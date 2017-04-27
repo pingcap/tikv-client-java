@@ -16,10 +16,9 @@
 package com.pingcap.tikv.catalog;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.Snapshot;
-import com.pingcap.tikv.TiClientInternalException;
+import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.codec.*;
 import com.pingcap.tikv.util.Pair;
 import com.pingcap.tikv.util.TiFluentIterable;
