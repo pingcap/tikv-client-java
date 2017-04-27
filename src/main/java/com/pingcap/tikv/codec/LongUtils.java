@@ -60,7 +60,7 @@ public class LongUtils {
     }
 
     public static void writeUVarLong(CodecDataOutput cdo, long value) {
-        while (value >= 0x80) {
+        while ((value - 0x80) >= 0) {
             cdo.writeByte((byte)value | 0x80);
             // logical shift as unsigned long
             value >>>= 7;
@@ -68,30 +68,29 @@ public class LongUtils {
         cdo.writeByte((byte)value);
     }
 
-    private static boolean isValidFlag(byte flag, boolean unsigned) {
-        if (unsigned && (flag == UINT_FLAG || flag == UVARINT_FLAG)) {
-            return true;
-        }
-        if (!unsigned && (flag == INT_FLAG || flag == VARINT_FLAG)) {
-            return true;
-        }
-        return false;
-    }
-
     public static long readLongFully(CodecDataInput cdi) {
         byte flag = cdi.readByte();
-        if (isValidFlag(flag, false)) {
-            throw new TiClientInternalException("Invalid Flag type for signed long type: " + flag);
+
+        switch (flag) {
+            case INT_FLAG:
+                return readLong(cdi);
+            case VARINT_FLAG:
+                return readVarLong(cdi);
+            default:
+                throw new TiClientInternalException("Invalid Flag type for signed long type: " + flag);
         }
-        return readLong(cdi);
     }
 
     public static long readULongFully(CodecDataInput cdi) {
         byte flag = cdi.readByte();
-        if (isValidFlag(flag, true)) {
-            throw new TiClientInternalException("Invalid Flag type for unsigned long type: " + flag);
+        switch (flag) {
+            case UINT_FLAG:
+                return readULong(cdi);
+            case UVARINT_FLAG:
+                return readUVarLong(cdi);
+            default:
+                throw new TiClientInternalException("Invalid Flag type for signed long type: " + flag);
         }
-        return readULong(cdi);
     }
 
     public static long readLong(CodecDataInput cdi) {
@@ -116,16 +115,16 @@ public class LongUtils {
         long x = 0;
         int s = 0;
         for (int i = 0; !cdi.eof(); i++) {
-            int b = cdi.readUnsignedByte();
-            if (b < 0x80) {
+            long b = cdi.readUnsignedByte();
+            if ((b - 0x80) < 0) {
                 if (i > 9 || i == 9 && b > 1) {
-                    return 0;
+                    throw new InvalidCodecFormatException("readUVarLong overflow");
                 }
                 return x | b << s;
             }
             x |= (b & 0x7f) << s;
             s += 7;
         }
-        return 0;
+        throw new InvalidCodecFormatException("readUVarLong encounter unfinished data");
     }
 }
