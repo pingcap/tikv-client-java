@@ -21,6 +21,15 @@ public class LongUtilsTest {
         assertEquals(9999L, value);
         value = LongUtils.readLongFully(cdi);
         assertEquals(-2333L, value);
+
+        byte[] wrongData = new byte[]{(byte)0x8,(byte)0xb9};
+        cdi = new CodecDataInput(wrongData);
+        try {
+            LongUtils.readLongFully(cdi);
+            fail();
+        } catch (Exception e) {
+            assertTrue(true);
+        }
     }
 
     @Test
