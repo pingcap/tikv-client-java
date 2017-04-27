@@ -125,6 +125,6 @@ public class LongUtils {
             x |= (b & 0x7f) << s;
             s += 7;
         }
-        throw new InvalidCodecFormatException("readUVarLong encounter unfinished data");
+        throw new InvalidCodecFormatException("readUVarLong encountered unfinished data");
     }
 }
