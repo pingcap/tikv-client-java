@@ -89,7 +89,7 @@ public class LongUtils {
             case UVARINT_FLAG:
                 return readUVarLong(cdi);
             default:
-                throw new TiClientInternalException("Invalid Flag type for signed long type: " + flag);
+                throw new TiClientInternalException("Invalid Flag type for unsigned long type: " + flag);
         }
     }
 
