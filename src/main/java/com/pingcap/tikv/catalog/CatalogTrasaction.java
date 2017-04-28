@@ -99,17 +99,6 @@ public class CatalogTrasaction {
                                 .stopWhen(kv -> !KeyUtils.hasPrefix(kv.getKey(), encodedKey))
                                 .transform(kv -> Pair.create(decodeHashDataKey(kv.getKey()).second, kv.getValue()));
 
-        // Copy to a list just in case since iterator cannot rewind
         return ImmutableList.copyOf(iter);
-    }
-
-    public ByteString getBytesValue(ByteString key) {
-        CodecDataOutput cdo = new CodecDataOutput();
-        encodeStringDataKey(cdo, key.toByteArray(), prefix);
-        return snapshot.get(cdo.toByteString());
-    }
-
-    public long getLongValue(ByteString key) {
-        return Long.parseLong(snapshot.get(key).toString());
     }
 }

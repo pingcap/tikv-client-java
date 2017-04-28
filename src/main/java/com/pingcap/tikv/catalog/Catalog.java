@@ -85,7 +85,7 @@ public class Catalog {
         }
     }
 
-    private TiTableInfo getTable(TiDBInfo database, long tableId) {
+    public TiTableInfo getTable(TiDBInfo database, long tableId) {
         ByteString dbKey = encodeDatabaseId(database.getId());
         if (!databaseExists(dbKey)) {
             return null;
