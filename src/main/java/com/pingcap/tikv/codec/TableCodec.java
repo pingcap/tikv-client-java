@@ -61,7 +61,7 @@ public class TableCodec {
         LongUtils.writeLong(cdo, handle);
     }
 
-    public static Pair<Long, Long> readRecordKey(CodecDataInput cdi) throws IOException {
+    public static Pair<Long, Long> readRecordKey(CodecDataInput cdi) {
         if (!consumeAndMatching(cdi, TBL_PREFIX)) {
             throw new CodecException("Invalid Table Prefix");
         }
