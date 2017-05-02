@@ -85,6 +85,7 @@ public class Catalog {
         }
     }
 
+    // TODO: a naive implementation before meta cache implemented
     public TiDBInfo getDatabase(String dbName) {
         for (TiDBInfo db : listDatabases()) {
             if (db.getName().equalsIgnoreCase(dbName)) {
