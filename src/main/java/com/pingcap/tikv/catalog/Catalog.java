@@ -95,6 +95,16 @@ public class Catalog {
         return parseFromJson(json, TiTableInfo.class);
     }
 
+    // TODO: a naive implementation before meta cache implemented
+    public TiTableInfo getTable(TiDBInfo database, String tableName) {
+        for (TiTableInfo tableInfo : listTables(database)) {
+            if (tableInfo.getName().equalsIgnoreCase(tableName)) {
+                return tableInfo;
+            }
+        }
+        return null;
+    }
+
     private static ByteString encodeDatabaseId(long id) {
         return ByteString.copyFrom(String
                 .format("%s:%d", DB_PREFIX, id)
