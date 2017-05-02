@@ -85,6 +85,15 @@ public class Catalog {
         }
     }
 
+    public TiDBInfo getDatabase(String dbName) {
+        for (TiDBInfo db : listDatabases()) {
+            if (db.getName().equalsIgnoreCase(dbName)) {
+                return db;
+            }
+        }
+        return null;
+    }
+
     public TiTableInfo getTable(TiDBInfo database, long tableId) {
         ByteString dbKey = encodeDatabaseId(database.getId());
         if (!databaseExists(dbKey)) {
