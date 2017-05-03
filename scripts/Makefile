@@ -14,7 +14,7 @@ tikv: kv_build
 
 pd: pd_build
 	@echo "starting pd as deamon"
-	../pd/bin/pd-server&
+	../pd/bin/pd-server --data-dir=pd&
 
 
 pd_build: 
@@ -22,7 +22,7 @@ pd_build:
 	cd $(PD_PATH) && (make > /dev/null  2>&1)
 
 kv_build: rust_nightly
-	which ../tikv/bin/tikv-server > /dev/null || cd tikv && make
+	which ../tikv/bin/tikv-server > /dev/null || cd ../tikv && make
 
 rust_nightly:
 	@echo "rust nightly installation takes a lot of time. Leave it for yourself. "
