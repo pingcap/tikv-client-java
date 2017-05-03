@@ -15,26 +15,27 @@
 
 package com.pingcap.tikv.codec;
 
+import com.pingcap.tikv.kv.Key;
 import com.pingcap.tikv.meta.ObjectRowImpl;
 import com.pingcap.tikv.meta.Row;
 import com.pingcap.tikv.type.FieldType;
 
 public class DefaultRowReader implements RowReader {
-    private final CodecDataInput cdi;
+    private final Key key;
 
-    public static DefaultRowReader create(CodecDataInput cdi) {
-        return new DefaultRowReader(cdi);
+    public static DefaultRowReader create(Key key) {
+        return new DefaultRowReader(key);
     }
 
-    DefaultRowReader(CodecDataInput cdi) {
-        this.cdi = cdi;
+    DefaultRowReader(Key key) {
+        this.key = key;
     }
 
     @Override
     public Row readRow(FieldType[] fieldTypes) {
         Row row = ObjectRowImpl.create(fieldTypes.length);
         for (int i = 0; i < fieldTypes.length; i++) {
-            fieldTypes[i].decodeValueToRow(cdi, row, i);
+            fieldTypes[i].decodeValueToRow(key, row, i);
         }
         return row;
     }

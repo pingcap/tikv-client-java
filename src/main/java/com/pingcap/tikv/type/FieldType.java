@@ -19,6 +19,7 @@ package com.pingcap.tikv.type;
 import com.google.common.collect.ImmutableList;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.codec.CodecDataInput;
+import com.pingcap.tikv.kv.Key;
 import com.pingcap.tikv.meta.Collation;
 import com.pingcap.tikv.meta.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
@@ -49,17 +50,19 @@ public abstract class FieldType {
         this.collation = Collation.DEF_COLLATION_CODE;
     }
 
-    protected abstract void decodeValueNoNullToRow(CodecDataInput cdi, Row row, int pos);
+    protected abstract void decodeValueNoNullToRow(Key key, Row row, int pos);
 
-    public void decodeValueToRow(CodecDataInput cdi, Row row, int pos) {
-        int flag = cdi.readUnsignedByte();
+    public void decodeValueToRow(Key key, Row row, int pos) {
+        int flag = 0;
+        //FIXME
+//        = key.readUnsignedByte();
         if (isNullFlag(flag)) {
             row.setNull(pos);
         }
         if (!isValidFlag(flag)) {
             throw new TiClientInternalException("Invalid " + toString() + " flag: " + flag);
         }
-        decodeValueNoNullToRow(cdi, row, pos);
+        decodeValueNoNullToRow(key, row, pos);
     }
 
     protected abstract boolean isValidFlag(int flag);

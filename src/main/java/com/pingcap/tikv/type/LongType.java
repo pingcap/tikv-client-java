@@ -15,10 +15,11 @@
 
 package com.pingcap.tikv.type;
 
-import com.pingcap.tikv.codec.CodecDataInput;
-import com.pingcap.tikv.codec.LongUtils;
+import com.pingcap.tikv.kv.Key;
 import com.pingcap.tikv.meta.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
+
+import static com.pingcap.tikv.codec.Encoder.*;
 
 public class LongType extends FieldType {
     private final boolean varLength;
@@ -46,19 +47,19 @@ public class LongType extends FieldType {
     }
 
     @Override
-    public void decodeValueNoNullToRow(CodecDataInput cdi, Row row, int pos) {
+    public void decodeValueNoNullToRow(Key key, Row row, int pos) {
         // NULL should be checked outside
         if (isUnsigned()) {
             if (varLength) {
-                row.setULong(pos, LongUtils.readUVarLong(cdi));
+//                row.setULong(pos, readUVarLong());
             } else {
-                row.setULong(pos, LongUtils.readULong(cdi));
+//                row.setULong(pos, readULong());
             }
         } else {
             if (varLength) {
-                row.setLong(pos, LongUtils.readVarLong(cdi));
+//                row.setLong(pos, readVarLong());
             } else {
-                row.setLong(pos, LongUtils.readLong(cdi));
+//                row.setLong(pos, readLong());
             }
         }
     }
@@ -68,9 +69,9 @@ public class LongType extends FieldType {
     @Override
     protected boolean isValidFlag(int flag) {
         if (isUnsigned()) {
-            return flag == LongUtils.UINT_FLAG || flag == LongUtils.UVARINT_FLAG;
+            return flag == UINT_FLAG || flag == UVARINT_FLAG;
         } else {
-            return flag == LongUtils.INT_FLAG || flag == LongUtils.VARINT_FLAG;
+            return flag == INT_FLAG || flag == VARINT_FLAG;
         }
     }
 

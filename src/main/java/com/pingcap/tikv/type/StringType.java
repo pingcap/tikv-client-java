@@ -16,6 +16,7 @@
 package com.pingcap.tikv.type;
 
 import com.pingcap.tikv.codec.CodecDataInput;
+import com.pingcap.tikv.kv.Key;
 import com.pingcap.tikv.meta.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
 
@@ -27,7 +28,7 @@ public class StringType extends FieldType {
     }
 
     @Override
-    protected void decodeValueNoNullToRow(CodecDataInput cdi, Row row, int pos) {
+    protected void decodeValueNoNullToRow(Key key, Row row, int pos) {
 
     }
 
