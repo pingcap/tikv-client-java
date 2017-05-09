@@ -16,8 +16,6 @@
 package com.pingcap.tikv.codec;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import com.pingcap.tikv.codec.CodecDataInput;
-import com.pingcap.tikv.codec.CodecDataOutput;
 
 import java.util.Arrays;
 
@@ -52,16 +50,16 @@ public class BytesUtils {
         }
     }
 
-    public static byte[] readBytes(CodecDataInput cdi) {
-        return readBytes(cdi, false);
+    public static byte[] readBytes() {
+        return readBytes(false);
     }
 
-    public static byte[] readBytes(CodecDataInput cdi, boolean reverse) {
+    public static byte[] readBytes(boolean reverse) {
         CodecDataOutput cdo = new CodecDataOutput();
         while (true) {
             byte[] groupBytes = new byte[GRP_SIZE + 1];
 
-            cdi.readFully(groupBytes, 0, GRP_SIZE + 1);
+//            readFully(groupBytes, 0, GRP_SIZE + 1);
             byte[] group = Arrays.copyOfRange(groupBytes, 0, GRP_SIZE);
 
             int padCount;

@@ -17,6 +17,7 @@ package com.pingcap.tikv.codec;
 
 import com.google.protobuf.ByteString;
 
+//TODO: this should be removed if replacement for codec becomes available.
 public class KeyUtils {
     public static final ByteString ZERO_BYTE = ByteString.copyFrom(new byte[]{0});
     public static ByteString getNextKeyInByteOrder(ByteString key) {

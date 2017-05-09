@@ -16,8 +16,10 @@
 package com.pingcap.tikv.codec;
 
 
+import com.pingcap.tikv.kv.Key;
+
 public class RowReaderFactory {
-    public static RowReader createRowReader(CodecDataInput cdi) {
-        return new DefaultRowReader(cdi);
+    public static RowReader createRowReader(Key key) {
+        return new DefaultRowReader(key);
     }
 }
