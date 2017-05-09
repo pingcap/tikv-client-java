@@ -1,9 +1,9 @@
 syntax = "proto3";
 package coprocessor;
 
-import "errorpb.proto";
-import "kvrpcpb.proto";
-import "gogoproto/gogo.proto";
+import "src/main/proto/errorpb.proto";
+import "src/main/proto/kvrpcpb.proto";
+import "src/main/proto/gogoproto/gogo.proto";
 
 option (gogoproto.marshaler_all) = true;
 option (gogoproto.sizer_all) = true;

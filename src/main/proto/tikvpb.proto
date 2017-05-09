@@ -1,11 +1,11 @@
 syntax = "proto3";
 package tikvpb;
 
-import "coprocessor.proto";
-import "kvrpcpb.proto";
-import "raft_serverpb.proto";
+import "src/main/proto/coprocessor.proto";
+import "src/main/proto/kvrpcpb.proto";
+import "src/main/proto/raft_serverpb.proto";
 
-import "gogoproto/gogo.proto";
+import "src/main/proto/gogoproto/gogo.proto";
 
 option (gogoproto.sizer_all) = true;
 option (gogoproto.marshaler_all) = true;

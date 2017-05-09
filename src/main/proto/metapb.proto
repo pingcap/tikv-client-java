@@ -1,7 +1,7 @@
 syntax = "proto2";
 package metapb;
 
-import "gogoproto/gogo.proto";
+import "src/main/proto/gogoproto/gogo.proto";
 
 option (gogoproto.marshaler_all) = true;
 option (gogoproto.sizer_all) = true;

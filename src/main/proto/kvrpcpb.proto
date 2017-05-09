@@ -1,9 +1,9 @@
 syntax = "proto3";
 package kvrpcpb;
 
-import "metapb.proto";
-import "errorpb.proto";
-import "gogoproto/gogo.proto";
+import "src/main/proto/metapb.proto";
+import "src/main/proto/errorpb.proto";
+import "src/main/proto/gogoproto/gogo.proto";
 
 option (gogoproto.marshaler_all) = true;
 option (gogoproto.sizer_all) = true;

@@ -38,3 +38,6 @@ hs_err_pid*
 
 # ignore gradle
 .gradle
+
+
+bazel-*

@@ -1,9 +1,9 @@
 syntax = "proto2";
 package raft_cmdpb;
 
-import "metapb.proto";
-import "errorpb.proto";
-import "eraftpb.proto";
+import "src/main/proto/metapb.proto";
+import "src/main/proto/errorpb.proto";
+import "src/main/proto/eraftpb.proto";
 
 option java_package = "com.pingcap.tikv.grpc";
 

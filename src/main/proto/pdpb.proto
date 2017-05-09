@@ -1,9 +1,9 @@
 syntax = "proto3";
 package pdpb;
 
-import "metapb.proto";
+import "src/main/proto/metapb.proto";
 
-import "gogoproto/gogo.proto";
+import "src/main/proto/gogoproto/gogo.proto";
 
 option (gogoproto.sizer_all) = true;
 option (gogoproto.marshaler_all) = true;
