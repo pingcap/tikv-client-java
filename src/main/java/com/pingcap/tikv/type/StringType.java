@@ -29,6 +29,9 @@ public class StringType extends FieldType {
     public StringType(TiColumnInfo.InternalTypeHolder holder) {
         super(holder);
     }
+    public StringType() {
+
+    }
 
     @Override
     protected void decodeValueNoNullToRow(CodecDataInput cdi, Row row, int pos) {
