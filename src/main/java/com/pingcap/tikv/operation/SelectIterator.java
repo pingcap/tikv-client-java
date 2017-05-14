@@ -38,7 +38,10 @@ import com.pingcap.tikv.type.FieldType;
 import com.pingcap.tikv.util.Pair;
 import com.pingcap.tikv.util.TiFluentIterable;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Comparator;
 import java.util.function.Function;
 
 import static com.google.common.base.Preconditions.checkArgument;
