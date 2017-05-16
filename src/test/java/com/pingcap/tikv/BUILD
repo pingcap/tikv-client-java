@@ -14,7 +14,7 @@ junit_suite_test(
          ["**/*.java"],
     ),
     deps = [
-        "//src/main/java/com/pingcap/tikv:tikv-lib",
+        "//src/main/java/com/pingcap/tikv:tikv-java",
         "@junit_junit//jar",
         "//src/main/proto:java_compile_imports",
         "//src/main/proto:java",
