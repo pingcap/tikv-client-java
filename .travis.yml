@@ -1,8 +1,6 @@
 dist: trusty
 sudo: required
-osx_image: xcode8
 language: java
-
 os:
   - linux
 
@@ -26,6 +24,8 @@ before_install:
   - ./install.sh --user
   - rm -f install.sh
 
+install: 
+  - echo "skip"
 script:
   - |
     bazel \
