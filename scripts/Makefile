@@ -26,5 +26,8 @@ kv_build: rust_nightly
 rust_nightly:
 	@echo "rust nightly installation takes a lot of time. Leave it for yourself. "
 	@echo 'curl -s https://static.rust-lang.org/rustup.sh | sh -s -- --channel=nightly'
+clean:
+	rm -rf ../tikv/bin
+	rm -rf ../pd/bin
 
 

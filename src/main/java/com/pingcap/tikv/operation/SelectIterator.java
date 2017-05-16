@@ -81,9 +81,7 @@ public class SelectIterator implements Iterator<Row> {
         this.req = req;
         this.session = session;
         this.regionCache = rm;
-        fieldTypes = TiFluentIterable.from(req.getTableInfo().getColumnsList())
-                .transform(column -> new TiColumnInfo.InternalTypeHolder(column).toFieldType())
-                .toArray(FieldType.class);
+        fieldTypes = TypeInferer.toFieldTypes(req);
         this.rangeToRegions = splitRangeByRegion(ranges);
         this.readNextRegionFn  = rangeToRegions -> {
             if (eof || index >= rangeToRegions.size()) {
@@ -102,10 +100,13 @@ public class SelectIterator implements Iterator<Row> {
                 eof = true;
                 return false;
             }
+            List<Chunk> chunks  = resp.getChunksList();
+            for (Chunk ck: chunks) {
+            }
             chunkIterator = new ChunkIterator(resp.getChunksList());
         } catch (Exception e) {
             eof = true;
-            throw new TiClientInternalException("Error Closing Store client.", e);
+            throw new TiClientInternalException("Error on calling coprocessor.", e);
         }
         return true;
         };
