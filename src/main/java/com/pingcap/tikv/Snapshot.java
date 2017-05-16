@@ -15,7 +15,6 @@
 
 package com.pingcap.tikv;
 
-
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.collect.ImmutableList;
@@ -33,6 +32,7 @@ import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.operation.ScanIterator;
 import com.pingcap.tikv.operation.SelectIterator;
 import com.pingcap.tikv.util.Pair;
+import com.pingcap.tikv.Snapshot.SelectBuilder;
 
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -82,7 +82,7 @@ public class Snapshot {
         for (TiRange<Long> r : ranges) {
             ByteString startKey = TableCodec.encodeRowKeyWithHandle(table.getId(), r.getLowValue());
             ByteString endKey = TableCodec.encodeRowKeyWithHandle(table.getId(),
-                                                                  Math.max(r.getHighValue() + 1, Long.MAX_VALUE));
+                    Math.max(r.getHighValue() + 1, Long.MAX_VALUE));
             builder.add(TiRange.createByteStringRange(startKey, endKey));
         }
         List<TiRange<ByteString>> keyRanges = builder.build();
@@ -112,7 +112,7 @@ public class Snapshot {
                 lastPair = pair;
                 curRegion = pair.first;
                 curKeyRange = Range.closedOpen(curRegion.getStartKey().asReadOnlyByteBuffer(),
-                                               curRegion.getEndKey().asReadOnlyByteBuffer());
+                        curRegion.getEndKey().asReadOnlyByteBuffer());
                 if (lastPair != null) {
                     try (RegionStoreClient client = RegionStoreClient
                             .create(lastPair.first, lastPair.second, getSession())) {
@@ -137,8 +137,8 @@ public class Snapshot {
     }
 
     public static class SelectBuilder {
-        private static long MASK_IGNORE_TRUNCATE     = 0x1;
-        private static long MASK_TRUNC_AS_WARNING    = 0x2;
+        private static long MASK_IGNORE_TRUNCATE = 0x1;
+        private static long MASK_TRUNC_AS_WARNING = 0x2;
 
         private final Snapshot snapshot;
         private final SelectRequest.Builder builder;
@@ -180,6 +180,46 @@ public class Snapshot {
 
         public SelectBuilder addRange(TiRange<Long> keyRange) {
             rangeListBuilder.add(keyRange);
+            return this;
+        }
+
+        public SelectBuilder timestamp() {
+            return this;
+        }
+
+        public SelectBuilder orderBy() {
+            return this;
+        }
+
+        public SelectBuilder groupBy() {
+            return this;
+        }
+
+        public SelectBuilder having() {
+            return this;
+        }
+
+        public SelectBuilder fields() {
+            return this;
+        }
+
+        public SelectBuilder distinct(boolean distinct) {
+            return this;
+        }
+
+        public SelectBuilder where() {
+            return this;
+        }
+
+        public SelectBuilder limit() {
+            return this;
+        }
+
+        public SelectBuilder Aggreates() {
+            return this;
+        }
+
+        public SelectBuilder timeZoneOffset() {
             return this;
         }
 
