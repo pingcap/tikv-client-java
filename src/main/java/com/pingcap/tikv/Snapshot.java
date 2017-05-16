@@ -178,28 +178,19 @@ public class Snapshot {
             return this;
         }
 
+        
+        public SelectBuilder setTimestamp(long timestamp) {
+            return this;
+        }
+
+                
+        
+        public SelectBuilder fields(Object[] exprs) {
+            return this;
+        }
+
         public SelectBuilder addRange(TiRange<Long> keyRange) {
             rangeListBuilder.add(keyRange);
-            return this;
-        }
-
-        public SelectBuilder timestamp() {
-            return this;
-        }
-
-        public SelectBuilder orderBy() {
-            return this;
-        }
-
-        public SelectBuilder groupBy() {
-            return this;
-        }
-
-        public SelectBuilder having() {
-            return this;
-        }
-
-        public SelectBuilder fields() {
             return this;
         }
 
@@ -207,19 +198,33 @@ public class Snapshot {
             return this;
         }
 
-        public SelectBuilder where() {
+        public SelectBuilder where(Object expr) {
             return this;
         }
 
-        public SelectBuilder limit() {
+        public SelectBuilder groupBy(Object expr) {
             return this;
         }
 
-        public SelectBuilder Aggreates() {
+       
+        public SelectBuilder having(Object expr) {
             return this;
         }
 
-        public SelectBuilder timeZoneOffset() {
+        public SelectBuilder orderBy(Object[] byItem) {
+            return this;
+        }
+
+        public SelectBuilder limit(long limit) {
+            return this;
+        }
+
+        // TODO: write exprs. A class Expr
+        public SelectBuilder Aggreates(Object[] exprs) {
+            return this;
+        }
+
+        public SelectBuilder setTimeZoneOffset(long timeZoneOffset) {
             return this;
         }
 
