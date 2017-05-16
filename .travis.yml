@@ -47,3 +47,5 @@ script:
       //src/... \
       $FLAGS \
 
+notifications:
+  email: false
