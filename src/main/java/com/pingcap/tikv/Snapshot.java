@@ -28,227 +28,292 @@ import com.pingcap.tikv.grpc.Metapb.Region;
 import com.pingcap.tikv.grpc.Metapb.Store;
 import com.pingcap.tikv.meta.Row;
 import com.pingcap.tikv.meta.TiRange;
+// TODO: UNDO this import later
+import com.pingcap.tikv.meta.*;
 import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.operation.ScanIterator;
 import com.pingcap.tikv.operation.SelectIterator;
 import com.pingcap.tikv.util.Pair;
 import com.pingcap.tikv.Snapshot.SelectBuilder;
+import com.pingcap.tidb.tipb.Expr;
+import com.pingcap.tidb.tipb.ByItem;
+import com.pingcap.tidb.tipb.ExprType;
 
 import java.nio.ByteBuffer;
 import java.util.*;
 
 public class Snapshot {
-    private final Version version;
-    private final RegionManager regionCache;
-    private final TiSession session;
-    private final static int EPOCH_SHIFT_BITS = 18;
-    private final TiConfiguration conf;
+  private final Version version;
+  private final RegionManager regionCache;
+  private final TiSession session;
+  private static final int EPOCH_SHIFT_BITS = 18;
+  private final TiConfiguration conf;
 
-    public Snapshot(Version version, RegionManager regionCache, TiSession session) {
-        this.version = version;
-        this.regionCache = regionCache;
-        this.session = session;
-        this.conf = session.getConf();
+  public Snapshot(Version version, RegionManager regionCache, TiSession session) {
+    this.version = version;
+    this.regionCache = regionCache;
+    this.session = session;
+    this.conf = session.getConf();
+  }
+
+  public Snapshot(RegionManager regionCache, TiSession session) {
+    this(Version.getCurrentTSAsVersion(), regionCache, session);
+  }
+
+  public TiSession getSession() {
+    return session;
+  }
+
+  public long getVersion() {
+    return version.getVersion();
+  }
+
+  public byte[] get(byte[] key) {
+    ByteString keyString = ByteString.copyFrom(key);
+    ByteString value = get(keyString);
+    return value.toByteArray();
+  }
+
+  public ByteString get(ByteString key) {
+    Pair<Region, Store> pair = regionCache.getRegionStorePairByKey(key);
+    RegionStoreClient client = RegionStoreClient.create(pair.first, pair.second, getSession());
+    // TODO: Need to deal with lock error after grpc stable
+    return client.get(key, version.getVersion());
+  }
+
+  public Iterator<Row> select(TiTableInfo table, SelectRequest req, List<TiRange<Long>> ranges) {
+    ImmutableList.Builder<TiRange<ByteString>> builder = ImmutableList.builder();
+    for (TiRange<Long> r : ranges) {
+      ByteString startKey = TableCodec.encodeRowKeyWithHandle(table.getId(), r.getLowValue());
+      ByteString endKey =
+          TableCodec.encodeRowKeyWithHandle(
+              table.getId(), Math.max(r.getHighValue() + 1, Long.MAX_VALUE));
+      builder.add(TiRange.createByteStringRange(startKey, endKey));
+    }
+    List<TiRange<ByteString>> keyRanges = builder.build();
+    return new SelectIterator(req, keyRanges, getSession(), regionCache);
+  }
+
+  public Iterator<KvPair> scan(ByteString startKey) {
+    return new ScanIterator(
+        startKey, conf.getScanBatchSize(), null, session, regionCache, version.getVersion());
+  }
+
+  // TODO: Need faster implementation, say concurrent version
+  // Assume keys sorted
+  public List<KvPair> batchGet(List<ByteString> keys) {
+    Region curRegion = null;
+    Range<ByteBuffer> curKeyRange = null;
+    Pair<Region, Store> lastPair = null;
+    List<ByteString> keyBuffer = new ArrayList<>();
+    List<KvPair> result = new ArrayList<>(keys.size());
+    for (ByteString key : keys) {
+      if (curRegion == null || !curKeyRange.contains(key.asReadOnlyByteBuffer())) {
+        Pair<Region, Store> pair = regionCache.getRegionStorePairByKey(key);
+        lastPair = pair;
+        curRegion = pair.first;
+        curKeyRange =
+            Range.closedOpen(
+                curRegion.getStartKey().asReadOnlyByteBuffer(),
+                curRegion.getEndKey().asReadOnlyByteBuffer());
+        if (lastPair != null) {
+          try (RegionStoreClient client =
+              RegionStoreClient.create(lastPair.first, lastPair.second, getSession())) {
+            List<KvPair> partialResult = client.batchGet(keyBuffer, version.getVersion());
+            for (KvPair kv : partialResult) {
+              // TODO: Add lock check
+              result.add(kv);
+            }
+          } catch (Exception e) {
+            throw new TiClientInternalException("Error Closing Store client.", e);
+          }
+          keyBuffer = new ArrayList<>();
+        }
+        keyBuffer.add(key);
+      }
+    }
+    return result;
+  }
+
+  public SelectBuilder newSelect(TiTableInfo table) {
+    return new SelectBuilder(this, table);
+  }
+
+  public static class SelectBuilder {
+    private static long MASK_IGNORE_TRUNCATE = 0x1;
+    private static long MASK_TRUNC_AS_WARNING = 0x2;
+
+    private final Snapshot snapshot;
+    private final SelectRequest.Builder builder;
+    private final ImmutableList.Builder<TiRange<Long>> rangeListBuilder;
+    private TiTableInfo table;
+    private long timestamp;
+    private long timeZoneOffset;
+    private boolean distinct;
+
+    private TiSession getSession() {
+      return snapshot.getSession();
     }
 
-    public Snapshot(RegionManager regionCache, TiSession session) {
-        this(Version.getCurrentTSAsVersion(), regionCache, session);
+    private TiConfiguration getConf() {
+      return getSession().getConf();
     }
 
-    public TiSession getSession() {
-        return session;
+    private SelectBuilder(Snapshot snapshot, TiTableInfo table) {
+      this.snapshot = snapshot;
+      this.builder = SelectRequest.newBuilder();
+      this.rangeListBuilder = ImmutableList.builder();
+      this.table = table;
+
+      long flags = 0;
+      if (getConf().isIgnoreTruncate()) {
+        flags |= MASK_IGNORE_TRUNCATE;
+      } else if (getConf().isTruncateAsWarning()) {
+        flags |= MASK_TRUNC_AS_WARNING;
+      }
+      builder.setFlags(flags);
+      builder.setStartTs(snapshot.getVersion());
+      // Set default timezone offset
+      TimeZone tz = TimeZone.getDefault();
+      builder.setTimeZoneOffset(tz.getOffset(new Date().getTime()) / 1000);
+      builder.setTableInfo(table.toProto());
+    }
+
+    public SelectBuilder setTimeZoneOffset(long offset) {
+      builder.setTimeZoneOffset(offset);
+      return this;
+    }
+
+    public SelectBuilder setTimestamp(long timestamp) {
+      builder.setStartTs(timestamp);
+      return this;
+    }
+
+    private boolean isExprTypeSupported(ExprType exprType, TiExpr[] exprs) {
+      switch (exprType) {
+        case Null:
+        case Int64:
+        case Uint64:
+        case String:
+        case Bytes:
+        case MysqlDuration:
+        case MysqlTime:
+        case MysqlDecimal:
+        case ColumnRef:
+        case And:
+        case Or:
+        case LT:
+        case LE:
+        case EQ:
+        case NE:
+        case GE:
+        case GT:
+        case NullEQ:
+        case In:
+        case ValueList:
+        case Like:
+        case Not:
+          return true;
+        case Plus:
+        case Div:
+          return true;
+        case Case:
+        case If:
+          return true;
+        case Count:
+        case First:
+        case Max:
+        case Min:
+        case Sum:
+        case Avg:
+          return true;
+          // case kv.ReqSubTypeDesc:
+          // return true;
+        default:
+          return false;
+      }
+    }
+
+    // projection
+    public SelectBuilder fields(Expr[] exprs) {
+      int i = 0;
+      for (Expr expr : exprs) {
+        builder.setFields(i++, expr);
+      }
+      return this;
+    }
+
+    public SelectBuilder addRange(TiRange<Long> keyRange) {
+      rangeListBuilder.add(keyRange);
+      return this;
+    }
+
+    public SelectBuilder distinct(boolean distinct) {
+      builder.setDistinct(distinct);
+      return this;
+    }
+
+    public SelectBuilder where(Expr expr) {
+      builder.setWhere(expr);
+      return this;
+    }
+
+    public SelectBuilder groupBy(TiByItem[] values) {
+      int i = 0;
+      for (TiByItem val : values) {
+        builder.setGroupBy(i++, val.toProto());
+      }
+      return this;
+    }
+
+    public SelectBuilder addHaving(TiExpr expr) {
+      builder.setHaving(expr.toProto());
+      return this;
+    }
+
+    public SelectBuilder orderBy(ByItem[] values) {
+      int i = 0;
+      for (ByItem val : values) {
+        builder.setOrderBy(i++, val);
+      }
+      return this;
+    }
+
+    public SelectBuilder limit(long limit) {
+      builder.setLimit(limit);
+      return this;
+    }
+
+    public SelectBuilder setAggreates(Expr[] exprs) {
+      int i = 0;
+      for (Expr expr : exprs) {
+        builder.setAggregates(i++, expr);
+      }
+      return this;
+    }
+
+    public Iterator<Row> doSelect() {
+      checkNotNull(table);
+      List<TiRange<Long>> ranges = rangeListBuilder.build();
+      checkArgument(ranges.size() > 0);
+      return snapshot.select(table, builder.build(), ranges);
+    }
+  }
+
+  public static class Version {
+    public static Version getCurrentTSAsVersion() {
+      long t = System.currentTimeMillis() << EPOCH_SHIFT_BITS;
+      return new Version(t);
+    }
+
+    private final long version;
+
+    private Version(long ts) {
+      version = ts;
     }
 
     public long getVersion() {
-        return version.getVersion();
+      return version;
     }
-
-    public byte[] get(byte[] key) {
-        ByteString keyString = ByteString.copyFrom(key);
-        ByteString value = get(keyString);
-        return value.toByteArray();
-    }
-
-    public ByteString get(ByteString key) {
-        Pair<Region, Store> pair = regionCache.getRegionStorePairByKey(key);
-        RegionStoreClient client = RegionStoreClient
-                .create(pair.first, pair.second, getSession());
-        // TODO: Need to deal with lock error after grpc stable
-        return client.get(key, version.getVersion());
-    }
-
-    public Iterator<Row> select(TiTableInfo table, SelectRequest req, List<TiRange<Long>> ranges) {
-        ImmutableList.Builder<TiRange<ByteString>> builder = ImmutableList.builder();
-        for (TiRange<Long> r : ranges) {
-            ByteString startKey = TableCodec.encodeRowKeyWithHandle(table.getId(), r.getLowValue());
-            ByteString endKey = TableCodec.encodeRowKeyWithHandle(table.getId(),
-                    Math.max(r.getHighValue() + 1, Long.MAX_VALUE));
-            builder.add(TiRange.createByteStringRange(startKey, endKey));
-        }
-        List<TiRange<ByteString>> keyRanges = builder.build();
-        return new SelectIterator(req, keyRanges, getSession(), regionCache);
-    }
-
-    public Iterator<KvPair> scan(ByteString startKey) {
-        return new ScanIterator(startKey,
-                conf.getScanBatchSize(),
-                null,
-                session,
-                regionCache,
-                version.getVersion());
-    }
-
-    // TODO: Need faster implementation, say concurrent version
-    // Assume keys sorted
-    public List<KvPair> batchGet(List<ByteString> keys) {
-        Region curRegion = null;
-        Range<ByteBuffer> curKeyRange = null;
-        Pair<Region, Store> lastPair = null;
-        List<ByteString> keyBuffer = new ArrayList<>();
-        List<KvPair> result = new ArrayList<>(keys.size());
-        for (ByteString key : keys) {
-            if (curRegion == null || !curKeyRange.contains(key.asReadOnlyByteBuffer())) {
-                Pair<Region, Store> pair = regionCache.getRegionStorePairByKey(key);
-                lastPair = pair;
-                curRegion = pair.first;
-                curKeyRange = Range.closedOpen(curRegion.getStartKey().asReadOnlyByteBuffer(),
-                        curRegion.getEndKey().asReadOnlyByteBuffer());
-                if (lastPair != null) {
-                    try (RegionStoreClient client = RegionStoreClient
-                            .create(lastPair.first, lastPair.second, getSession())) {
-                        List<KvPair> partialResult = client.batchGet(keyBuffer, version.getVersion());
-                        for (KvPair kv : partialResult) {
-                            // TODO: Add lock check
-                            result.add(kv);
-                        }
-                    } catch (Exception e) {
-                        throw new TiClientInternalException("Error Closing Store client.", e);
-                    }
-                    keyBuffer = new ArrayList<>();
-                }
-                keyBuffer.add(key);
-            }
-        }
-        return result;
-    }
-
-    public SelectBuilder newSelect(TiTableInfo table) {
-        return new SelectBuilder(this, table);
-    }
-
-    public static class SelectBuilder {
-        private static long MASK_IGNORE_TRUNCATE = 0x1;
-        private static long MASK_TRUNC_AS_WARNING = 0x2;
-
-        private final Snapshot snapshot;
-        private final SelectRequest.Builder builder;
-        private final ImmutableList.Builder<TiRange<Long>> rangeListBuilder;
-        private TiTableInfo table;
-
-        private TiSession getSession() {
-            return snapshot.getSession();
-        }
-
-        private TiConfiguration getConf() {
-            return getSession().getConf();
-        }
-
-        private SelectBuilder(Snapshot snapshot, TiTableInfo table) {
-            this.snapshot = snapshot;
-            this.builder = SelectRequest.newBuilder();
-            this.rangeListBuilder = ImmutableList.builder();
-            this.table = table;
-
-            long flags = 0;
-            if (getConf().isIgnoreTruncate()) {
-                flags |= MASK_IGNORE_TRUNCATE;
-            } else if (getConf().isTruncateAsWarning()) {
-                flags |= MASK_TRUNC_AS_WARNING;
-            }
-            builder.setFlags(flags);
-            builder.setStartTs(snapshot.getVersion());
-            // Set default timezone offset
-            TimeZone tz = TimeZone.getDefault();
-            builder.setTimeZoneOffset(tz.getOffset(new Date().getTime()) / 1000);
-            builder.setTableInfo(table.toProto());
-        }
-
-        public SelectBuilder setTimeZoneOffset(long offset) {
-            builder.setTimeZoneOffset(offset);
-            return this;
-        }
-
-        
-        public SelectBuilder setTimestamp(long timestamp) {
-            return this;
-        }
-
-                
-        
-        public SelectBuilder fields(Object[] exprs) {
-            return this;
-        }
-
-        public SelectBuilder addRange(TiRange<Long> keyRange) {
-            rangeListBuilder.add(keyRange);
-            return this;
-        }
-
-        public SelectBuilder distinct(boolean distinct) {
-            return this;
-        }
-
-        public SelectBuilder where(Object expr) {
-            return this;
-        }
-
-        public SelectBuilder groupBy(Object expr) {
-            return this;
-        }
-
-       
-        public SelectBuilder having(Object expr) {
-            return this;
-        }
-
-        public SelectBuilder orderBy(Object[] byItem) {
-            return this;
-        }
-
-        public SelectBuilder limit(long limit) {
-            return this;
-        }
-
-        // TODO: write exprs. A class Expr
-        public SelectBuilder Aggreates(Object[] exprs) {
-            return this;
-        }
-
-        public SelectBuilder setTimeZoneOffset(long timeZoneOffset) {
-            return this;
-        }
-
-        public Iterator<Row> doSelect() {
-            checkNotNull(table);
-            List<TiRange<Long>> ranges = rangeListBuilder.build();
-            checkArgument(ranges.size() > 0);
-            return snapshot.select(table, builder.build(), ranges);
-        }
-    }
-
-    public static class Version {
-        public static Version getCurrentTSAsVersion() {
-            long t = System.currentTimeMillis() << EPOCH_SHIFT_BITS;
-            return new Version(t);
-        }
-
-        private final long version;
-        private Version(long ts) {
-            version = ts;
-        }
-
-        public long getVersion() {
-            return version;
-        }
-    }
+  }
 }
