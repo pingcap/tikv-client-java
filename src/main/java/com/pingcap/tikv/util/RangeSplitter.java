@@ -19,8 +19,10 @@ package com.pingcap.tikv.util;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.RegionManager;
+import com.pingcap.tikv.codec.TableCodec;
 import com.pingcap.tikv.grpc.Metapb;
 import com.pingcap.tikv.meta.TiRange;
+import com.pingcap.tikv.meta.TiTableInfo;
 
 import java.util.Comparator;
 import java.util.List;
