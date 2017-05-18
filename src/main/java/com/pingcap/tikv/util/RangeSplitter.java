@@ -32,7 +32,7 @@ public class RangeSplitter {
         return new RangeSplitter(mgr);
     }
 
-    public RangeSplitter(RegionManager regionManager) {
+    private RangeSplitter(RegionManager regionManager) {
         this.regionManager = regionManager;
     }
 
