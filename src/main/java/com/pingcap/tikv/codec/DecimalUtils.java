@@ -26,6 +26,9 @@ import com.pingcap.tikv.codec.MyDecimal;
 import com.google.common.primitives.Ints;
 
 public class DecimalUtils {
+    /** read a decimal value from CodecDataInput
+     * @param cdi cdi is source data.
+     * */
     public static double readDecimalFully(CodecDataInput cdi) {
         if (cdi.size() < 3) {
             throw new IllegalArgumentException("insufficient bytes to read value");
@@ -42,6 +45,10 @@ public class DecimalUtils {
         return dec.toDecimal();
     }
 
+    /** write a decimal value from CodecDataInput
+     * @param cdo cdo is destination data.
+     * @param lvalue is decimal value that will be written into cdo.
+     * */
     public static void writeDecimalFully(CodecDataOutput cdo, double lvalue) {
         String value = Double.toString(lvalue);
         MyDecimal dec = new MyDecimal();

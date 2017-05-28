@@ -1,8 +1,19 @@
+// Copyright 2016 PingCAP, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package com.pingcap.tikv.codec;
 
 import org.junit.Test;
-import java.util.Arrays;
-import com.pingcap.tikv.codec.MyDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,6 +23,7 @@ public class MyDecimalTest {
     public void fromStringTest() throws Exception {
         List<MyDecimalTestStruct> test = new ArrayList<>();
         test.add(new MyDecimalTestStruct("12345", "12345", 5, 0));
+        test.add(new MyDecimalTestStruct("12345.", "12345", 5, 0));
         test.add(new MyDecimalTestStruct("123.45", "123.45", 5, 2));
         test.add(new MyDecimalTestStruct("-123.45", "-123.45", 5, 2));
         test.add(new MyDecimalTestStruct(".00012345000098765", "0.00012345000098765", 17, 17));

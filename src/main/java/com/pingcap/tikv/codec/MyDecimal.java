@@ -53,7 +53,7 @@ class MyDecimal {
 
     /*
      * Returns total precision of this decimal. Basically, it is sum of digitsInt and digitsFrac. But there
-     * are some special cases need to be takedn care of such as 000.001.
+     * are some special cases need to be token care of such as 000.001.
     */
     public int precision() {
         int frac = this.digitsFrac;
@@ -115,7 +115,7 @@ class MyDecimal {
             mask = 0;
         }
         int binSize = decimalBinSize(precision, frac);
-        int[] dCopy = new int[binSize];
+        int[] dCopy;
         dCopy = Arrays.copyOf(bin, binSize);
         dCopy[0] ^= 0x80;
         bin = dCopy;
@@ -306,7 +306,7 @@ class MyDecimal {
             throw new IllegalArgumentException("BadNumber");
         }
 
-        // skip sing and record where digits start from
+        // skip sign and record where digits start from
         // [-, 1, 2, 3]
         // [+, 1, 2, 3]
         // for +/-, we need skip them and record sign information into negtaive field.
