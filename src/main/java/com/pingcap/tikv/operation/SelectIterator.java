@@ -17,7 +17,6 @@ package com.pingcap.tikv.operation;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import com.google.protobuf.BoolValue;
 import com.google.protobuf.ByteString;
 import com.pingcap.tidb.tipb.Chunk;
 import com.pingcap.tidb.tipb.SelectRequest;
@@ -75,17 +74,13 @@ public class SelectIterator implements Iterator<Row> {
     }
 
     public SelectIterator(SelectRequest req,
-                          List<TiRange<ByteString>> ranges,
-                          TiSession session,
-                          RegionManager rm) {
+                          List<Pair<Pair<Region, Store> ,
+                               TiRange<ByteString>>> rangeToRegionsIn,
+                          TiSession session) {
         this.req = req;
         this.session = session;
-        this.regionCache = rm;
-        fieldTypes = TiFluentIterable.from(req.getTableInfo().getColumnsList())
-                .transform(column -> new TiColumnInfo.InternalTypeHolder(column).toFieldType())
-                .toArray(FieldType.class);
-        this.rangeToRegions = splitRangeByRegion(ranges);
-        this.readNextRegionFn  = rangeToRegions -> {
+        fieldTypes = TypeInferer.toFieldTypes(req);
+        this.readNextRegionFn  = (rangeToRegions) -> {
             if (eof || index >= rangeToRegions.size()) {
             return false;
         }
@@ -207,8 +202,9 @@ public class SelectIterator implements Iterator<Row> {
             if (metaIndex >= c.getRowsMetaCount()) {
                 // seek for next non-empty chunk
                 while (++chunkIndex < chunks.size() &&
-                       chunks.get(chunkIndex).getRowsMetaCount() == 0);
-
+                       chunks.get(chunkIndex).getRowsMetaCount() == 0) {
+                    ;
+                }
                 if (chunkIndex >= chunks.size()) {
                     eof = true;
                     return;
