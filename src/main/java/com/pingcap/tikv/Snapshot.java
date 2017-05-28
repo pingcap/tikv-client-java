@@ -15,8 +15,6 @@
 
 package com.pingcap.tikv;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
 import com.google.protobuf.ByteString;
@@ -40,7 +38,9 @@ import com.pingcap.tidb.tipb.ByItem;
 import com.pingcap.tidb.tipb.ExprType;
 
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class Snapshot {
   private final Version version;
@@ -179,6 +179,65 @@ public class Snapshot {
       builder.setTableInfo(table.toProto());
     }
 
+    public ByteString get(ByteString key) {
+        Pair<Region, Store> pair = regionCache.getRegionStorePairByKey(key);
+        RegionStoreClient client = RegionStoreClient.create(pair.first, pair.second, getSession());
+        // TODO: Need to deal with lock error after grpc stable
+        return client.get(key, version.getVersion());
+    }
+
+    public Iterator<Row> select(TiTableInfo table, SelectRequest req, List<TiRange<Long>> ranges) {
+        ImmutableList.Builder<TiRange<ByteString>> builder = ImmutableList.builder();
+        for (TiRange<Long> r : ranges) {
+            ByteString startKey = TableCodec.encodeRowKeyWithHandle(table.getId(), r.getLowValue());
+            ByteString endKey = TableCodec.encodeRowKeyWithHandle(
+                    table.getId(), Math.max(r.getHighValue() + 1, Long.MAX_VALUE));
+            builder.add(TiRange.createByteStringRange(startKey, endKey));
+        }
+        List<TiRange<ByteString>> keyRanges = builder.build();
+        return new SelectIterator(req, keyRanges, getSession(), regionCache);
+    }
+
+    public Iterator<KvPair> scan(ByteString startKey) {
+        return new ScanIterator(
+                startKey, conf.getScanBatchSize(), null, session, regionCache, version.getVersion());
+    }
+
+    // TODO: Need faster implementation, say concurrent version
+    // Assume keys sorted
+    public List<KvPair> batchGet(List<ByteString> keys) {
+        Region curRegion = null;
+        Range<ByteBuffer> curKeyRange = null;
+        Pair<Region, Store> lastPair = null;
+        List<ByteString> keyBuffer = new ArrayList<>();
+        List<KvPair> result = new ArrayList<>(keys.size());
+        for (ByteString key : keys) {
+            if (curRegion == null || !curKeyRange.contains(key.asReadOnlyByteBuffer())) {
+                Pair<Region, Store> pair = regionCache.getRegionStorePairByKey(key);
+                lastPair = pair;
+                curRegion = pair.first;
+                curKeyRange = Range.closedOpen(
+                        curRegion.getStartKey().asReadOnlyByteBuffer(),
+                        curRegion.getEndKey().asReadOnlyByteBuffer());
+                try (RegionStoreClient client = RegionStoreClient.create(lastPair.first, lastPair.second, getSession())) {
+                    List<KvPair> partialResult = client.batchGet(keyBuffer, version.getVersion());
+                    for (KvPair kv : partialResult) {
+                        // TODO: Add lock check
+                        result.add(kv);
+                    }
+                } catch (Exception e) {
+                    throw new TiClientInternalException("Error Closing Store client.", e);
+                }
+                keyBuffer = new ArrayList<>();
+                keyBuffer.add(key);
+            }
+        }
+        return result;
+    }
+
+    public SelectBuilder newSelect(TiTableInfo table) {
+        return SelectBuilder.newBuilder(this, table);
+
     public SelectBuilder setTimeZoneOffset(long offset) {
       builder.setTimeZoneOffset(offset);
       return this;
@@ -277,6 +336,7 @@ public class Snapshot {
         builder.setOrderBy(i++, val);
       }
       return this;
+
     }
 
     public SelectBuilder limit(long limit) {
@@ -284,13 +344,13 @@ public class Snapshot {
       return this;
     }
 
-    public SelectBuilder setAggreates(Expr[] exprs) {
+   public SelectBuilder setAggreates(Expr[] exprs) {
       int i = 0;
       for (Expr expr : exprs) {
         builder.setAggregates(i++, expr);
       }
       return this;
-    }
+   }
 
     public Iterator<Row> doSelect() {
       checkNotNull(table);

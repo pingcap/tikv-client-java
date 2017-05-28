@@ -15,7 +15,6 @@
 
 package com.pingcap.tikv.meta;
 
-
 import com.pingcap.tikv.type.FieldType;
 
 // TODO: Mapping unsigned and other types
@@ -25,6 +24,9 @@ import com.pingcap.tikv.type.FieldType;
 public interface Row {
     void        setNull(int pos);
     boolean     isNull(int pos);
+
+    void setDecimal(int pos, double v);
+    double getDecimal(int pos);
 
     void        setLong(int pos, long v);
     long        getLong(int pos);
