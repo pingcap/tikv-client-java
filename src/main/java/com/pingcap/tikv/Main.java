@@ -31,6 +31,7 @@ public class Main {
             // .setTimestamp(0)
             // .fields(null)
             .addAggreates(TiExpr.create(ExprType.Sum, "c1"))
+
             .doSelect();
 
     while (it.hasNext()) {
