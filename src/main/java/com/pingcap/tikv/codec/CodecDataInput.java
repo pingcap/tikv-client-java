@@ -180,5 +180,4 @@ public class CodecDataInput implements DataInput {
     public byte[] toByteArray() {
         return backingBuffer;
     }
->>>>>>> aggregates function works
 }
