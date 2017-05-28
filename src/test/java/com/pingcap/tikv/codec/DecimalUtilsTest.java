@@ -7,10 +7,10 @@ import static org.junit.Assert.*;
 public class DecimalUtilsTest {
     @Test
     public void readDecimalFullyTest() throws Exception {
-        // CodecDataOutput cdo = new CodecDataOutput();
-        // DecimalUtils.writeDecimalFully(cdo, 206);
-        // byte[] bs = cdo.toBytes();
-        // CodecDataInput cdi = new CodecDataInput(cdo.toBytes());
-        // DecimalUtils.readDecimalFully(cdi);
+        CodecDataOutput cdo = new CodecDataOutput();
+        DecimalUtils.writeDecimalFully(cdo, 206.0);
+        CodecDataInput cdi = new CodecDataInput(cdo.toBytes());
+        double value = DecimalUtils.readDecimalFully(cdi);
+        assertEquals(206.0, value, 0.0001);
     }
 }

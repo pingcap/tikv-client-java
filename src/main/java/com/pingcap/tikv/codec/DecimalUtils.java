@@ -27,15 +27,14 @@ import com.google.common.primitives.Ints;
 
 public class DecimalUtils {
     public static double readDecimalFully(CodecDataInput cdi) {
-        int precision = cdi.readUnsignedByte();
-        int frac = cdi.readUnsignedByte();
+        if (cdi.size() < 3) {
+            throw new IllegalArgumentException("insufficient bytes to read value");
+        }
+        int precision = cdi.readChar();
+        int frac = cdi.readChar();
         List<Integer> data = new ArrayList<>();
         for(;!cdi.eof();) {
-            data.add(cdi.readUnsignedByte());
-        }
-
-        if (data.size() < 3) {
-            throw new IllegalArgumentException("insufficient bytes to read value");
+            data.add((int) cdi.readChar());
         }
 
         MyDecimal dec = new MyDecimal();
