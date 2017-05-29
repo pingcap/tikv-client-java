@@ -30,7 +30,7 @@ public class Main {
             // .distinct(false)
             // .setTimestamp(0)
             // .fields(null)
-            .addAggreates(TiExpr.create(ExprType.Sum, "c1"))
+            .addAggreates(TiExpr.create().setType(ExprType.Sum).setValue("c1"))
             .doSelect();
 
     while (it.hasNext()) {
