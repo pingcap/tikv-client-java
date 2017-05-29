@@ -3,8 +3,6 @@ package com.pingcap.tikv.meta;
 import com.pingcap.tidb.tipb.Expr;
 import com.pingcap.tidb.tipb.ExprType;
 import com.google.protobuf.ByteString;
-import com.google.common.primitives.Longs;
-import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.codec.LongUtils;
 
@@ -12,28 +10,42 @@ import java.util.List;
 
 public class TiExpr {
   private TiTableInfo table;
+  private String value;
   private ExprType exprType;
-  private static List<TiExpr> childrens;
+  private static List<Expr> childrens;
 
-  public static TiExpr create(ExprType exprType, String value) {
-    return new TiExpr(exprType, value);
+  public static TiExpr create() {
+    return new TiExpr();
   }
 
-  private TiExpr(ExprType exprType, String value) {
-    this.exprType = exprType;
+  private TiExpr() {
+  }
+
+  public TiExpr setType(ExprType expr) {
+    this.exprType = expr;
+    return this;
+  }
+
+  public TiExpr setValue(String value) {
+    this.value = value;
+    return this;
   }
 
   private boolean isExprTypeSupported(ExprType exprType) {
     return true;
   }
 
-  public TiExpr addChildren(TiExpr expr) {
-    if (isExprTypeSupported(expr.getExprType())) {
-      // TODO throw a exception here
-      // throw new Exception();
+  public TiExpr addChildren(Expr expr) {
+    if (isExprTypeSupported(expr.getTp())) {
+        throw new IllegalArgumentException("Unsupported Expr Type");
     }
-    this.childrens.add(expr);
+    childrens.add(expr);
     return this;
+  }
+
+  public TiExpr addAllChildren(List<Expr> exprs) {
+      childrens.addAll(exprs);
+      return this;
   }
 
   public Expr toProto() {
@@ -52,5 +64,9 @@ public class TiExpr {
 
   public ExprType getExprType() {
     return this.exprType;
+  }
+
+  public static Expr getDefaultInstance() {
+    return Expr.getDefaultInstance();
   }
 }
