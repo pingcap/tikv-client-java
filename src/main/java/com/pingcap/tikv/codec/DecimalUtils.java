@@ -40,8 +40,6 @@ public class DecimalUtils {
             data.add(cdi.readUnsignedByte());
         }
 
-        System.out.println("read");
-        data.forEach(a -> System.out.print(a + " "));
         MyDecimal dec = new MyDecimal();
         dec.fromBin(precision, frac, Ints.toArray(data));
         return dec.toDecimal();
@@ -55,7 +53,6 @@ public class DecimalUtils {
         MyDecimal dec = new MyDecimal();
         dec.fromDecimal(lvalue);
         int[] data = dec.toBin(dec.precision(), dec.frac());
-        System.out.println(Arrays.toString(data));
         cdo.writeByte(dec.precision());
         cdo.writeByte(dec.frac());
         for (int aData : data) {
