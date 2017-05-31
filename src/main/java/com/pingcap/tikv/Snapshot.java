@@ -30,7 +30,6 @@ import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.operation.ScanIterator;
 import com.pingcap.tikv.operation.SelectIterator;
 import com.pingcap.tikv.util.Pair;
-import com.pingcap.tikv.util.RangeSplitter;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;

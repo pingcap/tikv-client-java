@@ -15,16 +15,40 @@
 
 package com.pingcap.tikv.type;
 
+import com.google.common.collect.ImmutableList;
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.codec.LongUtils;
+import com.pingcap.tikv.meta.Collation;
 import com.pingcap.tikv.meta.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
 
 public class LongType extends FieldType {
     private final boolean varLength;
 
-    private static int UNSIGNED_FLAG = 32;
+    private static final int UNSIGNED_FLAG = 32;
     public static final int TYPE_CODE = 3;
+
+    public static final LongType DEF_VAR_LONG =
+            new LongType(new TiColumnInfo.InternalTypeHolder(
+                    TYPE_CODE,
+                    0,
+                    UNSPECIFIED_LEN,
+                    UNSPECIFIED_LEN,
+                    "",
+                    Collation.translate(Collation.DEF_COLLATION_CODE),
+                    ImmutableList.of()
+            ));
+
+    public static final LongType DEF_VAR_ULONG =
+            new LongType(new TiColumnInfo.InternalTypeHolder(
+                    TYPE_CODE,
+                    UNSIGNED_FLAG,
+                    UNSPECIFIED_LEN,
+                    UNSPECIFIED_LEN,
+                    "",
+                    Collation.translate(Collation.DEF_COLLATION_CODE),
+                    ImmutableList.of()
+            ));
 
     public LongType(TiColumnInfo.InternalTypeHolder holder) {
         super(holder);
@@ -33,10 +57,6 @@ public class LongType extends FieldType {
 
     public LongType() {
         this.varLength = true;
-    }
-
-    public LongType(int flag, boolean varLength) {
-        this.varLength = varLength;
     }
 
     protected boolean isUnsigned() {
@@ -60,8 +80,6 @@ public class LongType extends FieldType {
             }
         }
     }
-
-
 
     @Override
     protected boolean isValidFlag(int flag) {

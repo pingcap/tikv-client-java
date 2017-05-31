@@ -68,6 +68,10 @@ public class TiColumnInfo {
         return name;
     }
 
+    public boolean matchName(String name) {
+        return name.equalsIgnoreCase(name);
+    }
+
     public int getOffset() {
         return offset;
     }

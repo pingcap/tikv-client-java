@@ -3,29 +3,16 @@ package com.pingcap.tikv;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Range;
-import com.google.protobuf.ByteString;
 import com.pingcap.tidb.tipb.SelectRequest;
-import com.pingcap.tikv.codec.TableCodec;
-import com.pingcap.tikv.exception.TiClientInternalException;
-import com.pingcap.tikv.grpc.Kvrpcpb.KvPair;
-import com.pingcap.tikv.grpc.Metapb.Region;
-import com.pingcap.tikv.grpc.Metapb.Store;
+import com.pingcap.tikv.expression.TiByItem;
+import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.meta.Row;
 import com.pingcap.tikv.exception.SelectException;
 import com.pingcap.tikv.meta.TiRange;
 // TODO: UNDO this import later
-import com.pingcap.tikv.meta.*;
 import com.pingcap.tikv.meta.TiTableInfo;
-import com.pingcap.tikv.operation.ScanIterator;
-import com.pingcap.tikv.operation.SelectIterator;
-import com.pingcap.tikv.util.Pair;
-import com.pingcap.tikv.SelectBuilder;
-import com.pingcap.tidb.tipb.Expr;
-import com.pingcap.tidb.tipb.ByItem;
 import com.pingcap.tidb.tipb.ExprType;
 
-import java.nio.ByteBuffer;
 import java.util.*;
 
 public class SelectBuilder {

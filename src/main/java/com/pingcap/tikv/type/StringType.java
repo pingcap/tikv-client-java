@@ -22,16 +22,15 @@ import com.pingcap.tikv.meta.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
 
 public class StringType extends FieldType {
-//    public static final int TYPE_CODE = 0xfe;
-    // mysql/type.go:34
+    // refer to mysql.TypeVarchar
     public static final int TYPE_CODE = 15;
     public static boolean isCompacted = false;
     public StringType(TiColumnInfo.InternalTypeHolder holder) {
         super(holder);
     }
-    public StringType() {
+    public StringType() {}
 
-    }
+    public static final StringType DEF_STRING = new StringType();
 
     @Override
     protected void decodeValueNoNullToRow(CodecDataInput cdi, Row row, int pos) {

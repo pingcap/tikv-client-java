@@ -2,10 +2,13 @@ package com.pingcap.tikv;
 
 import com.google.common.collect.ImmutableList;
 import com.pingcap.tikv.catalog.Catalog;
+import com.pingcap.tikv.expression.TiAggregateFunction;
+import com.pingcap.tikv.expression.TiConstant;
+import com.pingcap.tikv.expression.TiScalarExpression;
 import com.pingcap.tikv.meta.Row;
 import com.pingcap.tikv.meta.TiDBInfo;
 import com.pingcap.tikv.meta.TiRange;
-import com.pingcap.tikv.meta.TiExpr;
+import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.meta.TiTableInfo;
 
@@ -19,19 +22,11 @@ public class Main {
     TiDBInfo db = cat.getDatabase("test");
     TiTableInfo table = cat.getTable(db, "t1");
     Snapshot snapshot = cluster.createSnapshot();
-    Iterator<Row> it =
-        snapshot
-            .newSelect(table)
-            .addRange(TiRange.create(0L, Long.MAX_VALUE))
-            // .addHaving(null)
-            // .groupBy(null)
-            // .orderBy(null)
-            // .where(null)
-            // .distinct(false)
-            // .setTimestamp(0)
-            // .fields(null)
-            .addAggreates(TiExpr.create().setType(ExprType.Sum).setValue("c1"))
-            .doSelect();
+    Iterator<Row> it = null;
+
+    TiAggregateFunction.create(TiAggregateFunction.AggFunc.Average,
+            TiScalarExpression.create(TiScalarExpression.Op.Xor, TiConstant.create(1), TiConstant.create(2))
+            ).toProto();
 
     while (it.hasNext()) {
       Row r = it.next();

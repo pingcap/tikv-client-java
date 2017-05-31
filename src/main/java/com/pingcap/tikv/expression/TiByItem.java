@@ -1,10 +1,8 @@
-package com.pingcap.tikv.meta;
+package com.pingcap.tikv.expression;
 
 import com.pingcap.tidb.tipb.ByItem;
-import com.pingcap.tidb.tipb.Expr;
 import com.pingcap.tidb.tipb.ExprType;
-import com.google.protobuf.ByteString;
-
+import com.pingcap.tikv.expression.TiExpr;
 
 
 public class TiByItem {
