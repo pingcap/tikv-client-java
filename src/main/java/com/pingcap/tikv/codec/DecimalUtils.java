@@ -30,18 +30,26 @@ public class DecimalUtils {
      * @param cdi cdi is source data.
      * */
     public static double readDecimalFully(CodecDataInput cdi) {
-        if (cdi.size() < 3) {
+        if (cdi.available() < 3) {
             throw new IllegalArgumentException("insufficient bytes to read value");
-        }
-        int precision = cdi.readUnsignedByte();
-        int frac = cdi.readUnsignedByte();
-        List<Integer> data = new ArrayList<>();
-        for(;!cdi.eof();) {
-            data.add(cdi.readUnsignedByte());
         }
 
         MyDecimal dec = new MyDecimal();
-        dec.fromBin(precision, frac, Ints.toArray(data));
+        List<Integer> data = new ArrayList<>();
+        int precision = cdi.readUnsignedByte();
+        int frac = cdi.readUnsignedByte();
+        int length = precision + frac;
+        int curPos = cdi.size() - cdi.available();
+        for(int i = 0; i < length; i++) {
+            if (cdi.eof()){
+                break;
+            }
+            data.add(cdi.readUnsignedByte());
+        }
+
+        int binSize = dec.fromBin(precision, frac, Ints.toArray(data));
+        cdi.mark(curPos+binSize);
+        cdi.reset();
         return dec.toDecimal();
     }
 

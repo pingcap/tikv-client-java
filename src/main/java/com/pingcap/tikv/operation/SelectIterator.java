@@ -31,20 +31,14 @@ import com.pingcap.tikv.codec.RowReaderFactory;
 import com.pingcap.tikv.grpc.Metapb.Region;
 import com.pingcap.tikv.grpc.Metapb.Store;
 import com.pingcap.tikv.meta.Row;
-import com.pingcap.tikv.meta.TiColumnInfo;
 import com.pingcap.tikv.meta.TiRange;
-import com.pingcap.tikv.type.FieldType;
+import com.pingcap.tikv.meta.TiSelectRequest;
+import com.pingcap.tikv.types.FieldType;
 import com.pingcap.tikv.util.Pair;
 import com.pingcap.tikv.util.RangeSplitter;
-import com.pingcap.tikv.util.TiFluentIterable;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Comparator;
+import java.util.*;
 import java.util.function.Function;
-
-import static com.google.common.base.Preconditions.checkArgument;
 
 public class SelectIterator implements Iterator<Row> {
     protected final SelectRequest                               req;
@@ -72,14 +66,16 @@ public class SelectIterator implements Iterator<Row> {
         };
     }
 
-    public SelectIterator(SelectRequest req,
+    public SelectIterator(TiSelectRequest req,
                           List<Pair<Pair<Region, Store> ,
-                               TiRange<ByteString>>> rangeToRegionsIn,
+                                  TiRange<ByteString>>> rangeToRegionsIn,
                           TiSession session) {
-        this.req = req;
+        this.req = req.build();
         this.rangeToRegions = rangeToRegionsIn;
         this.session = session;
-        fieldTypes = TypeInferer.toFieldTypes(req);
+        //TODO revist later
+        SchemaInfer.TiFieldType tiField = SchemaInfer.create(req);
+        fieldTypes = tiField.getFieldTypes().toArray(new FieldType[0]);
         this.readNextRegionFn  = (rangeToRegions) -> {
             if (eof || index >= rangeToRegions.size()) {
                 return false;
@@ -92,7 +88,7 @@ public class SelectIterator implements Iterator<Row> {
             Region region = pair.first;
             Store store = pair.second;
             try (RegionStoreClient client = RegionStoreClient.create(region, store, session)) {
-                SelectResponse resp = client.coprocess(req, ImmutableList.of(range));
+                SelectResponse resp = client.coprocess(this.req, ImmutableList.of(range));
                 if (resp == null) {
                     eof = true;
                     return false;
@@ -106,7 +102,7 @@ public class SelectIterator implements Iterator<Row> {
         };
     }
 
-    public SelectIterator(SelectRequest req,
+    public SelectIterator(TiSelectRequest req,
                           List<TiRange<ByteString>> ranges,
                           TiSession session,
                           RegionManager rm) {

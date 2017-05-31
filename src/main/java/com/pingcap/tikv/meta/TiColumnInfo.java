@@ -19,9 +19,10 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
+import com.google.errorprone.annotations.Var;
 import com.pingcap.tidb.tipb.ColumnInfo;
 import com.pingcap.tikv.exception.TiClientInternalException;
-import com.pingcap.tikv.type.*;
+import com.pingcap.tikv.types.*;
 
 import java.util.List;
 import java.util.Map;
@@ -63,6 +64,10 @@ public class TiColumnInfo {
 
     public String getName() {
         return name;
+    }
+
+    public boolean matchName(String name) {
+        return this.name.equalsIgnoreCase(name);
     }
 
     public int getOffset() {
