@@ -11,7 +11,7 @@ import com.pingcap.tikv.type.FieldType;
 import com.pingcap.tikv.type.LongType;
 import com.pingcap.tikv.type.StringType;
 
-public class TiConstant extends TiExpr {
+public class TiConstant implements TiExpr {
     private Object value;
 
     public static TiConstant create(Object value) {

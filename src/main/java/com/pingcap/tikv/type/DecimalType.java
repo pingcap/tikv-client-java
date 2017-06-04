@@ -28,8 +28,10 @@ public class DecimalType extends FieldType {
         super(holder);
     }
 
-    public DecimalType() {
+    private DecimalType() {
     }
+
+    public static final DecimalType DEF_DECIMAL = new DecimalType();
 
     @Override
     public void decodeValueNoNullToRow(CodecDataInput cdi, Row row, int pos) {

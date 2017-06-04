@@ -8,7 +8,7 @@ import com.pingcap.tikv.meta.TiColumnInfo;
 import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.type.FieldType;
 
-public class TiColumnRef extends TiExpr {
+public class TiColumnRef implements TiExpr {
     static public TiColumnRef create(String name, TiTableInfo table) {
         TiColumnInfo columnInfo = null;
         for (TiColumnInfo col : table.getColumns()) {

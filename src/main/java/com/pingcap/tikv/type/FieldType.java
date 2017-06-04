@@ -24,9 +24,11 @@ import com.pingcap.tikv.meta.Collation;
 import com.pingcap.tikv.meta.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
 
+import java.io.BufferedInputStream;
+import java.io.Serializable;
 import java.util.List;
 
-public abstract class FieldType {
+public abstract class FieldType implements Serializable {
     protected static final byte   NULL_FLAG = 0;
     protected static final int    UNSPECIFIED_LEN = -1;
 
@@ -58,11 +60,13 @@ public abstract class FieldType {
             row.setNull(pos);
         }
         if (!isValidFlag(flag)) {
-            // throw new TiClientInternalException("Invalid " + toString() + " flag: " + flag);
+            throw new TiClientInternalException("Invalid " + toString() + " flag: " + flag);
         }
         decodeValueNoNullToRow(cdi, row, pos);
     }
 
+    // This type code is for encoding and decoding
+    // The flag should match constants in codec.go
     protected abstract boolean isValidFlag(int flag);
 
     protected boolean isNullFlag(int flag) {
@@ -92,5 +96,8 @@ public abstract class FieldType {
         return this.elems;
     }
 
+    // This should match TiDB's mysql/type.go's type code
+    // Different from encoding/decoding's type flag,
+    // this type code is for metadata's type flag
     public abstract int getTypeCode();
 }

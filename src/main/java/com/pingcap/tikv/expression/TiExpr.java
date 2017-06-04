@@ -10,9 +10,7 @@ import com.pingcap.tikv.type.FieldType;
 
 import java.util.List;
 
-public abstract class TiExpr {
-  protected TiTableInfo table;
-
-  public abstract Expr toProto();
-  public abstract FieldType getType();
+public interface TiExpr {
+    Expr toProto();
+    FieldType getType();
 }
