@@ -29,7 +29,7 @@ public class IsNull extends TiUnaryFunctionExpression {
     }
 
     @Override
-    protected void validateArguments() throws RuntimeException {
+    protected void validateArguments(TiExpr... args) throws RuntimeException {
         super.validateArguments();
     }
 }

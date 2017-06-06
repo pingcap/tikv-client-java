@@ -1,7 +1,6 @@
 package com.pingcap.tikv.expression.scalar;
 
 import com.pingcap.tidb.tipb.ExprType;
-import com.pingcap.tikv.expression.TiBinaryFunctionExpresson;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.expression.TiUnaryFunctionExpression;
 import com.pingcap.tikv.type.BooleanType;
@@ -30,8 +29,8 @@ public class Not extends TiUnaryFunctionExpression {
     }
 
     @Override
-    protected void validateArguments() throws RuntimeException {
+    protected void validateArguments(TiExpr... args) throws RuntimeException {
         super.validateArguments();
-        checkArgument(args.get(0).getType() instanceof BooleanType);
+        checkArgument(this.args.get(0).getType() instanceof BooleanType);
     }
 }

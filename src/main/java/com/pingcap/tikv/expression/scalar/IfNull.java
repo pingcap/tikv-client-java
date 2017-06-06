@@ -22,7 +22,7 @@ public class IfNull extends TiFunctionExpression {
     }
 
     @Override
-    protected void validateArguments() throws RuntimeException {
+    protected void validateArguments(TiExpr... args) throws RuntimeException {
     }
 
     @Override

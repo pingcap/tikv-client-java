@@ -1,7 +1,6 @@
 package com.pingcap.tikv.expression.scalar;
 
 import com.pingcap.tidb.tipb.ExprType;
-import com.pingcap.tikv.expression.TiBinaryFunctionExpresson;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.expression.TiFunctionExpression;
 import com.pingcap.tikv.type.FieldType;
@@ -22,7 +21,7 @@ public class Coalesce extends TiFunctionExpression {
     }
 
     @Override
-    protected void validateArguments() throws RuntimeException {
+    protected void validateArguments(TiExpr... args) throws RuntimeException {
 
     }
 

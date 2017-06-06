@@ -69,7 +69,7 @@ public class TiColumnInfo {
     }
 
     public boolean matchName(String name) {
-        return name.equalsIgnoreCase(name);
+        return this.name.equalsIgnoreCase(name);
     }
 
     public int getOffset() {
@@ -109,9 +109,9 @@ public class TiColumnInfo {
         private static Map<Integer, Builder<? extends FieldType>> typeBuilder;
         static {
             typeBuilder = ImmutableMap.<Integer, Builder<? extends FieldType>>builder()
-                    .put(LongType.TYPE_CODE, holder -> new LongType(holder))
-                    .put(StringType.TYPE_CODE, holder -> new StringType(holder))
-                    .put(DecimalType.TYPE_CODE, holder -> new DecimalType(holder))
+                    .put(LongType.TYPE_CODE, LongType::new)
+                    .put(StringType.TYPE_CODE, StringType::new)
+                    .put(DecimalType.TYPE_CODE, DecimalType::new)
                     .build();
         }
 

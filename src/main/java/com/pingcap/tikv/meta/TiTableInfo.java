@@ -23,6 +23,7 @@ import com.google.common.collect.Iterables;
 import com.pingcap.tidb.tipb.TableInfo;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TiTableInfo {
@@ -117,7 +118,7 @@ public class TiTableInfo {
     public TableInfo toProto() {
         return TableInfo.newBuilder()
                 .setTableId(getId())
-                .addAllColumns(Iterables.transform(getColumns(), col -> col.toProto()))
+                .addAllColumns(getColumns().stream().map(TiColumnInfo::toProto).collect(Collectors.toList()))
                 .build();
     }
 }

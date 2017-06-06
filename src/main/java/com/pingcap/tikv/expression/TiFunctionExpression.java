@@ -13,7 +13,7 @@ public abstract class TiFunctionExpression implements TiExpr {
     protected final List<TiExpr> args;
 
     protected TiFunctionExpression(TiExpr... args) {
-        validateArguments();
+        validateArguments(args);
         this.args = ImmutableList.copyOf(args);
     }
 
@@ -34,5 +34,5 @@ public abstract class TiFunctionExpression implements TiExpr {
 
     public abstract String getName();
 
-    protected abstract void validateArguments() throws RuntimeException;
+    protected abstract void validateArguments(TiExpr... args) throws RuntimeException;
 }

@@ -9,7 +9,7 @@ import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.type.FieldType;
 
 public class TiColumnRef implements TiExpr {
-    static public TiColumnRef create(String name, TiTableInfo table) {
+    static public TiColumnInfo getColumnWithName(String name, TiTableInfo table) {
         TiColumnInfo columnInfo = null;
         for (TiColumnInfo col : table.getColumns()) {
             if (col.matchName(name)) {
@@ -17,6 +17,10 @@ public class TiColumnRef implements TiExpr {
                 break;
             }
         }
+        return columnInfo;
+    }
+    static public TiColumnRef create(String name, TiTableInfo table) {
+        TiColumnInfo columnInfo = getColumnWithName(name, table);
         if (columnInfo == null) {
             throw new TiExpressionException("No Matching columns from TiTableInfo");
         }
@@ -52,5 +56,9 @@ public class TiColumnRef implements TiExpr {
     @Override
     public FieldType getType() {
         return columnInfo.getType();
+    }
+
+    public String getName() {
+        return this.columnInfo.getName();
     }
 }

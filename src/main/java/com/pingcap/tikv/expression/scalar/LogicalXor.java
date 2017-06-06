@@ -29,11 +29,11 @@ public class LogicalXor extends TiBinaryFunctionExpresson {
     }
 
     @Override
-    protected void validateArguments() throws RuntimeException {
+    protected void validateArguments(TiExpr... args) throws RuntimeException {
         // Validate 2 arguments
         super.validateArguments();
         // Validate 2 arguments are strings
-        checkArgument(args.get(0).getType() instanceof BooleanType);
-        checkArgument(args.get(1).getType() instanceof BooleanType);
+        checkArgument(this.args.get(0).getType() instanceof BooleanType);
+        checkArgument(this.args.get(1).getType() instanceof BooleanType);
     }
 }

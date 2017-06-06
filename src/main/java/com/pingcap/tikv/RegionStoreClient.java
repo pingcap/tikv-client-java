@@ -40,6 +40,7 @@ import io.grpc.ManagedChannelBuilder;
 
 import java.util.List;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -171,7 +172,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setContext(context)
                 .setTp(req.hasIndexInfo() ? ReqTypeIndex : ReqTypeSelect)
                 .setData(req.toByteString())
-                .addAllRanges(Iterables.transform(ranges, r -> rangeToProto(r)))
+                .addAllRanges(ranges.stream().map(RegionStoreClient::rangeToProto).collect(Collectors.toList()))
                 .build();
         Coprocessor.Response resp = callWithRetry(TikvGrpc.METHOD_COPROCESSOR, reqToSend);
         return coprocessorHelper(resp);
@@ -179,12 +180,12 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
 
     public Future<SelectResponse> coprocessAsync(SelectRequest req, List<TiRange<ByteString>> ranges) {
         FutureObserver<SelectResponse, Coprocessor.Response> responseObserver =
-                new FutureObserver<>((Coprocessor.Response resp) -> coprocessorHelper(resp));
+                new FutureObserver<>(this::coprocessorHelper);
         Coprocessor.Request reqToSend = Coprocessor.Request.newBuilder()
                 .setContext(context)
                 .setTp(req.hasIndexInfo() ? ReqTypeIndex : ReqTypeSelect)
                 .setData(req.toByteString())
-                .addAllRanges(Iterables.transform(ranges, r -> rangeToProto(r)))
+                .addAllRanges(ranges.stream().map(RegionStoreClient::rangeToProto).collect(Collectors.toList()))
                 .build();
         callAsyncWithRetry(TikvGrpc.METHOD_COPROCESSOR, reqToSend, responseObserver);
         return responseObserver.getFuture();
@@ -212,24 +213,14 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
 
     public static RegionStoreClient create(Region region, Store store, TiSession session) {
         RegionStoreClient client = null;
-        try {
-            HostAndPort address = HostAndPort.fromString(store.getAddress());
-            ManagedChannel channel = ManagedChannelBuilder
-                    .forAddress(address.getHostText(), address.getPort())
-                    .usePlaintext(true)
-                    .build();
-            TikvBlockingStub blockingStub = TikvGrpc.newBlockingStub(channel);
-            TikvStub asyncStub = TikvGrpc.newStub(channel);
-            client = new RegionStoreClient(region, session, channel, blockingStub, asyncStub);
-        } catch (Exception e) {
-            if (client != null) {
-                try {
-                    client.close();
-                } catch (Exception ignore) {
-                }
-            }
-            throw e;
-        }
+        HostAndPort address = HostAndPort.fromString(store.getAddress());
+        ManagedChannel channel = ManagedChannelBuilder
+                .forAddress(address.getHostText(), address.getPort())
+                .usePlaintext(true)
+                .build();
+        TikvBlockingStub blockingStub = TikvGrpc.newBlockingStub(channel);
+        TikvStub asyncStub = TikvGrpc.newStub(channel);
+        client = new RegionStoreClient(region, session, channel, blockingStub, asyncStub);
         return client;
     }
 

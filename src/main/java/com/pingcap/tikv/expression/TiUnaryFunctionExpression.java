@@ -11,8 +11,8 @@ public abstract class TiUnaryFunctionExpression extends TiFunctionExpression {
     public abstract String getName();
 
     @Override
-    protected void validateArguments() throws RuntimeException {
+    protected void validateArguments(TiExpr... args) throws RuntimeException {
         checkNotNull(args, "Arguments of " + getName() + " cannot be null");
-        checkArgument(args.size() == 1, getName() + " takes only 1 argument");
+        checkArgument(args.length == 1, getName() + " takes only 1 argument");
     }
 }

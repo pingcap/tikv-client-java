@@ -31,11 +31,11 @@ public class Like extends TiBinaryFunctionExpresson {
     }
 
     @Override
-    protected void validateArguments() throws RuntimeException {
+    protected void validateArguments(TiExpr... args) throws RuntimeException {
         // Validate 2 arguments
         super.validateArguments();
         // Validate 2 arguments are strings
-        checkArgument(args.get(0).getType() instanceof StringType);
-        checkArgument(args.get(1).getType() instanceof StringType);
+        checkArgument(this.args.get(0).getType() instanceof StringType);
+        checkArgument(this.args.get(1).getType() instanceof StringType);
     }
 }
