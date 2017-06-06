@@ -15,18 +15,31 @@
 
 package com.pingcap.tikv.type;
 
+import com.pingcap.tikv.codec.CodecDataInput;
+import com.pingcap.tikv.codec.LongUtils;
+import com.pingcap.tikv.exception.TiClientInternalException;
+import com.pingcap.tikv.meta.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
 
 
-public class BitType extends IntegerBaseType {
+public class BitType extends FieldType {
     public static final int TYPE_CODE = 16;
 
     public BitType(TiColumnInfo.InternalTypeHolder holder) {
         super(holder);
     }
 
-    protected BitType(boolean unsigned) {
-        super(unsigned);
+    protected BitType() {}
+
+    @Override
+    public void decodeValueNoNullToRow(int flag, CodecDataInput cdi, Row row, int pos) {
+        if (flag == LongUtils.UVARINT_FLAG) {
+            row.setULong(pos, LongUtils.readUVarLong(cdi));
+        } else if (flag == LongUtils.UINT_FLAG) {
+            row.setULong(pos, LongUtils.readULong(cdi));
+        } else {
+            throw new TiClientInternalException("Invalid " + toString() + " flag: " + flag);
+        }
     }
 
     @Override
@@ -34,6 +47,5 @@ public class BitType extends IntegerBaseType {
         return TYPE_CODE;
     }
 
-    public final static BitType DEF_SIGNED_TYPE = new BitType(false);
-    public final static BitType DEF_UNSIGNED_TYPE = new BitType(true);
+    public final static BitType DEF_TYPE = new BitType();
 }
