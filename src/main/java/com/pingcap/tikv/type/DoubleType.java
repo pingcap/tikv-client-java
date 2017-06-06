@@ -13,19 +13,22 @@
  * limitations under the License.
  */
 
-package com.pingcap.tikv.codec;
+package com.pingcap.tikv.type;
 
-import org.junit.Test;
+import com.pingcap.tikv.meta.TiColumnInfo;
 
-import static org.junit.Assert.assertEquals;
+public class DoubleType extends FloatingType {
+    public static final int TYPE_CODE = 5;
 
-public class DecimalUtilsTest {
-    @Test
-    public void readDecimalFullyTest() throws Exception {
-        CodecDataOutput cdo = new CodecDataOutput();
-        DecimalUtils.writeDecimalFully(cdo, 206.0);
-        CodecDataInput cdi = new CodecDataInput(cdo.toBytes());
-        double value = DecimalUtils.readDecimalFully(cdi);
-        assertEquals(206.0, value, 0.0001);
+    public DoubleType(TiColumnInfo.InternalTypeHolder holder) {
+        super(holder);
     }
+    public DoubleType() {}
+
+    @Override
+    public int getTypeCode() {
+        return TYPE_CODE;
+    }
+
+    public final static DoubleType DEF_TYPE = new DoubleType();
 }

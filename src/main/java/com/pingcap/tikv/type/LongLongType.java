@@ -19,7 +19,6 @@ public class LongLongType extends IntegerBaseType {
         return TYPE_CODE;
     }
 
-
     public final static LongLongType DEF_SIGNED_TYPE = new LongLongType(false);
     public final static LongLongType DEF_UNSIGNED_TYPE = new LongLongType(true);
 }

@@ -107,8 +107,12 @@ public class TiColumnInfo {
                     .put(MediumIntType.TYPE_CODE, holder -> new MediumIntType(holder))
                     .put(LongType.TYPE_CODE, holder -> new LongType(holder))
                     .put(LongLongType.TYPE_CODE, holder -> new LongLongType(holder))
-                    .put(StringType.TYPE_CODE, holder -> new StringType(holder))
+                    .put(VarCharType.TYPE_CODE, holder -> new VarCharType(holder))
+                    .put(CharType.TYPE_CODE, holder -> new CharType(holder))
+                    .put(TextType.TYPE_CODE, holder -> new TextType(holder))
                     .put(DecimalType.TYPE_CODE, holder -> new DecimalType(holder))
+                    .put(FloatType.TYPE_CODE, holder -> new FloatType(holder))
+                    .put(DoubleType.TYPE_CODE, holder -> new DoubleType(holder))
                     .build();
         }
 

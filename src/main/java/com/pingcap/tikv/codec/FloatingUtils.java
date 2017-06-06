@@ -15,17 +15,22 @@
 
 package com.pingcap.tikv.codec;
 
-import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+public class FloatingUtils {
+    public static final int FLOATING_FLAG = 5;
 
-public class DecimalUtilsTest {
-    @Test
-    public void readDecimalFullyTest() throws Exception {
-        CodecDataOutput cdo = new CodecDataOutput();
-        DecimalUtils.writeDecimalFully(cdo, 206.0);
-        CodecDataInput cdi = new CodecDataInput(cdo.toBytes());
-        double value = DecimalUtils.readDecimalFully(cdi);
-        assertEquals(206.0, value, 0.0001);
+    /**
+     * Decode as float
+     * @param cdi source of data
+     * @return decoded unsigned long value
+     */
+    public static double readDouble(CodecDataInput cdi) {
+        long u = LongUtils.readULong(cdi);
+        if (u < 0) {
+            u &= Long.MAX_VALUE;
+        } else {
+            u = ~u;
+        }
+        return Double.longBitsToDouble(u);
     }
 }

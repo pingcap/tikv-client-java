@@ -3,10 +3,10 @@ package com.pingcap.tikv.operation;
 
 
 import com.pingcap.tidb.tipb.SelectRequest;
+import com.pingcap.tikv.type.VarCharType;
 import com.pingcap.tikv.util.TiFluentIterable;
 import com.pingcap.tikv.type.FieldType;
 import com.pingcap.tikv.meta.TiColumnInfo;
-import com.pingcap.tikv.type.StringType;
 import com.pingcap.tikv.type.DecimalType;
 
 public class TypeInferer {
@@ -21,8 +21,8 @@ public class TypeInferer {
             //     .toArray(FieldType.class);
             // TODO: add more aggregates type
             FieldType[] fts = new FieldType[2];
-            fts[0] = StringType.DEF_TYPE;
-            fts[1] = new DecimalType();
+            fts[0] = VarCharType.DEF_TYPE;
+            fts[1] = DecimalType.DEF_TYPE;
             return fts;
         }
     }
