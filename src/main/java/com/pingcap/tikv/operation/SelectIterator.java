@@ -74,8 +74,8 @@ public class SelectIterator implements Iterator<Row> {
         this.rangeToRegions = rangeToRegionsIn;
         this.session = session;
         //TODO revist later
-        SchemaInferer.TiFieldType tiField = SchemaInferer.toFieldTypes(req);
-        fieldTypes = tiField.fieldTypes.toArray(new FieldType[0]);
+        SchemaInferer.TiFieldType tiField = SchemaInferer.create(req);
+        fieldTypes = tiField.getFieldTypes().toArray(new FieldType[0]);
         this.readNextRegionFn  = (rangeToRegions) -> {
             if (eof || index >= rangeToRegions.size()) {
                 return false;

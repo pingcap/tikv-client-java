@@ -130,10 +130,8 @@ public class Snapshot {
                         curRegion.getEndKey().asReadOnlyByteBuffer());
                 try (RegionStoreClient client = RegionStoreClient.create(lastPair.first, lastPair.second, getSession())) {
                     List<KvPair> partialResult = client.batchGet(keyBuffer, version.getVersion());
-                    for (KvPair kv : partialResult) {
-                        // TODO: Add lock check
-                        result.add(kv);
-                    }
+                    // TODO: Add lock check
+                    result.addAll(partialResult);
                 } catch (Exception e) {
                     throw new TiClientInternalException("Error Closing Store client.", e);
                 }
@@ -142,10 +140,6 @@ public class Snapshot {
             }
         }
         return result;
-    }
-
-    public SelectBuilder newSelect(TiTableInfo table) {
-        return SelectBuilder.newBuilder(this, table);
     }
 
     public static class Version {

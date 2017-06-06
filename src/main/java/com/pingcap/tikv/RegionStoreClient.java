@@ -66,7 +66,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
 
     public Future<ByteString> getAsync(ByteString key, long version) {
         FutureObserver<ByteString, GetResponse> responseObserver =
-                new FutureObserver<>((GetResponse resp) -> getHelper(resp));
+                new FutureObserver<>(this::getHelper);
         GetRequest request = GetRequest.newBuilder()
                 .setContext(context)
                 .setKey(key)
@@ -140,7 +140,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
 
     public Future<List<KvPair>> scanAsync(ByteString startKey, long version, boolean keyOnly) {
         FutureObserver<List<KvPair>, ScanResponse> responseObserver =
-                new FutureObserver<>((ScanResponse resp) -> scanHelper(resp));
+                new FutureObserver<>(this::scanHelper);
 
         ScanRequest request = ScanRequest.newBuilder()
                 .setContext(context)

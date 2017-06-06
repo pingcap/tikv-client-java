@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableList;
 import com.pingcap.tidb.tipb.IndexInfo;
 import com.pingcap.tidb.tipb.Select;
 import com.pingcap.tikv.meta.TiSelectRequest;
+import com.pingcap.tikv.operation.SchemaInferer;
 import lombok.Data;
 import com.pingcap.tidb.tipb.SelectRequest;
 import com.pingcap.tikv.expression.TiByItem;
@@ -29,7 +30,6 @@ public class SelectBuilder {
   private long timestamp;
   private long timeZoneOffset;
   private boolean distinct;
-
 
 
   private TiSession getSession() {
@@ -179,9 +179,6 @@ public class SelectBuilder {
   }
 
   public SelectBuilder addField(TiExpr expr) {
-      if (this.tiSelectReq.getFields() == null) {
-          this.tiSelectReq.setFields(new ArrayList<>());
-      }
       this.tiSelectReq.getFields().add(expr);
       return this;
   }
