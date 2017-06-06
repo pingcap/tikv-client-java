@@ -21,7 +21,7 @@ public class TypeInferer {
             //     .toArray(FieldType.class);
             // TODO: add more aggregates type
             FieldType[] fts = new FieldType[2];
-            fts[0] = new StringType();
+            fts[0] = StringType.DEF_TYPE;
             fts[1] = new DecimalType();
             return fts;
         }

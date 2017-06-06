@@ -49,27 +49,33 @@ public abstract class FieldType {
         this.collation = Collation.DEF_COLLATION_CODE;
     }
 
-    protected abstract void decodeValueNoNullToRow(CodecDataInput cdi, Row row, int pos);
+    protected FieldType(int flag) {
+        this.flag = flag;
+        this.elems = ImmutableList.of();
+        this.length = UNSPECIFIED_LEN;
+        this.collation = Collation.DEF_COLLATION_CODE;
+    }
+
+    protected FieldType(int flag, int length, String collation, List<String> elems) {
+        this.flag = flag;
+        this.length = length;
+        this.collation = Collation.translate(collation);
+        this.elems = elems == null ? ImmutableList.of() : elems;
+    }
+
+    protected abstract void decodeValueNoNullToRow(int flag, CodecDataInput cdi, Row row, int pos);
 
     public void decodeValueToRow(CodecDataInput cdi, Row row, int pos) {
         int flag = cdi.readUnsignedByte();
         if (isNullFlag(flag)) {
             row.setNull(pos);
         }
-        if (!isValidFlag(flag)) {
-            // throw new TiClientInternalException("Invalid " + toString() + " flag: " + flag);
-        }
-        decodeValueNoNullToRow(cdi, row, pos);
+        decodeValueNoNullToRow(flag, cdi, row, pos);
     }
-
-    protected abstract boolean isValidFlag(int flag);
 
     protected boolean isNullFlag(int flag) {
         return flag == NULL_FLAG;
     }
-
-    @Override
-    public abstract String toString();
 
     public int getCollationCode() {
         return collation;
@@ -92,4 +98,9 @@ public abstract class FieldType {
     }
 
     public abstract int getTypeCode();
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName();
+    }
 }

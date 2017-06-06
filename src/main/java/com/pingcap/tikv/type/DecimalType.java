@@ -16,29 +16,27 @@
 package com.pingcap.tikv.type;
 
 import com.pingcap.tikv.codec.CodecDataInput;
-import com.pingcap.tikv.codec.LongUtils;
+import com.pingcap.tikv.codec.DecimalUtils;
+import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.meta.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
-import com.pingcap.tikv.codec.DecimalUtils;
 
 public class DecimalType extends FieldType {
-    public static final int TYPE_CODE = 6;
+    public static final int TYPE_CODE = 0;
+    private static final int DECIMAL_FLAG = 6;
 
     public DecimalType(TiColumnInfo.InternalTypeHolder holder) {
         super(holder);
     }
 
-    public DecimalType() {
-    }
+    protected DecimalType() {}
 
     @Override
-    public void decodeValueNoNullToRow(CodecDataInput cdi, Row row, int pos) {
+    public void decodeValueNoNullToRow(int flag, CodecDataInput cdi, Row row, int pos) {
+        if (flag != DECIMAL_FLAG) {
+            throw new TiClientInternalException("Invalid " + toString() + " flag: " + flag);
+        }
         row.setDecimal(pos, DecimalUtils.readDecimalFully(cdi));
-    }
-
-    @Override
-    protected boolean isValidFlag(int flag) {
-        return flag == this.getTypeCode();
     }
 
     @Override
@@ -46,8 +44,5 @@ public class DecimalType extends FieldType {
         return TYPE_CODE;
     }
 
-    @Override
-    public String toString() {
-        return "DecimalType";
-    }
+    public static final DecimalType DEF_TYPE = new DecimalType();
 }

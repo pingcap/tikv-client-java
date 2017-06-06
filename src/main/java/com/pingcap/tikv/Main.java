@@ -17,26 +17,22 @@ public class Main {
     TiCluster cluster = TiCluster.getCluster(conf);
     Catalog cat = cluster.getCatalog();
     TiDBInfo db = cat.getDatabase("test");
-    TiTableInfo table = cat.getTable(db, "t1");
+    TiTableInfo table = cat.getTable(db, "t3");
     Snapshot snapshot = cluster.createSnapshot();
     Iterator<Row> it =
         snapshot
             .newSelect(table)
             .addRange(TiRange.create(0L, Long.MAX_VALUE))
-            // .addHaving(null)
-            // .groupBy(null)
-            // .orderBy(null)
-            // .where(null)
-            // .distinct(false)
-            // .setTimestamp(0)
-            // .fields(null)
-            .addAggreates(TiExpr.create().setType(ExprType.Sum).setValue("c1"))
             .doSelect();
 
     while (it.hasNext()) {
       Row r = it.next();
-      String val2 = r.getString(0);
-      double val1 = r.getDecimal(1);
+      long val0 = r.getLong(0);
+      long val1 = r.getLong(1);
+      long val2 = r.getLong(2);
+      long val3 = r.getLong(3);
+      long val4 = r.getLong(4);
+      long val5 = r.getLong(5);
       // String val3 = r.getString(1);
       System.out.println(val2);
       System.out.println(val1);
