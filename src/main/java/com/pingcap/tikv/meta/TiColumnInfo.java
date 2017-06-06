@@ -113,6 +113,7 @@ public class TiColumnInfo {
                     .put(DecimalType.TYPE_CODE, holder -> new DecimalType(holder))
                     .put(FloatType.TYPE_CODE, holder -> new FloatType(holder))
                     .put(DoubleType.TYPE_CODE, holder -> new DoubleType(holder))
+                    .put(BitType.TYPE_CODE, holder -> new BitType(holder))
                     .build();
         }
 

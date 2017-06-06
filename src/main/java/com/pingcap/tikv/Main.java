@@ -17,7 +17,7 @@ public class Main {
     TiCluster cluster = TiCluster.getCluster(conf);
     Catalog cat = cluster.getCatalog();
     TiDBInfo db = cat.getDatabase("test");
-    TiTableInfo table = cat.getTable(db, "ftable");
+    TiTableInfo table = cat.getTable(db, "bittable");
     Snapshot snapshot = cluster.createSnapshot();
     Iterator<Row> it =
         snapshot
@@ -27,8 +27,7 @@ public class Main {
 
     while (it.hasNext()) {
       Row r = it.next();
-      double val0 = r.getDecimal(0);
-      double val1 = r.getDecimal(1);
+      long val0 = r.getLong(0);
       System.out.print("");
     }
 

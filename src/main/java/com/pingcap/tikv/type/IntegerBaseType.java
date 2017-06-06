@@ -39,25 +39,23 @@ public abstract class IntegerBaseType extends FieldType {
         return (flag & UNSIGNED_FLAG) != 0;
     }
 
+    //
+    // It seems unsigned flag is not obeyed. So we don't do a check for unsigned
+    // and match it with type flag read
+    //
     @Override
     public void decodeValueNoNullToRow(int flag, CodecDataInput cdi, Row row, int pos) {
         // NULL should be checked outside
-        if (isUnsigned()) {
-            if (flag == LongUtils.UVARINT_FLAG) {
-                row.setULong(pos, LongUtils.readUVarLong(cdi));
-            } else if (flag == LongUtils.UINT_FLAG) {
-                row.setULong(pos, LongUtils.readULong(cdi));
-            } else {
-                throw new TiClientInternalException("Invalid " + toString() + " flag: " + flag);
-            }
+        if (flag == LongUtils.UVARINT_FLAG) {
+            row.setULong(pos, LongUtils.readUVarLong(cdi));
+        } else if (flag == LongUtils.UINT_FLAG) {
+            row.setULong(pos, LongUtils.readULong(cdi));
+        } else if (flag == LongUtils.VARINT_FLAG) {
+            row.setLong(pos, LongUtils.readVarLong(cdi));
+        } else if (flag == LongUtils.INT_FLAG) {
+            row.setLong(pos, LongUtils.readLong(cdi));
         } else {
-            if (flag == LongUtils.VARINT_FLAG) {
-                row.setLong(pos, LongUtils.readVarLong(cdi));
-            } else if (flag == LongUtils.INT_FLAG) {
-                row.setLong(pos, LongUtils.readLong(cdi));
-            } else {
-                throw new TiClientInternalException("Invalid " + toString() + " flag: " + flag);
-            }
+            throw new TiClientInternalException("Invalid " + toString() + " flag: " + flag);
         }
     }
 
