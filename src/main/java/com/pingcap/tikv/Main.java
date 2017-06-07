@@ -17,7 +17,7 @@ public class Main {
     TiCluster cluster = TiCluster.getCluster(conf);
     Catalog cat = cluster.getCatalog();
     TiDBInfo db = cat.getDatabase("test");
-    TiTableInfo table = cat.getTable(db, "booleantable");
+    TiTableInfo table = cat.getTable(db, "blobTable");
     Snapshot snapshot = cluster.createSnapshot();
     Iterator<Row> it =
         snapshot
@@ -27,7 +27,10 @@ public class Main {
 
     while (it.hasNext()) {
       Row r = it.next();
-      int val0 = r.getInteger(0);
+      String val0 = r.getString(0);
+      String val1 = r.getString(1);
+      String val2 = r.getString(2);
+      String val3 = r.getString(3);
       System.out.print("");
     }
 

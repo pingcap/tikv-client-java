@@ -114,6 +114,9 @@ public class TiColumnInfo {
                     .put(FloatType.TYPE_CODE, holder -> new FloatType(holder))
                     .put(DoubleType.TYPE_CODE, holder -> new DoubleType(holder))
                     .put(BitType.TYPE_CODE, holder -> new BitType(holder))
+                    .put(TinyBlobType.TYPE_CODE, holder -> new TinyBlobType(holder))
+                    .put(MediumBlobType.TYPE_CODE, holder -> new MediumBlobType(holder))
+                    .put(LongBlobType.TYPE_CODE, holder -> new LongBlobType(holder))
                     .build();
         }
 
