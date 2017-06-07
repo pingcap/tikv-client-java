@@ -51,16 +51,6 @@ public class ObjectRowImpl implements Row {
     }
 
     @Override
-    public void setBoolean(int pos, boolean v) {
-        values[pos] = v;
-    }
-
-    @Override
-    public boolean getBoolean(int pos) {
-        return (boolean)values[pos];
-    }
-
-    @Override
     public void setInteger(int pos, int v) {
         values[pos] = v;
     }

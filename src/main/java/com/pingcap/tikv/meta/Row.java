@@ -31,9 +31,6 @@ public interface Row {
     void        setDouble(int pos, double v);
     double      getDouble(int pos);
 
-    void        setBoolean(int pos, boolean v);
-    boolean     getBoolean(int pos);
-
     void        setInteger(int pos, int v);
     int         getInteger(int pos);
 
