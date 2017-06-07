@@ -13,26 +13,21 @@
  * limitations under the License.
  */
 
-package com.pingcap.tikv.type;
+package com.pingcap.tikv.types;
 
-import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import com.pingcap.tidb.tipb.Chunk;
 import com.pingcap.tidb.tipb.RowMeta;
-import com.pingcap.tidb.tipb.Select;
-import com.pingcap.tikv.*;
-import com.pingcap.tikv.codec.BytesUtils;
+<<<<<<< HEAD:src/test/java/com/pingcap/tikv/type/TypeTest.java
+import com.pingcap.tikv.meta.Row;
+=======
 import com.pingcap.tikv.meta.*;
+>>>>>>> finish schema_inferer:src/test/java/com/pingcap/tikv/types/TypeTest.java
 import com.pingcap.tikv.operation.SelectIterator;
-import jdk.nashorn.internal.parser.JSONParser;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 public class TypeTest {
@@ -49,8 +44,8 @@ public class TypeTest {
         List<Chunk> chunks = new ArrayList<>();
         chunks.add(chunk);
         FieldType[] fieldTypes = new FieldType[2];
-        fieldTypes[0] = new LongType();
-        fieldTypes[1] = new StringType();
+        fieldTypes[0] = LongType.DEF_SIGNED_TYPE;
+        fieldTypes[1] = VarCharType.DEF_TYPE;
         SelectIterator it = new SelectIterator(chunks, fieldTypes);
         Row r  = it.next();
         long val1 = r.getLong(0);

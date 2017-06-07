@@ -13,32 +13,38 @@
  * limitations under the License.
  */
 
-package com.pingcap.tikv.type;
+package com.pingcap.tikv.types;
 
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.codec.LongUtils;
+import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.meta.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
-import com.pingcap.tikv.codec.DecimalUtils;
 
-public class DecimalType extends FieldType {
-    public static final int TYPE_CODE = 6;
 
-    public DecimalType(TiColumnInfo.InternalTypeHolder holder) {
+public class BitType extends FieldType<Long> {
+    public static final int TYPE_CODE = 16;
+
+    public BitType(TiColumnInfo.InternalTypeHolder holder) {
         super(holder);
     }
 
-    public DecimalType() {
+    protected BitType() {}
+
+    @Override
+    protected void decodeValueNoNullToRow(Row row, int pos, Long value) {
+        row.setLong(pos, value);
     }
 
     @Override
-    public void decodeValueNoNullToRow(CodecDataInput cdi, Row row, int pos) {
-        row.setDecimal(pos, DecimalUtils.readDecimalFully(cdi));
-    }
-
-    @Override
-    protected boolean isValidFlag(int flag) {
-        return flag == this.getTypeCode();
+    public Long decodeNotNull(int flag, CodecDataInput cdi) {
+        if (flag == LongUtils.UVARINT_FLAG) {
+            return LongUtils.readUVarLong(cdi);
+        } else if (flag == LongUtils.UINT_FLAG) {
+            return LongUtils.readULong(cdi);
+        } else {
+            throw new TiClientInternalException("Invalid " + toString() + " flag: " + flag);
+        }
     }
 
     @Override
@@ -46,8 +52,5 @@ public class DecimalType extends FieldType {
         return TYPE_CODE;
     }
 
-    @Override
-    public String toString() {
-        return "DecimalType";
-    }
+    public final static BitType DEF_TYPE = new BitType();
 }

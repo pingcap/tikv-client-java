@@ -13,49 +13,36 @@
  * limitations under the License.
  */
 
-package com.pingcap.tikv.type;
+package com.pingcap.tikv.types;
 
 import com.pingcap.tikv.codec.BytesUtils;
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.codec.LongUtils;
+import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.meta.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
 
-public class StringType extends FieldType {
-//    public static final int TYPE_CODE = 0xfe;
+public abstract class StringBaseType extends FieldType<String> {
     // mysql/type.go:34
     public static final int TYPE_CODE = 15;
-    public static boolean isCompacted = false;
-    public StringType(TiColumnInfo.InternalTypeHolder holder) {
+    public StringBaseType(TiColumnInfo.InternalTypeHolder holder) {
         super(holder);
     }
-    public StringType() {
+    protected StringBaseType() {}
 
-    }
-
-    @Override
-    protected void decodeValueNoNullToRow(CodecDataInput cdi, Row row, int pos) {
-        if (isCompacted) {
-           byte[] bs = BytesUtils.readCompactBytes(cdi);
-           String v = new String(bs);
-           row.setString(pos, v);
-        } else {
-           String v = new String(BytesUtils.readBytes(cdi));
-        }
-    }
-
-    @Override
-    protected boolean isValidFlag(int flag) {
+    public String decodeNotNull(int flag, CodecDataInput cdi) {
         if (flag == BytesUtils.COMPACT_BYTES_FLAG) {
-            this.isCompacted = true;
-            return true;
+            return new String(BytesUtils.readCompactBytes(cdi));
+        } else if (flag == BytesUtils.BYTES_FLAG) {
+            return new String(BytesUtils.readBytes(cdi));
+        } else {
+            throw new TiClientInternalException("Invalid " + toString() + " flag: " + flag);
         }
-        return flag == BytesUtils.BYTES_FLAG;
     }
 
     @Override
-    public String toString() {
-        return "StringType";
+    protected void decodeValueNoNullToRow(Row row, int pos, String value) {
+        row.setString(pos, value);
     }
 
     public int getTypeCode() {

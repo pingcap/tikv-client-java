@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package com.pingcap.tikv.type;
+package com.pingcap.tikv.types;
 
 
 import com.google.common.collect.ImmutableList;
@@ -25,7 +25,7 @@ import com.pingcap.tikv.meta.TiColumnInfo;
 
 import java.util.List;
 
-public abstract class FieldType {
+public abstract class FieldType<T> {
     protected static final byte   NULL_FLAG = 0;
     protected static final int    UNSPECIFIED_LEN = -1;
 
@@ -39,7 +39,7 @@ public abstract class FieldType {
         this.length = holder.getFlen();
         this.collation = Collation.translate(holder.getCollate());
         this.elems = holder.getElems() == null ?
-                            ImmutableList.of() : holder.getElems();
+                ImmutableList.of() : holder.getElems();
     }
 
     protected FieldType() {
@@ -49,27 +49,42 @@ public abstract class FieldType {
         this.collation = Collation.DEF_COLLATION_CODE;
     }
 
-    protected abstract void decodeValueNoNullToRow(CodecDataInput cdi, Row row, int pos);
+    protected FieldType(int flag) {
+        this.flag = flag;
+        this.elems = ImmutableList.of();
+        this.length = UNSPECIFIED_LEN;
+        this.collation = Collation.DEF_COLLATION_CODE;
+    }
+
+    protected FieldType(int flag, int length, String collation, List<String> elems) {
+        this.flag = flag;
+        this.length = length;
+        this.collation = Collation.translate(collation);
+        this.elems = elems == null ? ImmutableList.of() : elems;
+    }
+
+    protected abstract void decodeValueNoNullToRow(Row row, int pos, T value);
+
+    public T decode(int flag, CodecDataInput cdi) {
+        if (isNullFlag(flag)) {
+            return null;
+        }
+        return decodeNotNull(flag, cdi);
+    }
+
+    public abstract T decodeNotNull(int flag, CodecDataInput cdi);
 
     public void decodeValueToRow(CodecDataInput cdi, Row row, int pos) {
         int flag = cdi.readUnsignedByte();
         if (isNullFlag(flag)) {
             row.setNull(pos);
         }
-        if (!isValidFlag(flag)) {
-            // throw new TiClientInternalException("Invalid " + toString() + " flag: " + flag);
-        }
-        decodeValueNoNullToRow(cdi, row, pos);
+        decodeValueNoNullToRow(row, pos, decodeNotNull(flag, cdi));
     }
-
-    protected abstract boolean isValidFlag(int flag);
 
     protected boolean isNullFlag(int flag) {
         return flag == NULL_FLAG;
     }
-
-    @Override
-    public abstract String toString();
 
     public int getCollationCode() {
         return collation;
@@ -92,4 +107,9 @@ public abstract class FieldType {
     }
 
     public abstract int getTypeCode();
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName();
+    }
 }
