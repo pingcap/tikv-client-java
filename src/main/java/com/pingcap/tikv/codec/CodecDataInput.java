@@ -33,7 +33,15 @@ public class CodecDataInput implements DataInput {
 
     public CodecDataInput(byte[] buf) {
         backingBuffer = buf;
-        backingStream = new ByteArrayInputStream(buf);
+        // MyDecimal usually will consume more bytes. If this happened,
+        // we need have a mechanism to reset backingStream.
+        // User mark first and then reset it later can do the trick.
+        backingStream = new ByteArrayInputStream(buf) {
+            @Override
+            public void mark(int givenPos) {
+                mark = givenPos;
+            }
+        };
         inputStream = new DataInputStream(backingStream);
     }
     @Override
@@ -171,11 +179,21 @@ public class CodecDataInput implements DataInput {
         }
     }
 
+    public void mark (int givenPos) {
+        this.backingStream.mark(givenPos);
+    }
+
+    public void reset() {
+        this.backingStream.reset();
+    }
+
     public boolean eof() {
         return backingStream.available() == 0;
     }
 
-    public int size() { return backingStream.available();}
+    public int size() { return backingBuffer.length;}
+
+    public int available() {return backingStream.available();}
 
     public byte[] toByteArray() {
         return backingBuffer;

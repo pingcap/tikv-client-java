@@ -26,11 +26,11 @@ import com.pingcap.tikv.grpc.Metapb.Region;
 import com.pingcap.tikv.grpc.Metapb.Store;
 import com.pingcap.tikv.meta.Row;
 import com.pingcap.tikv.meta.TiRange;
+import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.operation.ScanIterator;
 import com.pingcap.tikv.operation.SelectIterator;
 import com.pingcap.tikv.util.Pair;
-import com.pingcap.tikv.util.RangeSplitter;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -88,15 +88,20 @@ public class Snapshot {
         return builder.build();
     }
 
-    public Iterator<Row> select(TiTableInfo table, SelectRequest req, List<TiRange<Long>> ranges) {
-        return new SelectIterator(req, convertHandleRangeToKeyRange(table, ranges), getSession(), regionCache);
+    /**
+     * Issue a select request to TiKV and PD.
+     * @param sb is Select Builder.
+     * @return a Iterator that contains all result from this select request.
+     */
+    public Iterator<Row> select(SelectBuilder sb) {
+        return new SelectIterator(sb.getTiSelectReq(), convertHandleRangeToKeyRange(sb.getTable(), sb.getRangeListBuilder().build()), getSession(), regionCache);
     }
 
     /*
      * Below method is lower level interface for distributed environment
      * which avoids calling PD on slave nodes
      */
-    public Iterator<Row> select(SelectRequest req,
+    public Iterator<Row> select(TiSelectRequest req,
                                 Region region,
                                 Store store,
                                 TiRange<ByteString> range) {
@@ -130,10 +135,8 @@ public class Snapshot {
                         curRegion.getEndKey().asReadOnlyByteBuffer());
                 try (RegionStoreClient client = RegionStoreClient.create(lastPair.first, lastPair.second, getSession())) {
                     List<KvPair> partialResult = client.batchGet(keyBuffer, version.getVersion());
-                    for (KvPair kv : partialResult) {
-                        // TODO: Add lock check
-                        result.add(kv);
-                    }
+                    // TODO: Add lock check
+                    result.addAll(partialResult);
                 } catch (Exception e) {
                     throw new TiClientInternalException("Error Closing Store client.", e);
                 }
@@ -142,10 +145,6 @@ public class Snapshot {
             }
         }
         return result;
-    }
-
-    public SelectBuilder newSelect(TiTableInfo table) {
-        return SelectBuilder.newBuilder(this, table);
     }
 
     public static class Version {

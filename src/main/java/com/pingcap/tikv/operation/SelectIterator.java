@@ -31,27 +31,20 @@ import com.pingcap.tikv.codec.RowReaderFactory;
 import com.pingcap.tikv.grpc.Metapb.Region;
 import com.pingcap.tikv.grpc.Metapb.Store;
 import com.pingcap.tikv.meta.Row;
-import com.pingcap.tikv.meta.TiColumnInfo;
 import com.pingcap.tikv.meta.TiRange;
-import com.pingcap.tikv.type.FieldType;
+import com.pingcap.tikv.meta.TiSelectRequest;
+import com.pingcap.tikv.types.FieldType;
 import com.pingcap.tikv.util.Pair;
 import com.pingcap.tikv.util.RangeSplitter;
-import com.pingcap.tikv.util.TiFluentIterable;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Comparator;
+import java.util.*;
 import java.util.function.Function;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 public class SelectIterator implements Iterator<Row> {
-    protected final SelectRequest                               req;
+    protected final TiSelectRequest                               req;
     protected final TiSession                                   session;
     protected final List<Pair<Pair<Region, Store>,
                               TiRange<ByteString>>>             rangeToRegions;
-    protected final FieldType[]                                 fieldTypes;
 
 
     protected ChunkIterator                         chunkIterator;
@@ -59,12 +52,13 @@ public class SelectIterator implements Iterator<Row> {
     protected boolean                               eof = false;
     private Function<List<Pair<Pair<Region, Store>,
                               TiRange<ByteString>>>, Boolean>  readNextRegionFn;
+    private SchemaInfer schemaInfer;
 
     @VisibleForTesting
-    public SelectIterator(List<Chunk> chunks, FieldType[] fieldTypes) {
-        this.req = null;
+    public SelectIterator(List<Chunk> chunks, TiSelectRequest req) {
+        this.req = req;
         this.session = null;
-        this.fieldTypes = fieldTypes;
+        this.schemaInfer = SchemaInfer.create(req);
         this.rangeToRegions = null;
         this.readNextRegionFn = rangeToRegions -> {
             chunkIterator = new ChunkIterator(chunks);
@@ -72,14 +66,14 @@ public class SelectIterator implements Iterator<Row> {
         };
     }
 
-    public SelectIterator(SelectRequest req,
+    public SelectIterator(TiSelectRequest req,
                           List<Pair<Pair<Region, Store> ,
-                               TiRange<ByteString>>> rangeToRegionsIn,
+                                  TiRange<ByteString>>> rangeToRegionsIn,
                           TiSession session) {
         this.req = req;
         this.rangeToRegions = rangeToRegionsIn;
         this.session = session;
-        fieldTypes = TypeInferer.toFieldTypes(req);
+        this.schemaInfer = SchemaInfer.create(req);
         this.readNextRegionFn  = (rangeToRegions) -> {
             if (eof || index >= rangeToRegions.size()) {
                 return false;
@@ -92,7 +86,7 @@ public class SelectIterator implements Iterator<Row> {
             Region region = pair.first;
             Store store = pair.second;
             try (RegionStoreClient client = RegionStoreClient.create(region, store, session)) {
-                SelectResponse resp = client.coprocess(req, ImmutableList.of(range));
+                SelectResponse resp = client.coprocess(req.build(), ImmutableList.of(range));
                 if (resp == null) {
                     eof = true;
                     return false;
@@ -106,7 +100,7 @@ public class SelectIterator implements Iterator<Row> {
         };
     }
 
-    public SelectIterator(SelectRequest req,
+    public SelectIterator(TiSelectRequest req,
                           List<TiRange<ByteString>> ranges,
                           TiSession session,
                           RegionManager rm) {
@@ -135,7 +129,7 @@ public class SelectIterator implements Iterator<Row> {
             ByteString rowData = chunkIterator.next();
             RowReader reader = RowReaderFactory
                                 .createRowReader(new CodecDataInput(rowData));
-            return reader.readRow(fieldTypes);
+            return reader.readRow(this.schemaInfer.getFieldTypes().toArray(new FieldType[0]));
         } else {
             throw new NoSuchElementException();
         }

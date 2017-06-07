@@ -89,7 +89,7 @@ class MyDecimal {
      * @param bin bin is binary string which represents a decimal value.
      * TODO: (zhexuany) overflow and truncated exception need to be done later.
      */
-    public void fromBin(int precision, int frac, int[] bin) {
+    public int fromBin(int precision, int frac, int[] bin) {
         if (bin.length == 0) {
             throw new IllegalArgumentException("Bad Float Number to parse");
         }
@@ -195,6 +195,7 @@ class MyDecimal {
         }
 
         this.resultFrac = frac;
+        return binSize;
     }
 
     /**
