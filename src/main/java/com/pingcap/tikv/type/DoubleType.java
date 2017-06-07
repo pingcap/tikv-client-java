@@ -15,15 +15,27 @@
 
 package com.pingcap.tikv.type;
 
+import com.pingcap.tikv.codec.CodecDataInput;
+import com.pingcap.tikv.meta.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
 
-public class DoubleType extends FloatingType {
+public class DoubleType extends FloatingType<Double> {
     public static final int TYPE_CODE = 5;
 
     public DoubleType(TiColumnInfo.InternalTypeHolder holder) {
         super(holder);
     }
     public DoubleType() {}
+
+    @Override
+    protected void decodeValueNoNullToRow(Row row, int pos, Double value) {
+        row.setDouble(pos, value);
+    }
+
+    @Override
+    public Double decodeNotNull(int flag, CodecDataInput cdi) {
+        return decodeNotNullInternal(flag, cdi);
+    }
 
     @Override
     public int getTypeCode() {

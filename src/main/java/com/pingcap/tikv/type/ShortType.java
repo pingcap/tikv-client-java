@@ -1,13 +1,25 @@
 package com.pingcap.tikv.type;
 
 
+import com.pingcap.tikv.codec.CodecDataInput;
+import com.pingcap.tikv.meta.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
 
-public class ShortType extends IntegerBaseType {
+public class ShortType extends IntegerBaseType<Short> {
     public static final int TYPE_CODE = 2;
 
     public ShortType(TiColumnInfo.InternalTypeHolder holder) {
         super(holder);
+    }
+
+    @Override
+    protected void decodeValueNoNullToRow(Row row, int pos, Short value) {
+        row.setShort(pos, value);
+    }
+
+    @Override
+    public Short decodeNotNull(int flag, CodecDataInput cdi) {
+        return (short)decodeNotNullInternal(flag, cdi);
     }
 
     protected ShortType(boolean unsigned) {

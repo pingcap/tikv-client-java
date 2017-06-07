@@ -21,7 +21,7 @@ import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.meta.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
 
-public class DecimalType extends FieldType {
+public class DecimalType extends FieldType<Double> {
     public static final int TYPE_CODE = 0;
     private static final int DECIMAL_FLAG = 6;
 
@@ -32,11 +32,16 @@ public class DecimalType extends FieldType {
     protected DecimalType() {}
 
     @Override
-    public void decodeValueNoNullToRow(int flag, CodecDataInput cdi, Row row, int pos) {
+    protected void decodeValueNoNullToRow(Row row, int pos, Double value) {
+        row.setDouble(pos, value);
+    }
+
+    @Override
+    public Double decodeNotNull(int flag, CodecDataInput cdi) {
         if (flag != DECIMAL_FLAG) {
             throw new TiClientInternalException("Invalid " + toString() + " flag: " + flag);
         }
-        row.setDecimal(pos, DecimalUtils.readDecimalFully(cdi));
+        return DecimalUtils.readDecimalFully(cdi);
     }
 
     @Override

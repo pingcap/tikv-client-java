@@ -18,13 +18,12 @@ package com.pingcap.tikv.type;
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.codec.LongUtils;
 import com.pingcap.tikv.exception.TiClientInternalException;
-import com.pingcap.tikv.meta.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
 
 /**
  * Base class for all integer types: Tiny, Short, Medium, Int, Long and LongLong
  */
-public abstract class IntegerBaseType extends FieldType {
+public abstract class IntegerBaseType<T> extends FieldType<T> {
     private static int UNSIGNED_FLAG = 32;
 
     protected IntegerBaseType(TiColumnInfo.InternalTypeHolder holder) {
@@ -39,22 +38,20 @@ public abstract class IntegerBaseType extends FieldType {
         return (flag & UNSIGNED_FLAG) != 0;
     }
 
-    @Override
-    public void decodeValueNoNullToRow(int flag, CodecDataInput cdi, Row row, int pos) {
-        // NULL should be checked outside
+    public long decodeNotNullInternal(int flag, CodecDataInput cdi) {
         if (isUnsigned()) {
             if (flag == LongUtils.UVARINT_FLAG) {
-                row.setULong(pos, LongUtils.readUVarLong(cdi));
+                return LongUtils.readUVarLong(cdi);
             } else if (flag == LongUtils.UINT_FLAG) {
-                row.setULong(pos, LongUtils.readULong(cdi));
+                return LongUtils.readULong(cdi);
             } else {
                 throw new TiClientInternalException("Invalid " + toString() + " flag: " + flag);
             }
         } else {
             if (flag == LongUtils.VARINT_FLAG) {
-                row.setLong(pos, LongUtils.readVarLong(cdi));
+                return LongUtils.readVarLong(cdi);
             } else if (flag == LongUtils.INT_FLAG) {
-                row.setLong(pos, LongUtils.readLong(cdi));
+                return LongUtils.readLong(cdi);
             } else {
                 throw new TiClientInternalException("Invalid " + toString() + " flag: " + flag);
             }

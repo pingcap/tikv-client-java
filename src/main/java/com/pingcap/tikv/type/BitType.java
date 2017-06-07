@@ -22,7 +22,7 @@ import com.pingcap.tikv.meta.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
 
 
-public class BitType extends FieldType {
+public class BitType extends FieldType<Long> {
     public static final int TYPE_CODE = 16;
 
     public BitType(TiColumnInfo.InternalTypeHolder holder) {
@@ -32,11 +32,16 @@ public class BitType extends FieldType {
     protected BitType() {}
 
     @Override
-    public void decodeValueNoNullToRow(int flag, CodecDataInput cdi, Row row, int pos) {
+    protected void decodeValueNoNullToRow(Row row, int pos, Long value) {
+        row.setLong(pos, value);
+    }
+
+    @Override
+    public Long decodeNotNull(int flag, CodecDataInput cdi) {
         if (flag == LongUtils.UVARINT_FLAG) {
-            row.setULong(pos, LongUtils.readUVarLong(cdi));
+            return LongUtils.readUVarLong(cdi);
         } else if (flag == LongUtils.UINT_FLAG) {
-            row.setULong(pos, LongUtils.readULong(cdi));
+            return LongUtils.readULong(cdi);
         } else {
             throw new TiClientInternalException("Invalid " + toString() + " flag: " + flag);
         }

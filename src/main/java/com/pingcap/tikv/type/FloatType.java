@@ -21,13 +21,23 @@ import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.meta.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
 
-public class FloatType extends FloatingType {
+public class FloatType extends FloatingType<Float> {
     public static final int TYPE_CODE = 4;
 
     public FloatType(TiColumnInfo.InternalTypeHolder holder) {
         super(holder);
     }
     public FloatType() {}
+
+    @Override
+    protected void decodeValueNoNullToRow(Row row, int pos, Float value) {
+        row.setFloat(pos, value);
+    }
+
+    @Override
+    public Float decodeNotNull(int flag, CodecDataInput cdi) {
+        return (float)decodeNotNullInternal(flag, cdi);
+    }
 
     @Override
     public int getTypeCode() {

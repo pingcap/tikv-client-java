@@ -25,17 +25,16 @@ import com.pingcap.tikv.meta.TiColumnInfo;
 /**
  * Base class for Float and Double
  */
-public abstract class FloatingType extends FieldType {
+public abstract class FloatingType<T> extends FieldType<T> {
     protected FloatingType(TiColumnInfo.InternalTypeHolder holder) {
         super(holder);
     }
     protected FloatingType() {}
 
-    @Override
-    public void decodeValueNoNullToRow(int flag, CodecDataInput cdi, Row row, int pos) {
+
+    public double decodeNotNullInternal(int flag, CodecDataInput cdi) {
         if (flag == FloatingUtils.FLOATING_FLAG) {
-            double v = FloatingUtils.readDouble(cdi);
-            row.setDecimal(pos, v);
+            return FloatingUtils.readDouble(cdi);
         } else {
             throw new TiClientInternalException("Invalid " + toString() + " flag: " + flag);
         }

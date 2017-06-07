@@ -22,7 +22,7 @@ import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.meta.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
 
-public abstract class StringBaseType extends FieldType {
+public abstract class StringBaseType extends FieldType<String> {
     // mysql/type.go:34
     public static final int TYPE_CODE = 15;
     public StringBaseType(TiColumnInfo.InternalTypeHolder holder) {
@@ -30,17 +30,19 @@ public abstract class StringBaseType extends FieldType {
     }
     protected StringBaseType() {}
 
-    @Override
-    protected void decodeValueNoNullToRow(int flag, CodecDataInput cdi, Row row, int pos) {
+    public String decodeNotNull(int flag, CodecDataInput cdi) {
         if (flag == BytesUtils.COMPACT_BYTES_FLAG) {
-           String v = new String(BytesUtils.readCompactBytes(cdi));
-           row.setString(pos, v);
+            return new String(BytesUtils.readCompactBytes(cdi));
         } else if (flag == BytesUtils.BYTES_FLAG) {
-           String v = new String(BytesUtils.readBytes(cdi));
-           row.setString(pos, v);
+            return new String(BytesUtils.readBytes(cdi));
         } else {
             throw new TiClientInternalException("Invalid " + toString() + " flag: " + flag);
         }
+    }
+
+    @Override
+    protected void decodeValueNoNullToRow(Row row, int pos, String value) {
+        row.setString(pos, value);
     }
 
     public int getTypeCode() {

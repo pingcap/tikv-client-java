@@ -25,7 +25,7 @@ import com.pingcap.tikv.meta.TiColumnInfo;
 
 import java.util.List;
 
-public abstract class FieldType {
+public abstract class FieldType<T> {
     protected static final byte   NULL_FLAG = 0;
     protected static final int    UNSPECIFIED_LEN = -1;
 
@@ -63,14 +63,23 @@ public abstract class FieldType {
         this.elems = elems == null ? ImmutableList.of() : elems;
     }
 
-    protected abstract void decodeValueNoNullToRow(int flag, CodecDataInput cdi, Row row, int pos);
+    protected abstract void decodeValueNoNullToRow(Row row, int pos, T value);
+
+    public T decode(int flag, CodecDataInput cdi) {
+        if (isNullFlag(flag)) {
+            return null;
+        }
+        return decodeNotNull(flag, cdi);
+    }
+
+    public abstract T decodeNotNull(int flag, CodecDataInput cdi);
 
     public void decodeValueToRow(CodecDataInput cdi, Row row, int pos) {
         int flag = cdi.readUnsignedByte();
         if (isNullFlag(flag)) {
             row.setNull(pos);
         }
-        decodeValueNoNullToRow(flag, cdi, row, pos);
+        decodeValueNoNullToRow(row, pos, decodeNotNull(flag, cdi));
     }
 
     protected boolean isNullFlag(int flag) {

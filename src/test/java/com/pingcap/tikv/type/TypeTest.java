@@ -40,7 +40,7 @@ public class TypeTest {
         List<Chunk> chunks = new ArrayList<>();
         chunks.add(chunk);
         FieldType[] fieldTypes = new FieldType[2];
-        fieldTypes[0] = LongType.DEF_UNSIGNED_TYPE;
+        fieldTypes[0] = LongType.DEF_SIGNED_TYPE;
         fieldTypes[1] = VarCharType.DEF_TYPE;
         SelectIterator it = new SelectIterator(chunks, fieldTypes);
         Row r  = it.next();
