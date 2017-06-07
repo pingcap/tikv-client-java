@@ -21,10 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
 import com.pingcap.tidb.tipb.ColumnInfo;
 import com.pingcap.tikv.exception.TiClientInternalException;
-import com.pingcap.tikv.type.FieldType;
-import com.pingcap.tikv.type.LongType;
-import com.pingcap.tikv.type.StringType;
-import com.pingcap.tikv.type.DecimalType;
+import com.pingcap.tikv.type.*;
 
 import java.util.List;
 import java.util.Map;
@@ -105,9 +102,21 @@ public class TiColumnInfo {
         private static Map<Integer, Builder<? extends FieldType>> typeBuilder;
         static {
             typeBuilder = ImmutableMap.<Integer, Builder<? extends FieldType>>builder()
+                    .put(TinyType.TYPE_CODE, holder -> new TinyType(holder))
+                    .put(ShortType.TYPE_CODE, holder -> new ShortType(holder))
+                    .put(MediumIntType.TYPE_CODE, holder -> new MediumIntType(holder))
                     .put(LongType.TYPE_CODE, holder -> new LongType(holder))
-                    .put(StringType.TYPE_CODE, holder -> new StringType(holder))
+                    .put(LongLongType.TYPE_CODE, holder -> new LongLongType(holder))
+                    .put(VarCharType.TYPE_CODE, holder -> new VarCharType(holder))
+                    .put(CharType.TYPE_CODE, holder -> new CharType(holder))
+                    .put(TextType.TYPE_CODE, holder -> new TextType(holder))
                     .put(DecimalType.TYPE_CODE, holder -> new DecimalType(holder))
+                    .put(FloatType.TYPE_CODE, holder -> new FloatType(holder))
+                    .put(DoubleType.TYPE_CODE, holder -> new DoubleType(holder))
+                    .put(BitType.TYPE_CODE, holder -> new BitType(holder))
+                    .put(TinyBlobType.TYPE_CODE, holder -> new TinyBlobType(holder))
+                    .put(MediumBlobType.TYPE_CODE, holder -> new MediumBlobType(holder))
+                    .put(LongBlobType.TYPE_CODE, holder -> new LongBlobType(holder))
                     .build();
         }
 

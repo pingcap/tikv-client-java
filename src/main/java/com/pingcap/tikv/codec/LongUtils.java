@@ -16,8 +16,6 @@
 package com.pingcap.tikv.codec;
 
 
-import java.io.IOException;
-
 public class LongUtils {
     public static final byte INT_FLAG = 3;
     public static final byte UINT_FLAG = 4;

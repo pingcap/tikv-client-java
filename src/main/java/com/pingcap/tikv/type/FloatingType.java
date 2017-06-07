@@ -16,38 +16,27 @@
 package com.pingcap.tikv.type;
 
 import com.pingcap.tikv.codec.CodecDataInput;
-import com.pingcap.tikv.codec.DecimalUtils;
+import com.pingcap.tikv.codec.FloatingUtils;
+import com.pingcap.tikv.codec.LongUtils;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.meta.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
 
-public class DecimalType extends FieldType<Double> {
-    public static final int TYPE_CODE = 0;
-    private static final int DECIMAL_FLAG = 6;
-
-    public DecimalType(TiColumnInfo.InternalTypeHolder holder) {
+/**
+ * Base class for Float and Double
+ */
+public abstract class FloatingType<T> extends FieldType<T> {
+    protected FloatingType(TiColumnInfo.InternalTypeHolder holder) {
         super(holder);
     }
+    protected FloatingType() {}
 
-    protected DecimalType() {}
 
-    @Override
-    protected void decodeValueNoNullToRow(Row row, int pos, Double value) {
-        row.setDouble(pos, value);
-    }
-
-    @Override
-    public Double decodeNotNull(int flag, CodecDataInput cdi) {
-        if (flag != DECIMAL_FLAG) {
+    public double decodeNotNullInternal(int flag, CodecDataInput cdi) {
+        if (flag == FloatingUtils.FLOATING_FLAG) {
+            return FloatingUtils.readDouble(cdi);
+        } else {
             throw new TiClientInternalException("Invalid " + toString() + " flag: " + flag);
         }
-        return DecimalUtils.readDecimalFully(cdi);
     }
-
-    @Override
-    public int getTypeCode() {
-        return TYPE_CODE;
-    }
-
-    public static final DecimalType DEF_TYPE = new DecimalType();
 }

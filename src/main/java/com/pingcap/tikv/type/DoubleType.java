@@ -16,20 +16,16 @@
 package com.pingcap.tikv.type;
 
 import com.pingcap.tikv.codec.CodecDataInput;
-import com.pingcap.tikv.codec.DecimalUtils;
-import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.meta.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
 
-public class DecimalType extends FieldType<Double> {
-    public static final int TYPE_CODE = 0;
-    private static final int DECIMAL_FLAG = 6;
+public class DoubleType extends FloatingType<Double> {
+    public static final int TYPE_CODE = 5;
 
-    public DecimalType(TiColumnInfo.InternalTypeHolder holder) {
+    public DoubleType(TiColumnInfo.InternalTypeHolder holder) {
         super(holder);
     }
-
-    protected DecimalType() {}
+    public DoubleType() {}
 
     @Override
     protected void decodeValueNoNullToRow(Row row, int pos, Double value) {
@@ -38,10 +34,7 @@ public class DecimalType extends FieldType<Double> {
 
     @Override
     public Double decodeNotNull(int flag, CodecDataInput cdi) {
-        if (flag != DECIMAL_FLAG) {
-            throw new TiClientInternalException("Invalid " + toString() + " flag: " + flag);
-        }
-        return DecimalUtils.readDecimalFully(cdi);
+        return decodeNotNullInternal(flag, cdi);
     }
 
     @Override
@@ -49,5 +42,5 @@ public class DecimalType extends FieldType<Double> {
         return TYPE_CODE;
     }
 
-    public static final DecimalType DEF_TYPE = new DecimalType();
+    public final static DoubleType DEF_TYPE = new DoubleType();
 }

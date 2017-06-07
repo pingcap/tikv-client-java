@@ -15,33 +15,29 @@
 
 package com.pingcap.tikv.type;
 
+
 import com.pingcap.tikv.codec.CodecDataInput;
-import com.pingcap.tikv.codec.DecimalUtils;
-import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.meta.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
 
-public class DecimalType extends FieldType<Double> {
-    public static final int TYPE_CODE = 0;
-    private static final int DECIMAL_FLAG = 6;
-
-    public DecimalType(TiColumnInfo.InternalTypeHolder holder) {
+public class TinyType extends IntegerBaseType<Short> {
+    public static final int TYPE_CODE = 1;
+    public TinyType(TiColumnInfo.InternalTypeHolder holder) {
         super(holder);
     }
 
-    protected DecimalType() {}
-
     @Override
-    protected void decodeValueNoNullToRow(Row row, int pos, Double value) {
-        row.setDouble(pos, value);
+    protected void decodeValueNoNullToRow(Row row, int pos, Short value) {
+        row.setInteger(pos, value);
     }
 
     @Override
-    public Double decodeNotNull(int flag, CodecDataInput cdi) {
-        if (flag != DECIMAL_FLAG) {
-            throw new TiClientInternalException("Invalid " + toString() + " flag: " + flag);
-        }
-        return DecimalUtils.readDecimalFully(cdi);
+    public Short decodeNotNull(int flag, CodecDataInput cdi) {
+        return (short)decodeNotNullInternal(flag, cdi);
+    }
+
+    protected TinyType(boolean unsigned) {
+        super(unsigned);
     }
 
     @Override
@@ -49,5 +45,6 @@ public class DecimalType extends FieldType<Double> {
         return TYPE_CODE;
     }
 
-    public static final DecimalType DEF_TYPE = new DecimalType();
+    public final static TinyType DEF_SIGNED_TYPE = new TinyType(false);
+    public final static TinyType DEF_UNSIGNED_TYPE = new TinyType(true);
 }

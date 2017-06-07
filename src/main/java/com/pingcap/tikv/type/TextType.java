@@ -13,19 +13,21 @@
  * limitations under the License.
  */
 
-package com.pingcap.tikv.codec;
+package com.pingcap.tikv.type;
 
-import org.junit.Test;
+import com.pingcap.tikv.meta.TiColumnInfo;
 
-import static org.junit.Assert.assertEquals;
+public class TextType extends StringBaseType {
+    public static final int TYPE_CODE = 252;
 
-public class DecimalUtilsTest {
-    @Test
-    public void readDecimalFullyTest() throws Exception {
-        CodecDataOutput cdo = new CodecDataOutput();
-        DecimalUtils.writeDecimalFully(cdo, 206.0);
-        CodecDataInput cdi = new CodecDataInput(cdo.toBytes());
-        double value = DecimalUtils.readDecimalFully(cdi);
-        assertEquals(206.0, value, 0.0001);
+    public TextType(TiColumnInfo.InternalTypeHolder holder) {
+        super(holder);
     }
+    protected TextType() {}
+
+    public int getTypeCode() {
+        return TYPE_CODE;
+    }
+
+    public final static TextType DEF_TYPE = new TextType();
 }

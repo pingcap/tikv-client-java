@@ -25,21 +25,26 @@ public interface Row {
     void        setNull(int pos);
     boolean     isNull(int pos);
 
-    void        setDecimal(int pos, double v);
-    double      getDecimal(int pos);
+    void        setFloat(int pos, float v);
+    float       getFloat(int pos);
+
+    void        setDouble(int pos, double v);
+    double      getDouble(int pos);
+
+    void        setInteger(int pos, int v);
+    int         getInteger(int pos);
+
+    void        setShort(int pos, short v);
+    short       getShort(int pos);
 
     void        setLong(int pos, long v);
     long        getLong(int pos);
-
-    // deal with unsigned as signed for now
-    // client code are responsible for wrap with BigInteger if needed
-    void        setULong(int pos, long v);
-    long        getULong(int pos);
 
     void        setString(int pos, String v);
     String      getString(int pos);
 
     void        set(int pos, FieldType type, Object v);
     Object      get(int pos, FieldType type);
+
     int         fieldCount();
 }

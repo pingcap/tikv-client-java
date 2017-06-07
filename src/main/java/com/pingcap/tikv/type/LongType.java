@@ -15,61 +15,30 @@
 
 package com.pingcap.tikv.type;
 
+
 import com.pingcap.tikv.codec.CodecDataInput;
-import com.pingcap.tikv.codec.LongUtils;
 import com.pingcap.tikv.meta.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
 
-public class LongType extends FieldType {
-    private final boolean varLength;
-
-    private static int UNSIGNED_FLAG = 32;
+public class LongType extends IntegerBaseType<Long> {
     public static final int TYPE_CODE = 3;
 
     public LongType(TiColumnInfo.InternalTypeHolder holder) {
         super(holder);
-        this.varLength = true;
-    }
-
-    public LongType() {
-        this.varLength = true;
-    }
-
-    public LongType(int flag, boolean varLength) {
-        this.varLength = varLength;
-    }
-
-    protected boolean isUnsigned() {
-        return (flag & UNSIGNED_FLAG) != 0;
     }
 
     @Override
-    public void decodeValueNoNullToRow(CodecDataInput cdi, Row row, int pos) {
-        // NULL should be checked outside
-        if (isUnsigned()) {
-            if (varLength) {
-                row.setULong(pos, LongUtils.readUVarLong(cdi));
-            } else {
-                row.setULong(pos, LongUtils.readULong(cdi));
-            }
-        } else {
-            if (varLength) {
-                row.setLong(pos, LongUtils.readVarLong(cdi));
-            } else {
-                row.setLong(pos, LongUtils.readLong(cdi));
-            }
-        }
+    protected void decodeValueNoNullToRow(Row row, int pos, Long value) {
+        row.setLong(pos, value);
     }
 
-
-
     @Override
-    protected boolean isValidFlag(int flag) {
-        if (isUnsigned()) {
-            return flag == LongUtils.UINT_FLAG || flag == LongUtils.UVARINT_FLAG;
-        } else {
-            return flag == LongUtils.INT_FLAG || flag == LongUtils.VARINT_FLAG;
-        }
+    public Long decodeNotNull(int flag, CodecDataInput cdi) {
+        return decodeNotNullInternal(flag, cdi);
+    }
+
+    protected LongType(boolean unsigned) {
+        super(unsigned);
     }
 
     @Override
@@ -77,8 +46,6 @@ public class LongType extends FieldType {
         return TYPE_CODE;
     }
 
-    @Override
-    public String toString() {
-        return (isUnsigned() ? "Unsigned" : "Signed") + "_LongType";
-    }
+    public final static LongType DEF_SIGNED_TYPE = new LongType(false);
+    public final static LongType DEF_UNSIGNED_TYPE = new LongType(true);
 }
