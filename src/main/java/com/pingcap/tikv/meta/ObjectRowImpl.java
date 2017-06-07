@@ -40,14 +40,54 @@ public class ObjectRowImpl implements Row {
         return values[pos] == null;
     }
 
-
     @Override
-    public void setDecimal(int pos, double v) {
+    public void setFloat(int pos, float v) {
         values[pos] = v;
     }
 
     @Override
-    public double getDecimal(int pos) {
+    public float getFloat(int pos) {
+        return (float)values[pos];
+    }
+
+    @Override
+    public void setBoolean(int pos, boolean v) {
+        values[pos] = v;
+    }
+
+    @Override
+    public boolean getBoolean(int pos) {
+        return (boolean)values[pos];
+    }
+
+    @Override
+    public void setInteger(int pos, int v) {
+        values[pos] = v;
+    }
+
+    @Override
+    public int getInteger(int pos) {
+        return (int)values[pos];
+    }
+
+    @Override
+    public void setShort(int pos, short v) {
+        values[pos] = v;
+    }
+
+    @Override
+    public short getShort(int pos) {
+        return (short)values[pos];
+    }
+
+
+    @Override
+    public void setDouble(int pos, double v) {
+        values[pos] = v;
+    }
+
+    @Override
+    public double getDouble(int pos) {
         // Null should be handled by client code with isNull
         // below all get method behave the same
         return (double)values[pos];
@@ -63,16 +103,6 @@ public class ObjectRowImpl implements Row {
         // Null should be handled by client code with isNull
         // below all get method behave the same
         return (long)values[pos];
-    }
-
-    @Override
-    public void setULong(int pos, long v) {
-        setLong(pos, v);
-    }
-
-    @Override
-    public long getULong(int pos) {
-        return getLong(pos);
     }
 
     @Override
