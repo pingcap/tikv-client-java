@@ -17,10 +17,9 @@
 
 package com.pingcap.tikv.operation.transformer;
 
-import com.pingcap.tikv.meta.ObjectRowImpl;
-import com.pingcap.tikv.meta.Row;
-import com.pingcap.tikv.types.FieldType;
-import lombok.Getter;
+import com.pingcap.tikv.row.ObjectRowImpl;
+import com.pingcap.tikv.row.Row;
+import com.pingcap.tikv.types.DataType;
 import lombok.Setter;
 
 import java.util.ArrayList;
@@ -47,10 +46,10 @@ public class RowTransformer {
      */
     public static class Builder {
         private final List<Projection> projections = new ArrayList<>();
-        private final List<FieldType> sourceFieldTypes = new ArrayList<>();
+        private final List<DataType> sourceTypes = new ArrayList<>();
 
         public RowTransformer build() {
-            return new RowTransformer(sourceFieldTypes, projections);
+            return new RowTransformer(sourceTypes, projections);
         }
 
         public Builder addProjection(Projection projection) {
@@ -63,18 +62,18 @@ public class RowTransformer {
             return this;
         }
 
-        public Builder addSourceFieldType(FieldType fieldType) {
-            this.sourceFieldTypes.add(fieldType);
+        public Builder addSourceFieldType(DataType fieldType) {
+            this.sourceTypes.add(fieldType);
             return this;
         }
 
-        public Builder addSourceFieldTypes(FieldType... fieldTypes) {
-            this.sourceFieldTypes.addAll(Arrays.asList(fieldTypes));
+        public Builder addSourceFieldTypes(DataType... fieldTypes) {
+            this.sourceTypes.addAll(Arrays.asList(fieldTypes));
             return this;
         }
 
-        public Builder addSourceFieldTypes(List<FieldType> fieldTypes) {
-            this.sourceFieldTypes.addAll(fieldTypes);
+        public Builder addSourceFieldTypes(List<DataType> fieldTypes) {
+            this.sourceTypes.addAll(fieldTypes);
             return this;
         }
     }
@@ -82,10 +81,10 @@ public class RowTransformer {
     @Setter
     private List<Projection> projections;
     @Setter
-    private List<FieldType> sourceFieldTypes;
+    private List<DataType> sourceFieldTypes;
 
-    private RowTransformer(List<FieldType> sourceFieldTypes, List<Projection> projections) {
-        this.sourceFieldTypes = sourceFieldTypes;
+    private RowTransformer(List<DataType> sourceTypes, List<Projection> projections) {
+        this.sourceFieldTypes = sourceTypes;
         this.projections = projections;
     }
 
@@ -104,7 +103,7 @@ public class RowTransformer {
             Object inVal = inRow.get(i, this.sourceFieldTypes.get(i));
             Object outVal = getProjection(i).apply(inVal);
             if (outVal != null) {
-                outRow.set(counter++, getProjection(i).getFiledType(), outVal);
+                outRow.set(counter++, getProjection(i).getType(), outVal);
             }
         }
         return outRow;

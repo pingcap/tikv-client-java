@@ -1,4 +1,5 @@
 /*
+ *
  * Copyright 2017 PingCAP, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,18 +12,20 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package com.pingcap.tikv.codec;
+package com.pingcap.tikv.types;
 
 
+import com.pingcap.tikv.codec.CodecDataInput;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
 
 
 
-public class FloatingUtilsTest {
+public class RealTypeTest {
     @Test
     public void readFloatTest() throws Exception {
         byte [] data = new byte[] {(byte)(191 & 0xFF),
@@ -32,7 +35,7 @@ public class FloatingUtilsTest {
                                    (byte)(160 & 0xFF),
                                     0,0,0};
         CodecDataInput cdi = new CodecDataInput(data);
-        double u = FloatingUtils.readDouble(cdi);
+        double u = RealType.readDouble(cdi);
         assertEquals(1.1, u, 0.0001);
 
         data = new byte[] {(byte)(192 & 0xFF),
@@ -44,7 +47,7 @@ public class FloatingUtilsTest {
                 (byte)(153 & 0xFF),
                 (byte)(154 & 0xFF)};
         cdi = new CodecDataInput(data);
-        u = FloatingUtils.readDouble(cdi);
+        u = RealType.readDouble(cdi);
         assertEquals(2.2, u, 0.0001);
 
         data = new byte[]
@@ -58,7 +61,7 @@ public class FloatingUtilsTest {
                 (byte)(0xFF)};
 
         cdi = new CodecDataInput(data);
-        u = FloatingUtils.readDouble(cdi);
+        u = RealType.readDouble(cdi);
         assertEquals(-99.199, u, 0.0001);
     }
 }

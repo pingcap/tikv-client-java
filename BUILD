@@ -1,6 +1,6 @@
 load(
-    "@com_github_johnynek_bazel_jar_jar//:jar_jar.bzl",
-    "jar_jar"
+    "@com_github_zhexuany_bazel_shade//:java_shade.bzl",
+    "java_shade"
 )
 package(default_visibility = ["//visibility:public"])
 
@@ -21,7 +21,7 @@ java_binary(
         ":shaded_scalding",
     ],
 )
-jar_jar(
+java_shade(
     name = "shaded_args",
     input_jar = "@io_netty_netty_codec_socks//jar",
     rules = "shading_rule"

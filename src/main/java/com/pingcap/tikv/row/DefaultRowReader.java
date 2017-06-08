@@ -1,4 +1,5 @@
 /*
+ *
  * Copyright 2017 PingCAP, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,13 +12,13 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package com.pingcap.tikv.codec;
+package com.pingcap.tikv.row;
 
-import com.pingcap.tikv.meta.ObjectRowImpl;
-import com.pingcap.tikv.meta.Row;
-import com.pingcap.tikv.types.FieldType;
+import com.pingcap.tikv.codec.CodecDataInput;
+import com.pingcap.tikv.types.DataType;
 
 public class DefaultRowReader implements RowReader {
     private final CodecDataInput cdi;
@@ -30,11 +31,11 @@ public class DefaultRowReader implements RowReader {
         this.cdi = cdi;
     }
 
-    public Row readRow(FieldType[] fieldTypes) {
-        int length = fieldTypes.length;
+    public Row readRow(DataType[] dataTypes) {
+        int length = dataTypes.length;
         Row row = ObjectRowImpl.create(length);
         for(int i = 0; i < length; i++) {
-            fieldTypes[i].decodeValueToRow(cdi, row, i);
+            dataTypes[i].decode(cdi, row, i);
         }
         return row;
     }

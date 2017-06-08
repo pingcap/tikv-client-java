@@ -17,23 +17,23 @@
 
 package com.pingcap.tikv.operation.transformer;
 
-import com.pingcap.tikv.types.FieldType;
-import com.pingcap.tikv.types.floating.DoubleType;
-import com.pingcap.tikv.types.integer.IntegerBaseType;
-import com.pingcap.tikv.types.string.StringBaseType;
+import com.pingcap.tikv.types.DataType;
+import com.pingcap.tikv.types.DecimalType;
+import com.pingcap.tikv.types.IntegerType;
+import com.pingcap.tikv.types.StringType;
 
 public class Cast extends NoOp {
-    public Cast(FieldType fieldType) {
-        super(fieldType);
+    public Cast(DataType dataType) {
+        super(dataType);
     }
 
     @Override
     public Object apply(Object obj) {
-        if (targetType instanceof IntegerBaseType) {
+        if (targetDataType instanceof IntegerType) {
             return castToLong(obj);
-        } else if (targetType instanceof StringBaseType) {
+        } else if (targetDataType instanceof StringType) {
             return castToString(obj);
-        } else if (targetType instanceof DoubleType) {
+        } else if (targetDataType instanceof DecimalType) {
             return castToDouble(obj);
         } else {
             throw new UnsupportedOperationException("only support cast to Long, Double and String");

@@ -3,8 +3,9 @@ package com.pingcap.tikv.expression.aggregate;
 import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.expression.TiUnaryFunctionExpression;
-import com.pingcap.tikv.types.floating.DecimalType;
-import com.pingcap.tikv.types.FieldType;
+import com.pingcap.tikv.types.DataType;
+import com.pingcap.tikv.types.DataTypeFactory;
+import com.pingcap.tikv.types.Types;
 
 
 public class Sum extends TiUnaryFunctionExpression {
@@ -19,12 +20,12 @@ public class Sum extends TiUnaryFunctionExpression {
     }
 
     @Override
-    public FieldType getType() {
-        return DecimalType.DEF_TYPE;
+    public DataType getType() {
+        return DataTypeFactory.of(Types.TYPE_NEW_DECIMAL);
     }
 
     // TODO: refactor is needed. Only for Sum casting.
-    public FieldType getColumnType() {
+    public DataType getColumnType() {
         return this.args.get(0).getType();
     }
 

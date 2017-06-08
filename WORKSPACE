@@ -104,14 +104,9 @@ maven_jar(
 )
 
 maven_jar(
-   name = "joda_time",
-   artifact = "joda-time:joda-time:2.9.9",
-)
-maven_jar(
    name = "net_sf_trove4j_trove4j",
    artifact = "net.sf.trove4j:trove4j:3.0.1",
 )
-
 
 git_repository(
     name = "org_pubref_rules_protobuf",
@@ -122,16 +117,16 @@ git_repository(
 load("@org_pubref_rules_protobuf//java:rules.bzl", "java_proto_repositories")
 java_proto_repositories()
 
-bazel_jar_jar_version = "master"
+bazel_shade_version = "master"
 http_archive(
-             name = "com_github_johnynek_bazel_jar_jar",
-             url = "https://github.com/johnynek/bazel_jar_jar/archive/%s.zip"%bazel_jar_jar_version,
+             name = "com_github_zhexuany_bazel_shade",
+             url = "https://github.com/zhexuany/bazel_shade_plugin/archive/%s.zip"%bazel_shade_version,
              type = "zip",
-             strip_prefix= "bazel_jar_jar-%s"%bazel_jar_jar_version
+             strip_prefix= "bazel_shade_plugin-%s"%bazel_shade_version
 )
 load(
-    "@com_github_johnynek_bazel_jar_jar//:jar_jar.bzl",
-    "jar_jar_repositories",
-    "jar_jar"
+    "@com_github_zhexuany_bazel_shade//:java_shade.bzl",
+    "java_shade_repositories",
+    "java_shade"
 )
-jar_jar_repositories()
+java_shade_repositories()

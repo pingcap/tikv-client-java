@@ -18,7 +18,7 @@ package com.pingcap.tikv.expression.scalar;
 import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.expression.TiFunctionExpression;
-import com.pingcap.tikv.types.FieldType;
+import com.pingcap.tikv.types.DataType;
 
 public class Coalesce extends TiFunctionExpression {
     public Coalesce(TiExpr...args) {
@@ -41,7 +41,7 @@ public class Coalesce extends TiFunctionExpression {
     }
 
     @Override
-    public FieldType getType() {
+    public DataType getType() {
         throw new UnsupportedOperationException();
     }
 }

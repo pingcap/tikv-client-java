@@ -15,21 +15,11 @@
  *
  */
 
-package com.pingcap.tikv.types.string;
+package com.pingcap.tikv.row;
 
-import com.pingcap.tikv.meta.TiColumnInfo;
+import com.pingcap.tikv.types.DataType;
 
-public class VarCharType extends StringBaseType {
-    public static final int TYPE_CODE = 15;
 
-    public VarCharType(TiColumnInfo.InternalTypeHolder holder) {
-        super(holder);
-    }
-    protected VarCharType() {}
-
-    public int getTypeCode() {
-        return TYPE_CODE;
-    }
-
-    public final static VarCharType DEF_TYPE = new VarCharType();
+public interface RowReader {
+    Row readRow(DataType[] dataTypes);
 }

@@ -18,8 +18,8 @@ package com.pingcap.tikv.expression.scalar;
 import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.expression.TiUnaryFunctionExpression;
-import com.pingcap.tikv.types.integer.BooleanType;
-import com.pingcap.tikv.types.FieldType;
+import com.pingcap.tikv.types.DataType;
+import com.pingcap.tikv.types.IntegerType;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -39,8 +39,8 @@ public class IsNull extends TiUnaryFunctionExpression {
     }
 
     @Override
-    public FieldType getType() {
-        return BooleanType.DEF_BOOLEAN_TYPE;
+    public DataType getType() {
+        return IntegerType.DEF_BOOLEAN_TYPE;
     }
 
     @Override

@@ -18,9 +18,9 @@ package com.pingcap.tikv.expression.scalar;
 import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.expression.TiBinaryFunctionExpresson;
 import com.pingcap.tikv.expression.TiExpr;
-import com.pingcap.tikv.types.integer.BooleanType;
-import com.pingcap.tikv.types.FieldType;
-import com.pingcap.tikv.types.string.VarCharType;
+import com.pingcap.tikv.types.DataType;
+import com.pingcap.tikv.types.IntegerType;
+import com.pingcap.tikv.types.StringType;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -41,8 +41,8 @@ public class Like extends TiBinaryFunctionExpresson {
     }
 
     @Override
-    public FieldType getType() {
-        return BooleanType.DEF_BOOLEAN_TYPE;
+    public DataType getType() {
+        return IntegerType.DEF_BOOLEAN_TYPE;
     }
 
     @Override
@@ -50,7 +50,7 @@ public class Like extends TiBinaryFunctionExpresson {
         // Validate 2 arguments
         super.validateArguments();
         // Validate 2 arguments are strings
-        checkArgument(this.args.get(0).getType() instanceof VarCharType);
-        checkArgument(this.args.get(1).getType() instanceof VarCharType);
+        checkArgument(this.args.get(0).getType() instanceof StringType);
+        checkArgument(this.args.get(1).getType() instanceof StringType);
     }
 }

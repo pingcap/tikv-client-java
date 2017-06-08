@@ -32,6 +32,7 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
@@ -245,11 +246,11 @@ public class RegionStoreClientTest {
                 TiRange.createByteStringRange(ByteString.copyFromUtf8("key1"), ByteString.copyFromUtf8("key4")),
                 TiRange.createByteStringRange(ByteString.copyFromUtf8("key6"), ByteString.copyFromUtf8("key7")));
 
-        Iterable<KeyRange> keyRanges = Iterables.transform(tiRanges, range -> KeyRange
-                                                                        .newBuilder()
-                                                                        .setLow(range.getLowValue())
-                                                                        .setHigh(range.getHighValue())
-                                                                        .build());
+        Iterable<KeyRange> keyRanges = tiRanges.stream().map(range -> KeyRange
+                .newBuilder()
+                .setLow(range.getLowValue())
+                .setHigh(range.getHighValue())
+                .build()).collect(Collectors.toList());
 
 
         builder.addAllRanges(keyRanges);
@@ -257,10 +258,9 @@ public class RegionStoreClientTest {
                 client.coprocess(builder.build(), tiRanges);
         assertEquals(5, resp.getChunksCount());
         Set<String> results = ImmutableSet.copyOf(
-                Iterables.transform(resp.getChunksList(), c -> c.getRowsData().toStringUtf8())
+                resp.getChunksList().stream().map(c -> c.getRowsData().toStringUtf8()).collect(Collectors.toList())
         );
-        assertTrue(Iterables.all(ImmutableList.of("value1", "value2", "value4", "value6", "value7"),
-                                 v -> results.contains(v)));
+        assertTrue(ImmutableList.of("value1", "value2", "value4", "value6", "value7").stream().allMatch(results::contains));
 
 
         builder = SelectRequest.newBuilder();
@@ -268,11 +268,11 @@ public class RegionStoreClientTest {
         tiRanges = ImmutableList.of(
                 TiRange.createByteStringRange(ByteString.copyFromUtf8("error1"), ByteString.copyFromUtf8("error2")));
 
-        keyRanges = Iterables.transform(tiRanges, range -> KeyRange
+        keyRanges = tiRanges.stream().map(range -> KeyRange
                 .newBuilder()
                 .setLow(range.getLowValue())
                 .setHigh(range.getHighValue())
-                .build());
+                .build()).collect(Collectors.toList());
         builder.addAllRanges(keyRanges);
 
         server.putError("error1", KVMockServer.ABORT);
@@ -302,11 +302,11 @@ public class RegionStoreClientTest {
                 TiRange.createByteStringRange(ByteString.copyFromUtf8("key1"), ByteString.copyFromUtf8("key4")),
                 TiRange.createByteStringRange(ByteString.copyFromUtf8("key6"), ByteString.copyFromUtf8("key7")));
 
-        Iterable<KeyRange> keyRanges = Iterables.transform(tiRanges, range -> KeyRange
+        Iterable<KeyRange> keyRanges = tiRanges.stream().map(range -> KeyRange
                 .newBuilder()
                 .setLow(range.getLowValue())
                 .setHigh(range.getHighValue())
-                .build());
+                .build()).collect(Collectors.toList());
 
 
         builder.addAllRanges(keyRanges);
@@ -315,10 +315,10 @@ public class RegionStoreClientTest {
         SelectResponse resp = respFuture.get();
         assertEquals(5, resp.getChunksCount());
         Set<String> results = ImmutableSet.copyOf(
-                Iterables.transform(resp.getChunksList(), c -> c.getRowsData().toStringUtf8())
+                resp.getChunksList().stream().map(c -> c.getRowsData().toStringUtf8()).collect(Collectors.toList())
         );
         assertTrue(Iterables.all(ImmutableList.of("value1", "value2", "value4", "value6", "value7"),
-                v -> results.contains(v)));
+                results::contains));
 
 
         builder = SelectRequest.newBuilder();
@@ -326,11 +326,11 @@ public class RegionStoreClientTest {
         tiRanges = ImmutableList.of(
                 TiRange.createByteStringRange(ByteString.copyFromUtf8("error1"), ByteString.copyFromUtf8("error2")));
 
-        keyRanges = Iterables.transform(tiRanges, range -> KeyRange
+        keyRanges = tiRanges.stream().map(range -> KeyRange
                 .newBuilder()
                 .setLow(range.getLowValue())
                 .setHigh(range.getHighValue())
-                .build());
+                .build()).collect(Collectors.toList());
         builder.addAllRanges(keyRanges);
 
         server.putError("error1", KVMockServer.ABORT);

@@ -18,7 +18,7 @@ package com.pingcap.tikv.expression.scalar;
 import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.expression.TiBinaryFunctionExpresson;
 import com.pingcap.tikv.expression.TiExpr;
-import com.pingcap.tikv.types.FieldType;
+import com.pingcap.tikv.types.DataType;
 
 public class Divide extends TiBinaryFunctionExpresson {
     public Divide(TiExpr lhs, TiExpr rhs) {
@@ -36,7 +36,7 @@ public class Divide extends TiBinaryFunctionExpresson {
     }
 
     @Override
-    public FieldType getType() {
+    public DataType getType() {
         // TODO: Add type inference
         throw new UnsupportedOperationException();
     }
