@@ -15,7 +15,7 @@
 
 package com.pingcap.tikv.meta;
 
-import com.pingcap.tikv.type.FieldType;
+import com.pingcap.tikv.types.FieldType;
 
 // TODO: Mapping unsigned and other types
 // Even in case of mem-buffer-based row we can ignore field types

@@ -53,9 +53,9 @@ public class FloatingUtilsTest {
                 (byte)(51 & 0xFF),
                 (byte)(67 & 0xFF),
                 (byte)(159 & 0xFF),
-                (byte)(255 & 0xFF),
-                (byte)(255 & 0xFF),
-                (byte)(255 & 0xFF)};
+                (byte)(0xFF),
+                (byte)(0xFF),
+                (byte)(0xFF)};
 
         cdi = new CodecDataInput(data);
         u = FloatingUtils.readDouble(cdi);

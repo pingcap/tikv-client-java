@@ -15,7 +15,7 @@
 
 package com.pingcap.tikv.meta;
 
-import com.pingcap.tikv.type.FieldType;
+import com.pingcap.tikv.types.FieldType;
 
 // A dummy implementation of Row interface
 // Using non-memory compact format
@@ -82,7 +82,7 @@ public class ObjectRowImpl implements Row {
         // below all get method behave the same
         return (double)values[pos];
     }
-    
+
     @Override
     public void setLong(int pos, long v) {
         values[pos] = v;

@@ -21,7 +21,22 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
 import com.pingcap.tidb.tipb.ColumnInfo;
 import com.pingcap.tikv.exception.TiClientInternalException;
-import com.pingcap.tikv.type.*;
+import com.pingcap.tikv.types.*;
+import com.pingcap.tikv.types.blob.LongBlobType;
+import com.pingcap.tikv.types.blob.MediumBlobType;
+import com.pingcap.tikv.types.blob.TinyBlobType;
+import com.pingcap.tikv.types.floating.DecimalType;
+import com.pingcap.tikv.types.floating.DoubleType;
+import com.pingcap.tikv.types.floating.FloatType;
+import com.pingcap.tikv.types.integer.ShortType;
+import com.pingcap.tikv.types.integer.TinyIntType;
+import com.pingcap.tikv.types.integer.MediumIntType;
+import com.pingcap.tikv.types.integer.LongLongType;
+import com.pingcap.tikv.types.integer.LongType;
+import com.pingcap.tikv.types.string.BitType;
+import com.pingcap.tikv.types.string.CharType;
+import com.pingcap.tikv.types.string.TextType;
+import com.pingcap.tikv.types.string.VarCharType;
 
 import java.util.List;
 import java.util.Map;
@@ -58,15 +73,19 @@ public class TiColumnInfo {
     }
 
     public long getId() {
-        return id;
+        return this.id;
     }
 
     public String getName() {
-        return name;
+        return this.name;
+    }
+
+    public boolean matchName(String name) {
+        return this.name.equalsIgnoreCase(name);
     }
 
     public int getOffset() {
-        return offset;
+        return this.offset;
     }
 
     public FieldType getType() {
@@ -85,6 +104,17 @@ public class TiColumnInfo {
         return isPrimaryKey;
     }
 
+    /*Only for test*/
+    public static final InternalTypeHolder DEF_INT_INTERNALTYPE = new InternalTypeHolder(LongType.DEF_SIGNED_TYPE.getTypeCode(),
+            LongType.DEF_SIGNED_TYPE.getFlag(), LongType.DEF_SIGNED_TYPE.getLength(), LongType.DEF_SIGNED_TYPE.getDecimal(),
+            "", "" + LongType.DEF_SIGNED_TYPE.getCollationCode(), LongType.DEF_SIGNED_TYPE.getElems());
+
+    /*Only for test*/
+    public static final InternalTypeHolder DEF_STR_INTERNALTYPE = new InternalTypeHolder(VarCharType.DEF_TYPE.getTypeCode(),
+            VarCharType.DEF_TYPE.getFlag(), VarCharType.DEF_TYPE.getLength(), VarCharType.DEF_TYPE.getDecimal(),
+            "", "" + VarCharType.DEF_TYPE.getCollationCode(), VarCharType.DEF_TYPE.getElems());
+
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class InternalTypeHolder {
         private final int          tp;
@@ -102,21 +132,21 @@ public class TiColumnInfo {
         private static Map<Integer, Builder<? extends FieldType>> typeBuilder;
         static {
             typeBuilder = ImmutableMap.<Integer, Builder<? extends FieldType>>builder()
-                    .put(TinyType.TYPE_CODE, holder -> new TinyType(holder))
-                    .put(ShortType.TYPE_CODE, holder -> new ShortType(holder))
-                    .put(MediumIntType.TYPE_CODE, holder -> new MediumIntType(holder))
-                    .put(LongType.TYPE_CODE, holder -> new LongType(holder))
-                    .put(LongLongType.TYPE_CODE, holder -> new LongLongType(holder))
-                    .put(VarCharType.TYPE_CODE, holder -> new VarCharType(holder))
-                    .put(CharType.TYPE_CODE, holder -> new CharType(holder))
-                    .put(TextType.TYPE_CODE, holder -> new TextType(holder))
-                    .put(DecimalType.TYPE_CODE, holder -> new DecimalType(holder))
-                    .put(FloatType.TYPE_CODE, holder -> new FloatType(holder))
-                    .put(DoubleType.TYPE_CODE, holder -> new DoubleType(holder))
-                    .put(BitType.TYPE_CODE, holder -> new BitType(holder))
-                    .put(TinyBlobType.TYPE_CODE, holder -> new TinyBlobType(holder))
-                    .put(MediumBlobType.TYPE_CODE, holder -> new MediumBlobType(holder))
-                    .put(LongBlobType.TYPE_CODE, holder -> new LongBlobType(holder))
+                    .put(TinyIntType.TYPE_CODE, TinyIntType::new)
+                    .put(ShortType.TYPE_CODE, ShortType::new)
+                    .put(MediumIntType.TYPE_CODE, MediumIntType::new)
+                    .put(LongType.TYPE_CODE, LongType::new)
+                    .put(LongLongType.TYPE_CODE, LongLongType::new)
+                    .put(VarCharType.TYPE_CODE, VarCharType::new)
+                    .put(CharType.TYPE_CODE, CharType::new)
+                    .put(TextType.TYPE_CODE, TextType::new)
+                    .put(DecimalType.TYPE_CODE, DecimalType::new)
+                    .put(FloatType.TYPE_CODE, FloatType::new)
+                    .put(DoubleType.TYPE_CODE, DoubleType::new)
+                    .put(BitType.TYPE_CODE, BitType::new)
+                    .put(TinyBlobType.TYPE_CODE, TinyBlobType::new)
+                    .put(MediumBlobType.TYPE_CODE, MediumBlobType::new)
+                    .put(LongBlobType.TYPE_CODE, LongBlobType::new)
                     .build();
         }
 

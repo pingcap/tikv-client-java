@@ -17,7 +17,7 @@ package com.pingcap.tikv.codec;
 
 import com.pingcap.tikv.meta.ObjectRowImpl;
 import com.pingcap.tikv.meta.Row;
-import com.pingcap.tikv.type.FieldType;
+import com.pingcap.tikv.types.FieldType;
 
 public class DefaultRowReader implements RowReader {
     private final CodecDataInput cdi;
@@ -30,11 +30,10 @@ public class DefaultRowReader implements RowReader {
         this.cdi = cdi;
     }
 
-    @Override
     public Row readRow(FieldType[] fieldTypes) {
-        byte[] rowData = cdi.toByteArray();
-        Row row = ObjectRowImpl.create(fieldTypes.length);
-        for (int i = 0; i < fieldTypes.length; i++) {
+        int length = fieldTypes.length;
+        Row row = ObjectRowImpl.create(length);
+        for(int i = 0; i < length; i++) {
             fieldTypes[i].decodeValueToRow(cdi, row, i);
         }
         return row;

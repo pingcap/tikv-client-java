@@ -16,7 +16,8 @@
 package com.pingcap.tikv.codec;
 
 import com.pingcap.tikv.meta.Row;
-import com.pingcap.tikv.type.FieldType;
+import com.pingcap.tikv.operation.SchemaInfer;
+import com.pingcap.tikv.types.FieldType;
 
 
 public interface RowReader {
