@@ -37,11 +37,15 @@ public class TiConstant implements TiExpr {
         this.value = value;
     }
 
-    private boolean isIntegerType() {
+    public boolean isIntegerType() {
         return value instanceof Long ||
                 value instanceof Integer ||
                 value instanceof Short ||
                 value instanceof Byte;
+    }
+
+    public Object getValue() {
+        return value;
     }
 
     @Override

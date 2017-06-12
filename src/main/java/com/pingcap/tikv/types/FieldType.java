@@ -26,7 +26,7 @@ import java.util.List;
 
 public abstract class FieldType<T> {
     private static final byte   NULL_FLAG = 0;
-    private static final int    UNSPECIFIED_LEN = -1;
+    public static final int    UNSPECIFIED_LEN = -1;
 
     protected final int           flag;
     private final int           collation;

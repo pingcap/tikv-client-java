@@ -121,4 +121,15 @@ public class TiTableInfo {
                 .addAllColumns(getColumns().stream().map(TiColumnInfo::toProto).collect(Collectors.toList()))
                 .build();
     }
+
+    public String getPKName() {
+        if (isPkHandle()) {
+            for (TiColumnInfo col : getColumns()) {
+                if (col.isPrimaryKey()) {
+                    return col.getName();
+                }
+            }
+        }
+        return "";
+    }
 }
