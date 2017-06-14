@@ -28,4 +28,7 @@ import java.util.List;
 public interface TiExpr {
     Expr toProto();
     FieldType getType();
+    default boolean isSupportedExpr() {
+        return true;
+    }
 }

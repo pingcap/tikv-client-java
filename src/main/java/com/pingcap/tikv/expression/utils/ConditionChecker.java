@@ -16,8 +16,6 @@
 package com.pingcap.tikv.expression.utils;
 
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiConstant;
@@ -25,21 +23,30 @@ import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.expression.TiFunctionExpression;
 import com.pingcap.tikv.expression.scalar.*;
 import com.pingcap.tikv.meta.TiIndexInfo;
-import com.pingcap.tikv.types.FieldType;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ConditionChecker {
     private final TiIndexInfo index;
     private final int columnOffset;
     private final String pkName;
-    public boolean shouldReserve;
-    public final int length;
+    public final boolean shouldReserve;
+    private final boolean prefixIndex;
 
     public ConditionChecker(String pkName) {
         this.index = null;
         this.columnOffset = -1;
         this.pkName = pkName == null ? "" : pkName;
         this.shouldReserve = false;
-        this.length = FieldType.UNSPECIFIED_LEN;
+        this.prefixIndex = false;
+    }
+
+    public ConditionChecker(TiIndexInfo index, int indexColumnOffset) {
+        this.index = null;
+        this.columnOffset = indexColumnOffset;
+        this.pkName = null;
+        this.shouldReserve = false;
+        this.prefixIndex = index.getIndexColumns().get(columnOffset).isPrefixIndex();
     }
 
     public boolean check(TiExpr expr) {
@@ -65,10 +72,10 @@ public class ConditionChecker {
                 expr instanceof LessEqual ||
                 expr instanceof LessThan) {
             if (check((TiColumnRef)expr.getArg(0)) && expr.getArg(1) instanceof TiConstant) {
-                return !(expr instanceof NotEqual) || length != FieldType.UNSPECIFIED_LEN;
+                return !(expr instanceof NotEqual) || prefixIndex;
             }
             if (check((TiColumnRef)expr.getArg(1)) && expr.getArg(0) instanceof TiConstant) {
-                return !(expr instanceof NotEqual) || length != FieldType.UNSPECIFIED_LEN;
+                return !(expr instanceof NotEqual) || prefixIndex;
             }
         } else if (expr instanceof IsNull || expr instanceof IsTrue /* TODO: Add IsFalse when Proto ready*/) {
             if (expr.getArg(0) instanceof TiColumnRef) {
