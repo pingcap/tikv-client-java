@@ -11,28 +11,5 @@ import java.util.Iterator;
 
 public class Main {
   public static void main(String[] args) throws Exception {
-    TiConfiguration conf = TiConfiguration.createDefault(ImmutableList.of("127.0.0.1:" + 2379));
-    TiCluster cluster = TiCluster.getCluster(conf);
-    Catalog cat = cluster.getCatalog();
-    TiDBInfo db = cat.getDatabase("test");
-    TiTableInfo table = cat.getTable(db, "blobTable");
-    Snapshot snapshot = cluster.createSnapshot();
-    Iterator<Row> it =
-        snapshot
-            .newSelect(table)
-            .addRange(TiRange.create(0L, Long.MAX_VALUE))
-            .doSelect();
-
-    while (it.hasNext()) {
-      Row r = it.next();
-      String val0 = r.getString(0);
-      String val1 = r.getString(1);
-      String val2 = r.getString(2);
-      String val3 = r.getString(3);
-      System.out.print("");
-    }
-
-    cluster.close();
-    return;
   }
 }

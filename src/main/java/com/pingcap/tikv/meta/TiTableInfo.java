@@ -19,10 +19,12 @@ package com.pingcap.tikv.meta;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.pingcap.tidb.tipb.TableInfo;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -122,14 +124,34 @@ public class TiTableInfo {
                 .build();
     }
 
-    public String getPKName() {
+    // Only Integer Column will be a PK column
+    // and there exists only one PK column
+    public TiColumnInfo getPrimaryKeyColumn() {
         if (isPkHandle()) {
             for (TiColumnInfo col : getColumns()) {
                 if (col.isPrimaryKey()) {
-                    return col.getName();
+                    return col;
                 }
             }
         }
-        return "";
+        return null;
+    }
+
+    public TiIndexInfo getFakePkIndex() {
+        TiColumnInfo pkColumn = getPrimaryKeyColumn();
+        if (pkColumn != null) {
+            return new TiIndexInfo(
+                    -1,
+                    CIStr.newCIStr("fake_pk"),
+                    CIStr.newCIStr(getName()),
+                    ImmutableList.of(pkColumn.toIndexColumn()),
+                    true,
+                    true,
+                    SchemaState.StatePublic.getStateCode(),
+                    "Fake Column",
+                    IndexType.IndexTypeHash.getTypeCode()
+            );
+        }
+        return null;
     }
 }

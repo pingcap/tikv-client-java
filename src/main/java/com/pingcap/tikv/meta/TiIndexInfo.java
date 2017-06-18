@@ -27,7 +27,7 @@ public class TiIndexInfo {
     private final long                  id;
     private final String                name;
     private final String                tableName;
-    private final List<TiIndexColumn>     indexColumns;
+    private final List<TiIndexColumn>   indexColumns;
     private final boolean               isUnique;
     private final boolean               isPrimary;
     private final SchemaState           schemaState;

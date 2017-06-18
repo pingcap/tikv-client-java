@@ -214,6 +214,10 @@ public class TiColumnInfo {
         }
     }
 
+    public TiIndexColumn toIndexColumn() {
+        return new TiIndexColumn(CIStr.newCIStr(getName()), getOffset(), type.getLength());
+    }
+
     public ColumnInfo toProto() {
         return toProtoBuilder().build();
     }

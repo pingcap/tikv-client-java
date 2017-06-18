@@ -23,6 +23,7 @@ import com.pingcap.tikv.meta.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
 
 import java.util.List;
+import java.util.Objects;
 
 public abstract class FieldType<T> {
     private static final byte   NULL_FLAG = 0;
@@ -107,6 +108,14 @@ public abstract class FieldType<T> {
     }
 
     public abstract int getTypeCode();
+
+    public Object minVal() {return null;}
+    public Object maxVal() {return null;}
+
+    // TODO: implement in subclass
+    public boolean needCast(Object val) {
+        return true;
+    }
 
     @Override
     public String toString() {

@@ -31,6 +31,10 @@ public class CIStr {
         this.l = l;
     }
 
+    public static CIStr newCIStr(String str) {
+        return new CIStr(str, str.toLowerCase());
+    }
+
     public String getO() {
         return o;
     }
