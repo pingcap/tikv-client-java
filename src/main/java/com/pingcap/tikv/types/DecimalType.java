@@ -25,8 +25,6 @@ import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
 import gnu.trove.list.array.TIntArrayList;
 
-import static com.pingcap.tikv.types.Flags.DECIMAL_FLAG;
-
 public class DecimalType extends DataType {
 
     static DecimalType of(int tp) {

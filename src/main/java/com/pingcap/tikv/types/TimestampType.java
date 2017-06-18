@@ -27,9 +27,6 @@ import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
-import static com.pingcap.tikv.types.Flags.INT_FLAG;
-import static com.pingcap.tikv.types.Flags.UVARINT_FLAG;
-
 public class TimestampType extends DataType {
     static TimestampType of(int tp) {
         return new TimestampType(tp);
