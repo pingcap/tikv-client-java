@@ -31,7 +31,7 @@ import static com.pingcap.tikv.types.Flags.INT_FLAG;
 import static com.pingcap.tikv.types.Flags.UVARINT_FLAG;
 
 public class TimestampType extends DataType {
-    public static TimestampType of(int tp) {
+    static TimestampType of(int tp) {
         return new TimestampType(tp);
     }
 
@@ -61,7 +61,7 @@ public class TimestampType extends DataType {
             Time time = new Time(duration.toMillis());
             row.setTime(pos, time);
         } else {
-            throw new InvalidCodecFormatException("Invalid Flag type for TimestampType: " + codecMap.get(flag));
+            throw new InvalidCodecFormatException("Invalid Flag type for TimestampType: " + flag);
         }
     }
 
@@ -122,10 +122,5 @@ public class TimestampType extends DataType {
         int hour = hms >> 12;
         int microsec = (int)(packed % (1 << 24));
         return LocalDateTime.of(year, month, day, hour, minute, second, microsec);
-    }
-
-    @Override
-    public String toString() {
-        return "ClassTimestamp";
     }
 }

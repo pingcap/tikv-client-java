@@ -19,13 +19,9 @@ package com.pingcap.tikv.expression;
 import com.pingcap.tidb.tipb.Expr;
 import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.codec.CodecDataOutput;
-import com.pingcap.tikv.types.DataType;
-import com.pingcap.tikv.types.DecimalType;
-import com.pingcap.tikv.types.IntegerType;
-import com.pingcap.tikv.types.StringType;
+import com.pingcap.tikv.types.*;
 
-import static com.pingcap.tikv.types.Types.TYPE_LONG;
-import static com.pingcap.tikv.types.Types.TYPE_VARCHAR;
+import static com.pingcap.tikv.types.Types.*;
 
 public class TiConstant implements TiExpr {
     private Object value;
@@ -57,7 +53,7 @@ public class TiConstant implements TiExpr {
             IntegerType.writeLong(cdo, ((Number)value).longValue());
         } else if (value instanceof String) {
             builder.setTp(ExprType.String);
-            StringType.writeBytes(cdo, ((String)value).getBytes());
+            BytesType.writeBytes(cdo, ((String)value).getBytes());
         } else if (value instanceof Float) {
             builder.setTp(ExprType.Float32);
             DecimalType.writeFloat(cdo, (Float)value);
@@ -77,13 +73,13 @@ public class TiConstant implements TiExpr {
         if (value == null) {
             throw new TiExpressionException("NULL constant has no type");
         } else if (isIntegerType()) {
-            return IntegerType.of(TYPE_LONG);
+            return DataTypeFactory.of(TYPE_LONG);
         } else if (value instanceof String) {
-            return StringType.of(TYPE_VARCHAR);
+            return DataTypeFactory.of(TYPE_VARCHAR);
         } else if (value instanceof Float) {
-            throw new UnsupportedOperationException();
+            return DataTypeFactory.of(TYPE_FLOAT);
         } else if (value instanceof Double) {
-            throw new UnsupportedOperationException();
+            return DataTypeFactory.of(TYPE_NEW_DECIMAL);
         } else {
             throw new TiExpressionException("Constant type not supported.");
         }

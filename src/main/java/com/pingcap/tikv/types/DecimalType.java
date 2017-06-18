@@ -28,11 +28,8 @@ import gnu.trove.list.array.TIntArrayList;
 import static com.pingcap.tikv.types.Flags.DECIMAL_FLAG;
 
 public class DecimalType extends DataType {
-    public DecimalType(TiColumnInfo.InternalTypeHolder holder) {
-        super(holder);
-    }
 
-    public static DecimalType of(int tp) {
+    static DecimalType of(int tp) {
        return new DecimalType(tp);
     }
 
@@ -50,7 +47,7 @@ public class DecimalType extends DataType {
     public void decode(CodecDataInput cdi, Row row, int pos) {
         int flag = cdi.readUnsignedByte();
         if (flag != DECIMAL_FLAG) {
-            throw new InvalidCodecFormatException("Invalid Flag type for decimal type: " + codecMap.get(flag));
+            throw new InvalidCodecFormatException("Invalid Flag type for decimal type: " + flag);
         }
         double val = readDecimalFully(cdi);
         row.setDouble(pos, val);
@@ -72,12 +69,6 @@ public class DecimalType extends DataType {
         }
         writeDecimalFully(cdo, val);
     }
-
-    @Override
-    public String toString() {
-        return "ClassDecimal";
-    }
-
 
     /** read a decimal value from CodecDataInput
      * @param cdi cdi is source data.

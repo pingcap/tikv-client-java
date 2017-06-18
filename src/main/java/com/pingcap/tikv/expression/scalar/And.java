@@ -48,7 +48,7 @@ public class And extends TiBinaryFunctionExpresson {
         // Validate 2 arguments
         super.validateArguments();
         // Validate 2 arguments are strings
-//        checkArgument(this.args.get(0).getType() instanceof BooleanType);
-//        checkArgument(this.args.get(1).getType() instanceof BooleanType);
+        checkArgument(this.args.get(0).getType() instanceof IntegerType);
+        checkArgument(this.args.get(1).getType() instanceof IntegerType);
     }
 }

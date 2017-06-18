@@ -22,21 +22,19 @@ import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.codec.InvalidCodecFormatException;
 import com.pingcap.tikv.row.Row;
 
-import java.time.Duration;
 import java.util.Arrays;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.pingcap.tikv.types.Flags.BYTES_FLAG;
 import static com.pingcap.tikv.types.Flags.COMPACT_BYTES_FLAG;
-import static com.pingcap.tikv.types.Flags.UVARINT_FLAG;
 
-public class StringType extends DataType {
+public class BytesType extends DataType {
 
-    public static StringType of(int tp) {
-        return new StringType(tp);
+    static BytesType of(int tp) {
+        return new BytesType(tp);
     }
 
-    private StringType(int tp) {
+    private BytesType(int tp) {
         super(tp);
     }
 
@@ -48,7 +46,7 @@ public class StringType extends DataType {
         } else if (flag == BYTES_FLAG) {
             row.setString(pos, new String(readBytes(cdi)));
         } else {
-            throw new InvalidCodecFormatException("Invalid Flag type for  ClassString: " + codecMap.get(flag));
+            throw new InvalidCodecFormatException("Invalid Flag type for  ClassString: " + typeNameMap.get(flag));
         }
     }
 
@@ -79,14 +77,9 @@ public class StringType extends DataType {
         } else if (flag == BYTES_FLAG) {
             return new String(readBytes(cdi));
         } else {
-            throw new InvalidCodecFormatException("Invalid Flag type for String type: " + codecMap.get(flag));
+            throw new InvalidCodecFormatException("Invalid Flag type for String type: " + typeNameMap.get(flag));
         }
     }
-
-    public String toString() {
-        return "ClassString";
-    }
-
 
     private static final int GRP_SIZE = 8;
     private static final byte[] PADS = new byte[GRP_SIZE];

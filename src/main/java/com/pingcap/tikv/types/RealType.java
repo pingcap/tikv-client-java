@@ -28,10 +28,7 @@ import static com.pingcap.tikv.types.Flags.FLOATING_FLAG;
 public class RealType extends DataType {
     private static final long signMask = 0x8000000000000000L;
 
-    public RealType(TiColumnInfo.InternalTypeHolder holder) {
-        super(holder);
-    }
-    public static RealType of(int tp) {
+    static RealType of(int tp) {
        return new RealType(tp);
     }
 
@@ -50,7 +47,7 @@ public class RealType extends DataType {
         // check flag first and then read.
         int flag = cdi.readUnsignedByte();
         if (flag != FLOATING_FLAG) {
-            throw new InvalidCodecFormatException("Invalid Flag type for float type: " + codecMap.get(flag));
+            throw new InvalidCodecFormatException("Invalid Flag type for float type: " + flag);
         }
         long u = IntegerType.readULong(cdi);
         if((u & signMask) > 0) {
@@ -90,12 +87,6 @@ public class RealType extends DataType {
         }
         IntegerType.writeULong(cdo, bits);
     }
-
-    @Override
-    public String toString() {
-        return "ClassReal";
-    }
-
 
     /**
      * Decode as float

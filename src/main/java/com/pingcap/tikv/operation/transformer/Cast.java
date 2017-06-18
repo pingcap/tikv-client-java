@@ -20,7 +20,7 @@ package com.pingcap.tikv.operation.transformer;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.DecimalType;
 import com.pingcap.tikv.types.IntegerType;
-import com.pingcap.tikv.types.StringType;
+import com.pingcap.tikv.types.BytesType;
 
 public class Cast extends NoOp {
     public Cast(DataType dataType) {
@@ -31,7 +31,7 @@ public class Cast extends NoOp {
     public Object apply(Object obj) {
         if (targetDataType instanceof IntegerType) {
             return castToLong(obj);
-        } else if (targetDataType instanceof StringType) {
+        } else if (targetDataType instanceof BytesType) {
             return castToString(obj);
         } else if (targetDataType instanceof DecimalType) {
             return castToDouble(obj);

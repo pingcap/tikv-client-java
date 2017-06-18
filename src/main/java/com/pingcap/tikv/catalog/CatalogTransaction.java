@@ -20,9 +20,8 @@ import com.google.protobuf.ByteString;
 import com.pingcap.tikv.Snapshot;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.codec.*;
-import com.pingcap.tikv.expression.scalar.In;
 import com.pingcap.tikv.types.IntegerType;
-import com.pingcap.tikv.types.StringType;
+import com.pingcap.tikv.types.BytesType;
 import com.pingcap.tikv.util.Pair;
 import com.pingcap.tikv.util.TiFluentIterable;
 
@@ -57,18 +56,18 @@ public class CatalogTransaction {
 
     private static void encodeStringDataKey(CodecDataOutput cdo, byte[] prefix, byte[] key) {
         cdo.write(prefix);
-        StringType.writeBytes(cdo, key);
+        BytesType.writeBytes(cdo, key);
         IntegerType.writeULong(cdo, STR_DATA_FLAG);
     }
 
     private static void encodeHashDataKey(CodecDataOutput cdo, byte[] prefix, byte[] key, byte[] field) {
         encodeHashDataKeyPrefix(cdo, prefix, key);
-        StringType.writeBytes(cdo, field);
+        BytesType.writeBytes(cdo, field);
     }
 
     private static void encodeHashDataKeyPrefix(CodecDataOutput cdo, byte[] prefix, byte[] key) {
         cdo.write(prefix);
-        StringType.writeBytes(cdo, key);
+        BytesType.writeBytes(cdo, key);
         IntegerType.writeULong(cdo, HASH_DATA_FLAG);
     }
 
@@ -77,12 +76,12 @@ public class CatalogTransaction {
                     "invalid encoded hash data key prefix: " + new String(prefix));
         CodecDataInput cdi = new CodecDataInput(rawKey.toByteArray());
         cdi.skipBytes(prefix.length);
-        byte[] key = StringType.readBytes(cdi);
+        byte[] key = BytesType.readBytes(cdi);
         long typeFlag = IntegerType.readULong(cdi);
         if (typeFlag != HASH_DATA_FLAG) {
             throw new TiClientInternalException("Invalid hash data flag: " + typeFlag);
         }
-        byte[] field = StringType.readBytes(cdi);
+        byte[] field = BytesType.readBytes(cdi);
         return Pair.create(ByteString.copyFrom(key), ByteString.copyFrom(field));
     }
 

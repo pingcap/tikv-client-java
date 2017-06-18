@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.pingcap.tikv.types.Flags.*;
+import static com.pingcap.tikv.types.Types.*;
 
 /**
  * Base Type for encoding and decoding TiDB row information.
@@ -49,7 +50,7 @@ public class DataType {
     private   List<String> elems;
 
 
-   static final Map<Integer, String> codecMap = ImmutableMap.<Integer, String>builder()
+   static final Map<Integer, String> typeNameMap = ImmutableMap.<Integer, String>builder()
             .put(NULL_FLAG, "NULL")
             .put(BYTES_FLAG, "STRING")
             .put(COMPACT_BYTES_FLAG, "STRING")
@@ -146,8 +147,44 @@ public class DataType {
         return tp;
     }
 
-    @Override
-    public String toString() {
-        return "ClassRow";
-    }
+   public static boolean hasNoDefaultFlag(int flag) {
+       return (flag & NoDefaultValueFlag) > 0;
+   }
+
+   public static boolean hasAutoIncrementFlag(int flag) {
+       return (flag & AutoIncrementFlag) > 0;
+   }
+
+   public static boolean hasUnsignedFlag(int flag) {
+       return (flag & UnsignedFlag) > 0;
+   }
+
+   public static boolean hasZerofillFlag(int flag) {
+       return (flag & ZerofillFlag) > 0;
+   }
+
+   public static boolean hasBinaryFlag(int flag) {
+       return (flag & PriKeyFlag) > 0;
+   }
+
+   public static boolean hasUniKeyFlag(int flag) {
+      return (flag & UniqueKeyFlag) > 0;
+   }
+
+   public static boolean hasMultipleKeyFlag(int flag) {
+       return (flag & MultipleKeyFlag) > 0;
+   }
+
+   public static boolean hasTimestampFlag(int flag) {
+       return (flag & TimestampFlag) > 0;
+   }
+
+   public static boolean hasOnUpdateNowFlag(int flag) {
+       return (flag & OnUpdateNowFlag) > 0;
+   }
+
+   @Override
+   public String toString() {
+       return this.getClass().getSimpleName();
+   }
 }

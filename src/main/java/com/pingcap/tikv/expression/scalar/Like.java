@@ -20,7 +20,7 @@ import com.pingcap.tikv.expression.TiBinaryFunctionExpresson;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.IntegerType;
-import com.pingcap.tikv.types.StringType;
+import com.pingcap.tikv.types.BytesType;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -50,7 +50,7 @@ public class Like extends TiBinaryFunctionExpresson {
         // Validate 2 arguments
         super.validateArguments();
         // Validate 2 arguments are strings
-        checkArgument(this.args.get(0).getType() instanceof StringType);
-        checkArgument(this.args.get(1).getType() instanceof StringType);
+        checkArgument(this.args.get(0).getType() instanceof BytesType);
+        checkArgument(this.args.get(1).getType() instanceof BytesType);
     }
 }

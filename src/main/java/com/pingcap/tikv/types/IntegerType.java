@@ -33,7 +33,7 @@ import static com.pingcap.tikv.types.Types.*;
  */
 public class IntegerType extends DataType {
 
-    public static IntegerType of(int tp) {
+    static IntegerType of(int tp) {
        return new IntegerType(tp);
     }
 
@@ -88,7 +88,7 @@ public class IntegerType extends DataType {
         super(holder);
     }
 
-    public long decodeNotNullInternal(int flag, CodecDataInput cdi) {
+    private long decodeNotNullInternal(int flag, CodecDataInput cdi) {
         switch (flag) {
             case UVARINT_FLAG:
                 return readUVarLong(cdi);
@@ -205,7 +205,7 @@ public class IntegerType extends DataType {
             case VARINT_FLAG:
                 return readVarLong(cdi);
             default:
-                throw new InvalidCodecFormatException("Invalid Flag type for signed long type: " + codecMap.get(flag));
+                throw new InvalidCodecFormatException("Invalid Flag type for signed long type: " + flag);
         }
     }
 

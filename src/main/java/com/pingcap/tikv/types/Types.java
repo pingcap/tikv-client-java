@@ -20,7 +20,7 @@ package com.pingcap.tikv.types;
 public class Types {
     // The following ints are mysql type.
     // TYPE_DECIMAL is not used in MySQL.
-    public static final int TYPE_DECIMAL = 0;
+    // public static final int TYPE_DECIMAL = 0;
     public static final int TYPE_TINY = 1;
     public static final int TYPE_SHORT = 2;
     public static final int TYPE_LONG = 3;
@@ -77,39 +77,5 @@ public class Types {
        return (flag & NotNullFlag) > 0;
     }
 
-    public static boolean hasNoDefaultFlag(int flag) {
-        return (flag & NoDefaultValueFlag) > 0;
-    }
 
-    public static boolean hasAutoIncrementFlag(int flag) {
-        return (flag & AutoIncrementFlag) > 0;
-    }
-
-    public static boolean hasUnsignedFlag(int flag) {
-        return (flag & UnsignedFlag) > 0;
-    }
-
-    public static boolean hasZerofillFlag(int flag) {
-        return (flag & ZerofillFlag) > 0;
-    }
-
-    public static boolean hasBinaryFlag(int flag) {
-        return (flag & PriKeyFlag) > 0;
-    }
-
-    public static boolean hasUniKeyFlag(int flag) {
-        return (flag & UniqueKeyFlag) > 0;
-    }
-
-    public static boolean hasMultipleKeyFlag(int flag) {
-        return (flag & MultipleKeyFlag) > 0;
-    }
-
-    public static boolean hasTimestampFlag(int flag) {
-        return (flag & TimestampFlag) > 0;
-    }
-
-    public static boolean hasOnUpdateNowFlag(int flag) {
-        return (flag & OnUpdateNowFlag) > 0;
-    }
 }
