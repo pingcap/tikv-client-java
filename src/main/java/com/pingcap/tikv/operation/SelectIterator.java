@@ -19,21 +19,20 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import com.pingcap.tidb.tipb.Chunk;
-import com.pingcap.tidb.tipb.SelectRequest;
 import com.pingcap.tidb.tipb.SelectResponse;
 import com.pingcap.tikv.RegionManager;
 import com.pingcap.tikv.RegionStoreClient;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.TiSession;
 import com.pingcap.tikv.codec.CodecDataInput;
-import com.pingcap.tikv.codec.RowReader;
-import com.pingcap.tikv.codec.RowReaderFactory;
+import com.pingcap.tikv.row.RowReader;
+import com.pingcap.tikv.row.RowReaderFactory;
 import com.pingcap.tikv.grpc.Metapb.Region;
 import com.pingcap.tikv.grpc.Metapb.Store;
-import com.pingcap.tikv.meta.Row;
+import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.meta.TiRange;
 import com.pingcap.tikv.meta.TiSelectRequest;
-import com.pingcap.tikv.types.FieldType;
+import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.util.Pair;
 import com.pingcap.tikv.util.RangeSplitter;
 
@@ -41,22 +40,20 @@ import java.util.*;
 import java.util.function.Function;
 
 public class SelectIterator implements Iterator<Row> {
-    protected final TiSelectRequest                               req;
     protected final TiSession                                   session;
-    protected final List<Pair<Pair<Region, Store>,
+    private final List<Pair<Pair<Region, Store>,
                               TiRange<ByteString>>>             rangeToRegions;
 
 
-    protected ChunkIterator                         chunkIterator;
+    private ChunkIterator                         chunkIterator;
     protected int                                   index = 0;
-    protected boolean                               eof = false;
+    private boolean                               eof = false;
     private Function<List<Pair<Pair<Region, Store>,
                               TiRange<ByteString>>>, Boolean>  readNextRegionFn;
     private SchemaInfer schemaInfer;
 
     @VisibleForTesting
     public SelectIterator(List<Chunk> chunks, TiSelectRequest req) {
-        this.req = req;
         this.session = null;
         this.schemaInfer = SchemaInfer.create(req);
         this.rangeToRegions = null;
@@ -70,7 +67,6 @@ public class SelectIterator implements Iterator<Row> {
                           List<Pair<Pair<Region, Store> ,
                                   TiRange<ByteString>>> rangeToRegionsIn,
                           TiSession session) {
-        this.req = req;
         this.rangeToRegions = rangeToRegionsIn;
         this.session = session;
         this.schemaInfer = SchemaInfer.create(req);
@@ -129,7 +125,7 @@ public class SelectIterator implements Iterator<Row> {
             ByteString rowData = chunkIterator.next();
             RowReader reader = RowReaderFactory
                                 .createRowReader(new CodecDataInput(rowData));
-            return reader.readRow(this.schemaInfer.getFieldTypes().toArray(new FieldType[0]));
+            return reader.readRow(this.schemaInfer.getTypes().toArray(new DataType[0]));
         } else {
             throw new NoSuchElementException();
         }
@@ -142,7 +138,7 @@ public class SelectIterator implements Iterator<Row> {
         private int bufOffset;
         private boolean eof;
 
-        public ChunkIterator(List<Chunk> chunks) {
+        ChunkIterator(List<Chunk> chunks) {
             // Read and then advance semantics
             this.chunks = chunks;
             chunkIndex = 0;

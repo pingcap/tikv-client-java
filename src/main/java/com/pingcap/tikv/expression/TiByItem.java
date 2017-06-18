@@ -16,7 +16,6 @@
 package com.pingcap.tikv.expression;
 
 import com.pingcap.tidb.tipb.ByItem;
-import lombok.Data;
 import lombok.Getter;
 
 import static com.google.common.base.Preconditions.checkNotNull;

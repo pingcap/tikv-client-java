@@ -18,13 +18,12 @@ package com.pingcap.tikv;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
 import com.google.protobuf.ByteString;
-import com.pingcap.tidb.tipb.SelectRequest;
 import com.pingcap.tikv.codec.TableCodec;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.grpc.Kvrpcpb.KvPair;
 import com.pingcap.tikv.grpc.Metapb.Region;
 import com.pingcap.tikv.grpc.Metapb.Store;
-import com.pingcap.tikv.meta.Row;
+import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.meta.TiRange;
 import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.meta.TiTableInfo;
@@ -76,6 +75,7 @@ public class Snapshot {
         return client.get(key, version.getVersion());
     }
 
+    //TODO remove this
     static public List<TiRange<ByteString>> convertHandleRangeToKeyRange(TiTableInfo table,
                                                                    List<TiRange<Long>> ranges) {
         ImmutableList.Builder<TiRange<ByteString>> builder = ImmutableList.builder();

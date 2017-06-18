@@ -17,7 +17,7 @@ package com.pingcap.tikv.codec;
 
 import java.util.Arrays;
 
-class MyDecimal {
+public class MyDecimal {
     // how many digits that a word has
     private final static int digitsPerWord = 9;
     // MyDecimal can holds at most 9 words.

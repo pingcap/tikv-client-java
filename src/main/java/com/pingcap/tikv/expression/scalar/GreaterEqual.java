@@ -18,8 +18,8 @@ package com.pingcap.tikv.expression.scalar;
 import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.expression.TiBinaryFunctionExpresson;
 import com.pingcap.tikv.expression.TiExpr;
-import com.pingcap.tikv.types.FieldType;
-import com.pingcap.tikv.types.integer.ShortType;
+import com.pingcap.tikv.types.DataType;
+import com.pingcap.tikv.types.IntegerType;
 
 public class GreaterEqual extends TiBinaryFunctionExpresson {
     public GreaterEqual(TiExpr lhs, TiExpr rhs) {
@@ -37,7 +37,7 @@ public class GreaterEqual extends TiBinaryFunctionExpresson {
     }
 
     @Override
-    public FieldType getType() {
-        return ShortType.DEF_UNSIGNED_TYPE;
+    public DataType getType() {
+        return IntegerType.DEF_BOOLEAN_TYPE;
     }
 }

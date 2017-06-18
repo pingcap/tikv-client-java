@@ -16,13 +16,12 @@
 package com.pingcap.tikv.operation;
 
 
-import com.google.common.base.Optional;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.RegionManager;
 import com.pingcap.tikv.RegionStoreClient;
-import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.TiSession;
 import com.pingcap.tikv.codec.KeyUtils;
+import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.grpc.Kvrpcpb;
 import com.pingcap.tikv.grpc.Metapb;
 import com.pingcap.tikv.meta.TiRange;
@@ -31,18 +30,19 @@ import com.pingcap.tikv.util.Pair;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 public class ScanIterator implements Iterator<Kvrpcpb.KvPair> {
-    protected final Optional<TiRange<ByteString>> keyRange;
-    protected final int                           batchSize;
+    private final TiRange<ByteString> keyRange;
+    private final int                           batchSize;
     protected final TiSession                     session;
-    protected final RegionManager                 regionCache;
+    private final RegionManager                 regionCache;
     protected final long                          version;
 
-    protected List<Kvrpcpb.KvPair>                  currentCache;
+    private List<Kvrpcpb.KvPair>                  currentCache;
     protected ByteString                            startKey;
     protected int                                   index = -1;
-    protected boolean                               eof = false;
+    private boolean                               eof = false;
 
     public ScanIterator(ByteString startKey,
                         int batchSize,
@@ -52,7 +52,7 @@ public class ScanIterator implements Iterator<Kvrpcpb.KvPair> {
                         long version) {
         this.startKey = startKey;
         this.batchSize = batchSize;
-        this.keyRange = Optional.fromNullable(range);
+        this.keyRange = range;
         this.session = session;
         this.regionCache = rm;
         this.version = version;
@@ -110,11 +110,9 @@ public class ScanIterator implements Iterator<Kvrpcpb.KvPair> {
     }
 
     private boolean contains(ByteString key) {
-        if (keyRange.isPresent() &&
-                !keyRange.get().contains(key)) {
-            return false;
-        }
-        return true;
+        Optional<TiRange<ByteString>> opt = Optional.ofNullable(this.keyRange);
+        return !(opt.isPresent() &&
+                !opt.get().contains(key));
     }
 
     private Kvrpcpb.KvPair getCurrent() {

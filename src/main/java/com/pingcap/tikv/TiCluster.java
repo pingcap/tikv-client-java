@@ -15,16 +15,8 @@
 
 package com.pingcap.tikv;
 
-import com.google.common.collect.ImmutableList;
 import com.pingcap.tikv.catalog.Catalog;
-import com.pingcap.tikv.meta.Row;
-import com.pingcap.tikv.meta.TiDBInfo;
-import com.pingcap.tikv.meta.TiRange;
-import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.grpc.Pdpb.RequestHeader;
-
-import java.util.Iterator;
-import java.util.List;
 
 // Should be different per session thread
 public class TiCluster implements AutoCloseable {

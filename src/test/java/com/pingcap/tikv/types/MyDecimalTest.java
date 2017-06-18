@@ -1,4 +1,5 @@
 /*
+ *
  * Copyright 2017 PingCAP, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,10 +12,12 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package com.pingcap.tikv.codec;
+package com.pingcap.tikv.types;
 
+import com.pingcap.tikv.codec.MyDecimal;
 import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;

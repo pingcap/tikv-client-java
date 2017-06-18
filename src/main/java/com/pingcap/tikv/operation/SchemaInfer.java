@@ -16,8 +16,9 @@
 package com.pingcap.tikv.operation;
 
 import com.pingcap.tikv.meta.TiSelectRequest;
-import com.pingcap.tikv.types.FieldType;
-import com.pingcap.tikv.types.string.VarCharType;
+import com.pingcap.tikv.types.DataType;
+import com.pingcap.tikv.types.DataTypeFactory;
+import static com.pingcap.tikv.types.Types.*;
 import lombok.Getter;
 
 import java.util.ArrayList;
@@ -35,13 +36,13 @@ import java.util.List;
  */
 public class SchemaInfer {
     @Getter
-    private List<FieldType> fieldTypes;
+    private List<DataType> types;
     public static SchemaInfer create(TiSelectRequest tiSelectRequest) {
         return new SchemaInfer(tiSelectRequest);
     }
 
     public SchemaInfer(TiSelectRequest tiSelectRequest) {
-        fieldTypes = new ArrayList<>();
+        types = new ArrayList<>();
         extractFieldTypes(tiSelectRequest);
     }
 
@@ -53,13 +54,13 @@ public class SchemaInfer {
     private void extractFieldTypes(TiSelectRequest tiSelectRequest) {
         tiSelectRequest.getGroupBys().forEach(
                groupBy -> {
-                   fieldTypes.add(VarCharType.DEF_TYPE);
+                   types.add(DataTypeFactory.of(TYPE_VARCHAR));
                }
         );
 
         if (tiSelectRequest.getAggregates().size() > 0) {
             if(tiSelectRequest.getGroupBys().size() == 0) {
-                fieldTypes.add(VarCharType.DEF_TYPE);
+                types.add(DataTypeFactory.of(TYPE_VARCHAR));
             }
         }
 
@@ -68,18 +69,18 @@ public class SchemaInfer {
         // FieldType information.
         tiSelectRequest.getFields().forEach(
                 expr -> {
-                    fieldTypes.add(expr.getType());
+                    types.add(expr.getType());
                 }
         );
 
         tiSelectRequest.getAggregates().forEach(
                 expr -> {
-                    fieldTypes.add(expr.getType());
+                    types.add(expr.getType());
                 }
         );
     }
 
-    public FieldType getFieldType(int index) {
-        return fieldTypes.get(index);
+    public DataType getType(int index) {
+        return types.get(index);
     }
 }

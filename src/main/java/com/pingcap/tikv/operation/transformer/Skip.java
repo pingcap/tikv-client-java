@@ -17,11 +17,11 @@
 
 package com.pingcap.tikv.operation.transformer;
 
-import com.pingcap.tikv.types.FieldType;
+import com.pingcap.tikv.types.DataType;
 
 public class Skip extends NoOp {
-    public Skip(FieldType fieldType) {
-        super(fieldType);
+    public Skip(DataType type) {
+        super(type);
     }
 
     @Override

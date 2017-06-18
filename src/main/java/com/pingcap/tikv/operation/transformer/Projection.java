@@ -17,10 +17,10 @@
 
 package com.pingcap.tikv.operation.transformer;
 
-import com.pingcap.tikv.types.FieldType;
+import com.pingcap.tikv.types.DataType;
 
 public interface Projection {
     Object apply(Object obj);
     int size();
-    FieldType getFiledType();
+    DataType getType();
 }

@@ -1,4 +1,5 @@
 /*
+ *
  * Copyright 2017 PingCAP, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,16 +12,102 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package com.pingcap.tikv.codec;
+package com.pingcap.tikv.types;
 
+import com.pingcap.tikv.codec.CodecDataInput;
+import com.pingcap.tikv.codec.CodecDataOutput;
+import com.pingcap.tikv.codec.InvalidCodecFormatException;
+import com.pingcap.tikv.codec.TableCodec;
+import com.pingcap.tikv.exception.TiClientInternalException;
+import com.pingcap.tikv.row.Row;
+import com.pingcap.tikv.meta.TiColumnInfo;
 
-public class LongUtils {
-    public static final byte INT_FLAG = 3;
-    public static final byte UINT_FLAG = 4;
-    public static final byte VARINT_FLAG = 8;
-    public static final byte UVARINT_FLAG = 9;
+import static com.pingcap.tikv.types.Flags.*;
+import static com.pingcap.tikv.types.Types.*;
+
+/**
+ * Base class for all integer types: Tiny, Short, Medium, Int, Long and LongLong
+ */
+public class IntegerType extends DataType {
+
+    static IntegerType of(int tp) {
+       return new IntegerType(tp);
+    }
+
+    private IntegerType(int tp){
+        super(tp);
+    }
+
+    /**
+     * decode a int value from cdi to row per tp.
+     * @param cdi source of data.
+     * @param row destination of data
+     * @param pos position of row.
+     */
+    @Override
+    public void decode(CodecDataInput cdi, Row row, int pos) {
+        int flag = cdi.readUnsignedByte();
+        long val = decodeNotNullInternal(flag, cdi);
+        row.setLong(pos, val);
+    }
+
+    /**
+     * Encode a value to cdo.
+     * @param cdo destination of data.
+     * @param encodeType Key or Value.
+     * @param value need to be encoded.
+     */
+    @Override
+    public void encode(CodecDataOutput cdo, EncodeType encodeType, Object value) {
+        long val;
+        if (value instanceof Number) {
+            val = ((Number) value).longValue();
+        } else {
+            throw new UnsupportedOperationException("Cannot cast Un-number value to long");
+        }
+        boolean comparable = false;
+        if(encodeType == EncodeType.KEY) {
+            comparable = true;
+        }
+        switch (tp) {
+            case TYPE_SHORT:
+            case TYPE_INT24:
+            case TYPE_LONG:
+                writeLongFull(cdo, val, comparable);
+                break;
+            case TYPE_LONG_LONG:
+                writeULongFull(cdo, val, comparable);
+                break;
+        }
+    }
+
+    protected IntegerType(TiColumnInfo.InternalTypeHolder holder) {
+        super(holder);
+    }
+
+    private long decodeNotNullInternal(int flag, CodecDataInput cdi) {
+        switch (flag) {
+            case UVARINT_FLAG:
+                return readUVarLong(cdi);
+            case UINT_FLAG:
+                return readULong(cdi);
+            case VARINT_FLAG:
+                return readVarLong(cdi);
+            case INT_FLAG:
+                return readLong(cdi);
+            default:
+                throw new TiClientInternalException("Invalid " + toString() + " flag: " + flag);
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "ClassInt";
+    }
+
 
     /**
      * Encoding a long value to byte buffer with type flag at the beginning
@@ -82,7 +169,7 @@ public class LongUtils {
      * @param cdo For outputting data in bytes array
      * @param value The data to encode
      */
-    public static void writeVarLong(CodecDataOutput cdo, long value) {
+    private static void writeVarLong(CodecDataOutput cdo, long value) {
         long ux = value << 1;
         if (value < 0) {
             ux = ~ux;
@@ -95,7 +182,7 @@ public class LongUtils {
      * @param cdo For outputting data in bytes array
      * @param value The data to encode
      */
-    public static void writeUVarLong(CodecDataOutput cdo, long value) {
+    private static void writeUVarLong(CodecDataOutput cdo, long value) {
         while ((value - 0x80) >= 0) {
             cdo.writeByte((byte)value | 0x80);
             value >>>= 7;
@@ -110,7 +197,7 @@ public class LongUtils {
      * @exception InvalidCodecFormatException wrong format of binary encoding encountered
      */
     public static long readLongFully(CodecDataInput cdi) {
-        byte flag = cdi.readByte();
+        int flag = cdi.readByte();
 
         switch (flag) {
             case INT_FLAG:
@@ -164,7 +251,7 @@ public class LongUtils {
      * @param cdi source of data
      * @return decoded signed long value
      */
-    public static long readVarLong(CodecDataInput cdi) {
+    static long readVarLong(CodecDataInput cdi) {
         long ux = readUVarLong(cdi);
         long x = ux >>> 1;
         if ((ux & 1) != 0) {
@@ -194,4 +281,6 @@ public class LongUtils {
         }
         throw new InvalidCodecFormatException("readUVarLong encountered unfinished data");
     }
+
+    public final static IntegerType DEF_BOOLEAN_TYPE = new IntegerType(Types.TYPE_SHORT);
 }

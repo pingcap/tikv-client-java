@@ -20,6 +20,8 @@ import com.google.protobuf.ByteString;
 import com.pingcap.tikv.Snapshot;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.codec.*;
+import com.pingcap.tikv.types.IntegerType;
+import com.pingcap.tikv.types.BytesType;
 import com.pingcap.tikv.util.Pair;
 import com.pingcap.tikv.util.TiFluentIterable;
 
@@ -54,19 +56,19 @@ public class CatalogTransaction {
 
     private static void encodeStringDataKey(CodecDataOutput cdo, byte[] prefix, byte[] key) {
         cdo.write(prefix);
-        BytesUtils.writeBytes(cdo, key);
-        LongUtils.writeULong(cdo, STR_DATA_FLAG);
+        BytesType.writeBytes(cdo, key);
+        IntegerType.writeULong(cdo, STR_DATA_FLAG);
     }
 
     private static void encodeHashDataKey(CodecDataOutput cdo, byte[] prefix, byte[] key, byte[] field) {
         encodeHashDataKeyPrefix(cdo, prefix, key);
-        BytesUtils.writeBytes(cdo, field);
+        BytesType.writeBytes(cdo, field);
     }
 
     private static void encodeHashDataKeyPrefix(CodecDataOutput cdo, byte[] prefix, byte[] key) {
         cdo.write(prefix);
-        BytesUtils.writeBytes(cdo, key);
-        LongUtils.writeULong(cdo, HASH_DATA_FLAG);
+        BytesType.writeBytes(cdo, key);
+        IntegerType.writeULong(cdo, HASH_DATA_FLAG);
     }
 
     private Pair<ByteString, ByteString> decodeHashDataKey(ByteString rawKey) {
@@ -74,12 +76,12 @@ public class CatalogTransaction {
                     "invalid encoded hash data key prefix: " + new String(prefix));
         CodecDataInput cdi = new CodecDataInput(rawKey.toByteArray());
         cdi.skipBytes(prefix.length);
-        byte[] key = BytesUtils.readBytes(cdi);
-        long typeFlag = LongUtils.readULong(cdi);
+        byte[] key = BytesType.readBytes(cdi);
+        long typeFlag = IntegerType.readULong(cdi);
         if (typeFlag != HASH_DATA_FLAG) {
             throw new TiClientInternalException("Invalid hash data flag: " + typeFlag);
         }
-        byte[] field = BytesUtils.readBytes(cdi);
+        byte[] field = BytesType.readBytes(cdi);
         return Pair.create(ByteString.copyFrom(key), ByteString.copyFrom(field));
     }
 

@@ -21,7 +21,6 @@ java_library(
         "@org_apache_logging_log4j_log4j_api//jar",
         "@org_apache_logging_log4j_log4j_core//jar",
         "@org_projectlombok_lombok//jar",
-        "@joda_time//jar",
          "@net_sf_trove4j_trove4j//jar",
          ":lombok", 
     ],

@@ -41,7 +41,7 @@ public abstract class TiFunctionExpression implements TiExpr {
         builder.setTp(getExprType());
         builder.addAllChildren(TiFluentIterable
                 .from(args)
-                .transform(arg -> arg.toProto())
+                .transform(TiExpr::toProto)
         );
 
         return builder.build();
