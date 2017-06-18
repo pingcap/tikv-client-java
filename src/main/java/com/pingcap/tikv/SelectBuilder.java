@@ -2,15 +2,14 @@ package com.pingcap.tikv;
 
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
-import com.pingcap.tikv.codec.TableCodec;
-import com.pingcap.tikv.meta.TiSelectRequest;
-import lombok.Data;
 import com.pingcap.tidb.tipb.SelectRequest;
+import com.pingcap.tikv.codec.TableCodec;
 import com.pingcap.tikv.expression.TiByItem;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.meta.TiRange;
+import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.meta.TiTableInfo;
-import com.pingcap.tidb.tipb.ExprType;
+import lombok.Data;
 
 import java.util.Date;
 import java.util.List;

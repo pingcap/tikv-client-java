@@ -199,6 +199,11 @@ public class DataType {
        return (flag & OnUpdateNowFlag) > 0;
    }
 
+   public boolean needCast(Object val) {
+       // TODO: Add implementations
+       return false;
+   }
+
    @Override
    public String toString() {
        return this.getClass().getSimpleName();

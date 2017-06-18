@@ -24,8 +24,8 @@ import com.pingcap.tikv.meta.TiColumnInfo;
 import com.pingcap.tikv.meta.TiIndexColumn;
 import com.pingcap.tikv.meta.TiIndexInfo;
 import com.pingcap.tikv.meta.TiTableInfo;
-import com.pingcap.tikv.types.FieldType;
 import com.pingcap.tikv.predicates.RangeBuilder.IndexRange;
+import com.pingcap.tikv.types.DataType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,15 +55,15 @@ public class ScanBuilder {
     public static class IndexMatchingResult {
         public final List<TiExpr>       residualConditions;
         public final List<TiExpr>       accessPoints;
-        public final List<FieldType>    accessPointsTypes;
+        public final List<DataType>    accessPointsTypes;
         public final List<TiExpr>       accessConditions;
-        public final FieldType          rangeType;
+        public final DataType          rangeType;
 
         public IndexMatchingResult(List<TiExpr> residualConditions,
                                    List<TiExpr> accessPoints,
-                                   List<FieldType> accessPointsTypes,
+                                   List<DataType> accessPointsTypes,
                                    List<TiExpr> accessConditions,
-                                   FieldType rangeType) {
+                                   DataType rangeType) {
             this.residualConditions = residualConditions;
             this.accessPoints = accessPoints;
             this.accessPointsTypes = accessPointsTypes;
@@ -82,10 +82,10 @@ public class ScanBuilder {
         // 5. Push back index related filter if prefix index, for remaining filters
         // Equal conditions needs to be process first according to index sequence
         List<TiExpr> accessPoints = new ArrayList<>();
-        List<FieldType> accessPointTypes = new ArrayList<>();
+        List<DataType> accessPointTypes = new ArrayList<>();
         List<TiExpr> residualConditions = new ArrayList<>();
         List<TiExpr> accessConditions = new ArrayList<>();
-        FieldType accessConditionType = null;
+        DataType accessConditionType = null;
 
         for (int i = 0; i < index.getIndexColumns().size(); i++) {
             // for each index column try matches an equal condition
