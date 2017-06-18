@@ -18,7 +18,7 @@ package com.pingcap.tikv.expression.scalar;
 import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.expression.TiBinaryFunctionExpresson;
 import com.pingcap.tikv.expression.TiExpr;
-import com.pingcap.tikv.types.FieldType;
+import com.pingcap.tikv.types.DataType;
 
 public class RightShift extends TiBinaryFunctionExpresson {
     public RightShift(TiExpr lhs, TiExpr rhs) {
@@ -36,7 +36,7 @@ public class RightShift extends TiBinaryFunctionExpresson {
     }
 
     @Override
-    public FieldType getType() {
+    public DataType getType() {
         throw new UnsupportedOperationException();
     }
 }

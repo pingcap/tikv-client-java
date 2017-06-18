@@ -15,9 +15,8 @@
 
 package com.pingcap.tikv;
 
-import com.google.common.base.Optional;
 import com.pingcap.tikv.grpc.PDGrpc;
-import com.pingcap.tikv.grpc.Pdpb;
+import com.pingcap.tikv.grpc.Pdpb.*;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.Status;
@@ -26,23 +25,22 @@ import io.grpc.stub.StreamObserver;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.Deque;
+import java.util.Optional;
 import java.util.concurrent.LinkedBlockingDeque;
 
-import com.pingcap.tikv.grpc.Pdpb.*;
-
 public class PDMockServer extends PDGrpc.PDImplBase {
-    public int port;
+    int port;
     private long clusterId;
 
-    public Server server;
+    private Server server;
 
-    public void addGetMemberResp(GetMembersResponse r) {
-        getMembersResp.addLast(Optional.fromNullable(r));
+    void addGetMemberResp(GetMembersResponse r) {
+        getMembersResp.addLast(Optional.ofNullable(r));
     }
 
-    private final Deque<Optional<GetMembersResponse>> getMembersResp = new LinkedBlockingDeque<>();
+    private final Deque<java.util.Optional<GetMembersResponse>> getMembersResp = new LinkedBlockingDeque<java.util.Optional<GetMembersResponse>>();
     @Override
-    public void getMembers(Pdpb.GetMembersRequest request,
+    public void getMembers(GetMembersRequest request,
                            StreamObserver<GetMembersResponse> resp) {
         try {
             resp.onNext(getMembersResp.removeFirst().get());
@@ -59,7 +57,7 @@ public class PDMockServer extends PDGrpc.PDImplBase {
             private int logical = 0;
 
             @Override
-            public void onNext(Pdpb.TsoRequest value) {}
+            public void onNext(TsoRequest value) {}
 
             @Override
             public void onError(Throwable t) {}
@@ -72,7 +70,7 @@ public class PDMockServer extends PDGrpc.PDImplBase {
         };
     }
 
-    public void addGetRegionResp(GetRegionResponse r) {
+    void addGetRegionResp(GetRegionResponse r) {
         getRegionResp.addLast(r);
     }
 
@@ -88,7 +86,7 @@ public class PDMockServer extends PDGrpc.PDImplBase {
         }
     }
 
-    public void addGetRegionByIDResp(GetRegionResponse r) {
+    void addGetRegionByIDResp(GetRegionResponse r) {
         getRegionByIDResp.addLast(r);
     }
 
@@ -103,9 +101,10 @@ public class PDMockServer extends PDGrpc.PDImplBase {
         }
     }
 
-    public void addGetStoreResp(GetStoreResponse r) {
-        getStoreResp.addLast(Optional.fromNullable(r));
+    void addGetStoreResp(GetStoreResponse r) {
+        getStoreResp.addLast(Optional.ofNullable(r));
     }
+
     private final Deque<Optional<GetStoreResponse>> getStoreResp = new LinkedBlockingDeque<>();
     public void getStore(GetStoreRequest request,
                          StreamObserver<GetStoreResponse> resp) {
@@ -117,7 +116,7 @@ public class PDMockServer extends PDGrpc.PDImplBase {
         }
     }
 
-    public int start(long clusterId) throws IOException {
+    int start(long clusterId) throws IOException {
         try (ServerSocket s = new ServerSocket(0)) {
             port = s.getLocalPort();
         }
@@ -127,17 +126,17 @@ public class PDMockServer extends PDGrpc.PDImplBase {
                 .build()
                 .start();
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> PDMockServer.this.stop()));
+        Runtime.getRuntime().addShutdownHook(new Thread(PDMockServer.this::stop));
         return port;
     }
 
-    public void stop() {
+    void stop() {
         if (server != null) {
             server.shutdown();
         }
     }
 
-    public long getClusterId() {
+    long getClusterId() {
         return clusterId;
     }
 }

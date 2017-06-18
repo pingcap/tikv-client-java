@@ -1,4 +1,5 @@
 /*
+ *
  * Copyright 2017 PingCAP, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,11 +12,16 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package com.pingcap.tikv.meta;
+package com.pingcap.tikv.row;
 
-import com.pingcap.tikv.types.FieldType;
+import com.pingcap.tikv.types.DataType;
+
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.Date;
 
 // A dummy implementation of Row interface
 // Using non-memory compact format
@@ -106,13 +112,33 @@ public class ObjectRowImpl implements Row {
     }
 
     @Override
-    public void set(int pos, FieldType type, Object v) {
+    public void setTime(int pos, Time v) {
+        values[pos] = v;
+    }
+
+    @Override
+    public Date getTime(int pos) {
+        return (Date)values[pos];
+    }
+
+    @Override
+    public void setTimestamp(int pos, Timestamp v) {
+        values[pos] = v;
+    }
+
+    @Override
+    public Timestamp getTimestamp(int pos) {
+        return (Timestamp)values[pos];
+    }
+
+    @Override
+    public void set(int pos, DataType type, Object v) {
         // Ignore type for this implementation since no serialization happens
         values[pos] = v;
     }
 
     @Override
-    public Object get(int pos, FieldType type) {
+    public Object get(int pos, DataType type) {
         // Ignore type for this implementation since no serialization happens
         return values[pos];
     }

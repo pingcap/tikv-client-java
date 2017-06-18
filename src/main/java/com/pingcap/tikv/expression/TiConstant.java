@@ -18,13 +18,10 @@ package com.pingcap.tikv.expression;
 
 import com.pingcap.tidb.tipb.Expr;
 import com.pingcap.tidb.tipb.ExprType;
-import com.pingcap.tikv.codec.BytesUtils;
 import com.pingcap.tikv.codec.CodecDataOutput;
-import com.pingcap.tikv.codec.FloatingUtils;
-import com.pingcap.tikv.codec.LongUtils;
-import com.pingcap.tikv.types.FieldType;
-import com.pingcap.tikv.types.integer.LongType;
-import com.pingcap.tikv.types.string.VarCharType;
+import com.pingcap.tikv.types.*;
+
+import static com.pingcap.tikv.types.Types.*;
 
 public class TiConstant implements TiExpr {
     private Object value;
@@ -57,16 +54,16 @@ public class TiConstant implements TiExpr {
             builder.setTp(ExprType.Null);
         } else if (isIntegerType()) {
             builder.setTp(ExprType.Int64);
-            LongUtils.writeLong(cdo, ((Number)value).longValue());
+            IntegerType.writeLong(cdo, ((Number)value).longValue());
         } else if (value instanceof String) {
             builder.setTp(ExprType.String);
-            BytesUtils.writeBytes(cdo, ((String)value).getBytes());
+            BytesType.writeBytes(cdo, ((String)value).getBytes());
         } else if (value instanceof Float) {
             builder.setTp(ExprType.Float32);
-            FloatingUtils.writeFloat(cdo, (Float)value);
+            DecimalType.writeFloat(cdo, (Float)value);
         } else if (value instanceof Double) {
             builder.setTp(ExprType.Float64);
-            FloatingUtils.writeDouble(cdo, (Double)value);
+            DecimalType.writeDouble(cdo, (Double)value);
         } else {
             throw new TiExpressionException("Constant type not supported.");
         }
@@ -76,17 +73,17 @@ public class TiConstant implements TiExpr {
     }
 
     @Override
-    public FieldType getType() {
+    public DataType getType() {
         if (value == null) {
             throw new TiExpressionException("NULL constant has no type");
         } else if (isIntegerType()) {
-            return LongType.DEF_SIGNED_TYPE;
+            return DataTypeFactory.of(TYPE_LONG);
         } else if (value instanceof String) {
-            return VarCharType.DEF_TYPE;
+            return DataTypeFactory.of(TYPE_VARCHAR);
         } else if (value instanceof Float) {
-            throw new UnsupportedOperationException();
+            return DataTypeFactory.of(TYPE_FLOAT);
         } else if (value instanceof Double) {
-            throw new UnsupportedOperationException();
+            return DataTypeFactory.of(TYPE_NEW_DECIMAL);
         } else {
             throw new TiExpressionException("Constant type not supported.");
         }

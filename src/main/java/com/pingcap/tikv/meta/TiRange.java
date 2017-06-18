@@ -36,7 +36,7 @@ public class TiRange<E> implements Serializable {
     transient private Comparator<E> comparator;
 
     public static <T> TiRange<T> create(T l, T h, boolean lopen, boolean ropen, Comparator<T> c) {
-        return new TiRange(l, h, lopen, ropen, c);
+        return new TiRange<T>(l, h, lopen, ropen, c);
     }
 
     public static TiRange<Long> createLongRange(long l, long h, boolean lOpen, boolean rOpen) {
@@ -48,11 +48,11 @@ public class TiRange<E> implements Serializable {
     }
 
     public static <T extends Comparable<T>> TiRange<T> create(T l, T h) {
-        return new TiRange(l, h, false, true, Comparator.naturalOrder());
+        return new TiRange<T>(l, h, false, true, Comparator.naturalOrder());
     }
 
     public static <T> TiRange<T> create(T l, T h, Comparator<T> comp) {
-        return new TiRange(l, h, false, true, comp);
+        return new TiRange<T>(l, h, false, true, comp);
     }
 
     public static TiRange<ByteString> createByteStringRange(ByteString l, ByteString h) {

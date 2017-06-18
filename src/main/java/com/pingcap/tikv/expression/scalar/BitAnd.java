@@ -18,8 +18,9 @@ package com.pingcap.tikv.expression.scalar;
 import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.expression.TiBinaryFunctionExpresson;
 import com.pingcap.tikv.expression.TiExpr;
-import com.pingcap.tikv.types.integer.BooleanType;
-import com.pingcap.tikv.types.FieldType;
+import com.pingcap.tikv.types.DataType;
+import com.pingcap.tikv.types.IntegerType;
+import com.pingcap.tikv.types.Types;
 
 public class BitAnd extends TiBinaryFunctionExpresson {
     public BitAnd(TiExpr lhs, TiExpr rhs) {
@@ -37,7 +38,7 @@ public class BitAnd extends TiBinaryFunctionExpresson {
     }
 
     @Override
-    public FieldType getType() {
-        return BooleanType.DEF_BOOLEAN_TYPE;
+    public DataType getType() {
+        return IntegerType.DEF_BOOLEAN_TYPE;
     }
 }

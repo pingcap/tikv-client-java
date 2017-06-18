@@ -55,11 +55,11 @@ public class Catalog {
     }
 
     public TiDBInfo getDatabase(long id) {
-        return getDatabase(encodeDatabaseId(id));
+        return getDatabase(encodeDatabaseID(id));
     }
 
     public List<TiTableInfo> listTables(TiDBInfo db) {
-        ByteString dbKey = encodeDatabaseId(db.getId());
+        ByteString dbKey = encodeDatabaseID(db.getId());
         if (databaseExists(dbKey)) {
             throw new TiClientInternalException("Database not exists: " + db.getName());
         }
@@ -96,7 +96,7 @@ public class Catalog {
     }
 
     public TiTableInfo getTable(TiDBInfo database, long tableId) {
-        ByteString dbKey = encodeDatabaseId(database.getId());
+        ByteString dbKey = encodeDatabaseID(database.getId());
         if (!databaseExists(dbKey)) {
             return null;
         }
@@ -115,7 +115,7 @@ public class Catalog {
         return null;
     }
 
-    private static ByteString encodeDatabaseId(long id) {
+    private static ByteString encodeDatabaseID(long id) {
         return ByteString.copyFrom(String
                 .format("%s:%d", DB_PREFIX, id)
                 .getBytes());

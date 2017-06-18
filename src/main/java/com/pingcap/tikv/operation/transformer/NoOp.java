@@ -17,16 +17,16 @@
 
 package com.pingcap.tikv.operation.transformer;
 
-import com.pingcap.tikv.types.FieldType;
+import com.pingcap.tikv.types.DataType;
 
 /**
  * Noop is a base type projection, it basically do nothing.
  */
 public class NoOp implements Projection {
-    protected FieldType targetType;
+    protected DataType targetDataType;
 
-    public NoOp(FieldType fieldType) {
-        this.targetType = fieldType;
+    public NoOp(DataType dataType) {
+        this.targetDataType = dataType;
     }
 
     @Override
@@ -40,7 +40,7 @@ public class NoOp implements Projection {
     }
 
     @Override
-    public FieldType getFiledType() {
-        return targetType;
+    public DataType getType() {
+        return targetDataType;
     }
 }

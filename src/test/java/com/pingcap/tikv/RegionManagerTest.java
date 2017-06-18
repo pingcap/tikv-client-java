@@ -44,7 +44,7 @@ public class RegionManagerTest {
         server.stop();
     }
 
-    public PDClient createClient() {
+    private PDClient createClient() {
         server.addGetMemberResp(GrpcUtils.makeGetMembersResponse(
                 server.getClusterId(),
                 GrpcUtils.makeMember(1, "http://" + LOCAL_ADDR + ":" + server.port),
@@ -157,7 +157,7 @@ public class RegionManagerTest {
         try {
             mgr.getRegionById(regionId);
             fail();
-        } catch (Exception e) {}
+        } catch (Exception ignored) {}
     }
 
     @Test

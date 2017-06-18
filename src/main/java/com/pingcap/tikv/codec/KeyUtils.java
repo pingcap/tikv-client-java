@@ -18,12 +18,12 @@ package com.pingcap.tikv.codec;
 import com.google.protobuf.ByteString;
 
 public class KeyUtils {
-    public static final ByteString ZERO_BYTE = ByteString.copyFrom(new byte[]{0});
+    private static final ByteString ZERO_BYTE = ByteString.copyFrom(new byte[]{0});
     public static ByteString getNextKeyInByteOrder(ByteString key) {
         return key.concat(ZERO_BYTE);
     }
 
-    public static final boolean hasPrefix(ByteString str, ByteString prefix) {
+    public static boolean hasPrefix(ByteString str, ByteString prefix) {
         for (int i = 0; i < prefix.size(); i++) {
             if (str.byteAt(i) != prefix.byteAt(i)) {
                 return false;

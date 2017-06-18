@@ -1,4 +1,5 @@
 /*
+ *
  * Copyright 2017 PingCAP, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,11 +12,16 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package com.pingcap.tikv.meta;
+package com.pingcap.tikv.row;
 
-import com.pingcap.tikv.types.FieldType;
+import com.pingcap.tikv.types.DataType;
+
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.Date;
 
 // TODO: Mapping unsigned and other types
 // Even in case of mem-buffer-based row we can ignore field types
@@ -43,8 +49,14 @@ public interface Row {
     void        setString(int pos, String v);
     String      getString(int pos);
 
-    void        set(int pos, FieldType type, Object v);
-    Object      get(int pos, FieldType type);
+    void        setTime(int pos, Time v);
+    Date        getTime(int pos);
+
+    void        setTimestamp(int pos, Timestamp v);
+    Timestamp   getTimestamp(int pos);
+
+    void        set(int pos, DataType type, Object v);
+    Object      get(int pos, DataType type);
 
     int         fieldCount();
 }

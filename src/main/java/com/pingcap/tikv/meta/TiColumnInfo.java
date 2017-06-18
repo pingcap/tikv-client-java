@@ -18,28 +18,11 @@ package com.pingcap.tikv.meta;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.collect.ImmutableMap;
 import com.pingcap.tidb.tipb.ColumnInfo;
-import com.pingcap.tikv.exception.TiClientInternalException;
-import com.pingcap.tikv.types.*;
-import com.pingcap.tikv.types.blob.LongBlobType;
-import com.pingcap.tikv.types.blob.MediumBlobType;
-import com.pingcap.tikv.types.blob.TinyBlobType;
-import com.pingcap.tikv.types.floating.DecimalType;
-import com.pingcap.tikv.types.floating.DoubleType;
-import com.pingcap.tikv.types.floating.FloatType;
-import com.pingcap.tikv.types.integer.ShortType;
-import com.pingcap.tikv.types.integer.TinyIntType;
-import com.pingcap.tikv.types.integer.MediumIntType;
-import com.pingcap.tikv.types.integer.LongLongType;
-import com.pingcap.tikv.types.integer.LongType;
-import com.pingcap.tikv.types.string.BitType;
-import com.pingcap.tikv.types.string.CharType;
-import com.pingcap.tikv.types.string.TextType;
-import com.pingcap.tikv.types.string.VarCharType;
+import com.pingcap.tikv.types.DataType;
+import com.pingcap.tikv.types.DataTypeFactory;
 
 import java.util.List;
-import java.util.Map;
 
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -47,7 +30,7 @@ public class TiColumnInfo {
     private final long        id;
     private final String      name;
     private final int         offset;
-    private final FieldType   type;
+    private final DataType type;
     private final SchemaState schemaState;
     private final String      comment;
     private final boolean     isPrimaryKey;
@@ -64,7 +47,7 @@ public class TiColumnInfo {
         this.id = id;
         this.name = name.getL();
         this.offset = offset;
-        this.type = type.toFieldType();
+        this.type = type.toDataType();
         this.schemaState = SchemaState.fromValue(schemaState);
         this.comment = comment;
         // I don't think pk flag should be set on type
@@ -88,7 +71,7 @@ public class TiColumnInfo {
         return this.offset;
     }
 
-    public FieldType getType() {
+    public DataType getType() {
         return type;
     }
 
@@ -104,17 +87,6 @@ public class TiColumnInfo {
         return isPrimaryKey;
     }
 
-    /*Only for test*/
-    public static final InternalTypeHolder DEF_INT_INTERNALTYPE = new InternalTypeHolder(LongType.DEF_SIGNED_TYPE.getTypeCode(),
-            LongType.DEF_SIGNED_TYPE.getFlag(), LongType.DEF_SIGNED_TYPE.getLength(), LongType.DEF_SIGNED_TYPE.getDecimal(),
-            "", "" + LongType.DEF_SIGNED_TYPE.getCollationCode(), LongType.DEF_SIGNED_TYPE.getElems());
-
-    /*Only for test*/
-    public static final InternalTypeHolder DEF_STR_INTERNALTYPE = new InternalTypeHolder(VarCharType.DEF_TYPE.getTypeCode(),
-            VarCharType.DEF_TYPE.getFlag(), VarCharType.DEF_TYPE.getLength(), VarCharType.DEF_TYPE.getDecimal(),
-            "", "" + VarCharType.DEF_TYPE.getCollationCode(), VarCharType.DEF_TYPE.getElems());
-
-
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class InternalTypeHolder {
         private final int          tp;
@@ -125,29 +97,8 @@ public class TiColumnInfo {
         private final String       collate;
         private final List<String> elems;
 
-        interface Builder<E extends FieldType> {
+        interface Builder<E extends DataType> {
             E build(InternalTypeHolder holder);
-        }
-
-        private static Map<Integer, Builder<? extends FieldType>> typeBuilder;
-        static {
-            typeBuilder = ImmutableMap.<Integer, Builder<? extends FieldType>>builder()
-                    .put(TinyIntType.TYPE_CODE, TinyIntType::new)
-                    .put(ShortType.TYPE_CODE, ShortType::new)
-                    .put(MediumIntType.TYPE_CODE, MediumIntType::new)
-                    .put(LongType.TYPE_CODE, LongType::new)
-                    .put(LongLongType.TYPE_CODE, LongLongType::new)
-                    .put(VarCharType.TYPE_CODE, VarCharType::new)
-                    .put(CharType.TYPE_CODE, CharType::new)
-                    .put(TextType.TYPE_CODE, TextType::new)
-                    .put(DecimalType.TYPE_CODE, DecimalType::new)
-                    .put(FloatType.TYPE_CODE, FloatType::new)
-                    .put(DoubleType.TYPE_CODE, DoubleType::new)
-                    .put(BitType.TYPE_CODE, BitType::new)
-                    .put(TinyBlobType.TYPE_CODE, TinyBlobType::new)
-                    .put(MediumBlobType.TYPE_CODE, MediumBlobType::new)
-                    .put(LongBlobType.TYPE_CODE, LongBlobType::new)
-                    .build();
         }
 
         @JsonCreator
@@ -205,12 +156,10 @@ public class TiColumnInfo {
             return elems;
         }
 
-        public FieldType toFieldType() {
-            Builder<? extends FieldType> builder = typeBuilder.get(getTp());
-            if (builder == null) {
-                throw new TiClientInternalException("Invalid Field Type code: " + getTp());
-            }
-            return builder.build(this);
+        public DataType toDataType() {
+            DataType dataType =  DataTypeFactory.of(tp);
+            dataType.setFlag(flag);
+            return dataType;
         }
     }
 
