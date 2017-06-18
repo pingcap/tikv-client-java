@@ -63,89 +63,93 @@ public class DataType {
             .put(UVARINT_FLAG, "UVARINT")
             .build();
 
-    protected DataType(TiColumnInfo.InternalTypeHolder holder) {
-        this.tp = holder.getTp();
-        this.flag = holder.getFlag();
-        this.length = holder.getFlen();
-        this.collation = Collation.translate(holder.getCollate());
-        this.elems = holder.getElems() == null ?
-                ImmutableList.of() : holder.getElems();
-    }
+   protected DataType(TiColumnInfo.InternalTypeHolder holder) {
+       this.tp = holder.getTp();
+       this.flag = holder.getFlag();
+       this.length = holder.getFlen();
+       this.collation = Collation.translate(holder.getCollate());
+       this.elems = holder.getElems() == null ?
+               ImmutableList.of() : holder.getElems();
+   }
 
-    protected DataType() {
-        this.flag = 0;
-        this.elems = ImmutableList.of();
-        this.length = UNSPECIFIED_LEN;
-        this.collation = Collation.DEF_COLLATION_CODE;
-    }
+   protected DataType() {
+       this.flag = 0;
+       this.elems = ImmutableList.of();
+       this.length = UNSPECIFIED_LEN;
+       this.collation = Collation.DEF_COLLATION_CODE;
+   }
 
 
-    protected DataType(int tp) {
-        this.tp = tp;
-        this.flag = 0;
-        this.elems = ImmutableList.of();
-        this.length = UNSPECIFIED_LEN;
-        this.collation = Collation.DEF_COLLATION_CODE;
-    }
+   protected DataType(int tp) {
+       this.tp = tp;
+       this.flag = 0;
+       this.elems = ImmutableList.of();
+       this.length = UNSPECIFIED_LEN;
+       this.collation = Collation.DEF_COLLATION_CODE;
+   }
 
-    protected DataType(int flag, int length, String collation, List<String> elems, int tp) {
-        this.tp = tp;
-        this.flag = flag;
-        this.length = length;
-        this.collation = Collation.translate(collation);
-        this.elems = elems == null ? ImmutableList.of() : elems;
-        this.tp = tp;
-    }
+   protected DataType(int flag, int length, String collation, List<String> elems, int tp) {
+       this.tp = tp;
+       this.flag = flag;
+       this.length = length;
+       this.collation = Collation.translate(collation);
+       this.elems = elems == null ? ImmutableList.of() : elems;
+       this.tp = tp;
+   }
 
-    protected boolean isNullFlag(int flag) {
+   protected boolean isNullFlag(int flag) {
         return flag == NULL_FLAG;
     }
 
-    /**
-     * decode a null value from row which is nothing.
-     * @param cdi source of data.
-     * @param row destination of data
-     * @param pos position of row.
-     */
-    public void decode(CodecDataInput cdi, Row row, int pos) {
-    }
+   /**
+    * decode a null value from row which is nothing.
+    * @param cdi source of data.
+    * @param row destination of data
+    * @param pos position of row.
+    */
+   public void decode(CodecDataInput cdi, Row row, int pos) {
+   }
 
-    /**
-     * encode a Row to CodecDataOutput
-     * @param cdo destination of data.
-     * @param encodeType Key or Value.
-     * @param value need to be encoded.
-     */
-    public void encode(CodecDataOutput cdo, EncodeType encodeType, Object value) {
+   /**
+    * encode a Row to CodecDataOutput
+    * @param cdo destination of data.
+    * @param encodeType Key or Value.
+    * @param value need to be encoded.
+    */
+   public void encode(CodecDataOutput cdo, EncodeType encodeType, Object value) {
         cdo.writeByte(NULL_FLAG);
     }
 
-    public int getCollationCode() {
+   public int getCollationCode() {
         return collation;
     }
 
-    public int getLength() {
+   public int getLength() {
         return length;
     }
 
-    public int getDecimal() {
+   public int getDecimal() {
         return UNSPECIFIED_LEN;
     }
 
-    public void setFlag(int flag) {
+   public void setFlag(int flag) {
         this.flag = flag;
     }
-    public int getFlag() {
+   public int getFlag() {
         return flag;
     }
 
-    public List<String> getElems() {
+   public List<String> getElems() {
         return this.elems;
     }
 
-    public int getTypeCode() {
+   public int getTypeCode() {
         return tp;
     }
+
+   public static boolean hasNullFlag(int flag) {
+       return (flag & NotNullFlag) > 0;
+   }
 
    public static boolean hasNoDefaultFlag(int flag) {
        return (flag & NoDefaultValueFlag) > 0;

@@ -73,9 +73,5 @@ public class Types {
     public static final int  GroupFlag          = 32768;  /* Intern: Group field */
     public static final int BinCmpFlag         = 131072; /* Intern: Used by sql_yacc */
 
-    public static boolean hasNullFlag(int flag) {
-       return (flag & NotNullFlag) > 0;
-    }
-
 
 }
