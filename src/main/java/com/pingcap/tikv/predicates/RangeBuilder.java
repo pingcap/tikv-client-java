@@ -118,8 +118,6 @@ public class RangeBuilder {
                                                 ImmutableList.<DataType>builder()
                                                         .addAll(types)
                                                         .add(type);
-                newAccessPoints.add(p);
-                newTypes.add(type);
 
                 result.add(new IndexRange(newAccessPoints.build(), newTypes.build()));
             }

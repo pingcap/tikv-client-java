@@ -79,7 +79,7 @@ public class AccessConditionNormalizer {
                 return new NotEqual(expr.getArg(1), expr.getArg(0));
             }
         }
-        return null;
+        return expr;
     }
 
     public static class NormalizedCondition {

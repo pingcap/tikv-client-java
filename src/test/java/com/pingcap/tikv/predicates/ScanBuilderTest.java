@@ -45,7 +45,7 @@ public class ScanBuilderTest {
         TiColumnInfo c2 = new TiColumnInfo(
                 2,
                 "c2",
-                0,
+                1,
                 DataTypeFactory.of(Types.TYPE_STRING),
                 false);
 
