@@ -69,16 +69,6 @@ public class BytesType extends DataType {
         }
     }
 
-    public String decodeNotNull(int flag, CodecDataInput cdi) {
-        if (flag == COMPACT_BYTES_FLAG) {
-            return new String(readCompactBytes(cdi));
-        } else if (flag == BYTES_FLAG) {
-            return new String(readBytes(cdi));
-        } else {
-            throw new InvalidCodecFormatException("Invalid Flag type for String type: " + typeNameMap.get(flag));
-        }
-    }
-
     private static final int GRP_SIZE = 8;
     private static final byte[] PADS = new byte[GRP_SIZE];
     private static final int MARKER = 0xFF;
