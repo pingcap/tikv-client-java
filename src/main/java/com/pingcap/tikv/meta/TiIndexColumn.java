@@ -53,4 +53,10 @@ public class TiIndexColumn {
     public boolean matchName(String otherName) {
         return name.equalsIgnoreCase(otherName);
     }
+
+    @Override
+    public String toString() {
+        return String.format("%s {name: %s, offset: %d, length: %d}",
+                             getClass().getSimpleName(), name, offset, length);
+    }
 }
