@@ -27,19 +27,31 @@ import com.pingcap.tikv.meta.TiColumnInfo;
 import java.util.List;
 import java.util.Map;
 
-import static com.pingcap.tikv.types.Flags.*;
 import static com.pingcap.tikv.types.Types.*;
 
 /**
  * Base Type for encoding and decoding TiDB row information.
  */
 public class DataType {
-     public enum EncodeType {
-        KEY,
-        VALUE
+    public enum EncodeType {
+       KEY,
+       VALUE
     }
     public static final int UNSPECIFIED_LEN = -1;
 
+    // encoding/decoding flag
+    static final int NULL_FLAG = 0;
+    static final int BYTES_FLAG = 1;
+    static final int COMPACT_BYTES_FLAG = 2;
+    static final int INT_FLAG = 3;
+    static final int UINT_FLAG = 4;
+    static final int FLOATING_FLAG = 5;
+    static final int DECIMAL_FLAG = 6;
+    static final int DURATION_FLAG = 7;
+    static final int VARINT_FLAG = 8;
+    static final int UVARINT_FLAG = 9;
+    private static final int JSON_FLAG = 10;
+    private static final int MAX_FLAG = 250;
     // MySQL type
     protected int           tp;
     // Not Encode/Decode flag, this is used to strict mysql type
