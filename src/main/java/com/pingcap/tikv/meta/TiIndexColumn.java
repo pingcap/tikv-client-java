@@ -17,7 +17,7 @@ package com.pingcap.tikv.meta;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.pingcap.tikv.types.FieldType;
+import com.pingcap.tikv.types.DataType;
 
 
 public class TiIndexColumn {
@@ -47,7 +47,7 @@ public class TiIndexColumn {
     }
 
     public boolean isPrefixIndex() {
-        return length != FieldType.UNSPECIFIED_LEN;
+        return length != DataType.UNSPECIFIED_LEN;
     }
 
     public boolean matchName(String otherName) {

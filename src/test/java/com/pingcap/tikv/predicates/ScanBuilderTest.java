@@ -21,6 +21,9 @@ import com.pingcap.tikv.expression.TiConstant;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.expression.scalar.Equal;
 import com.pingcap.tikv.meta.*;
+import com.pingcap.tikv.types.DataTypeFactory;
+import com.pingcap.tikv.types.IntegerType;
+import com.pingcap.tikv.types.Types;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -34,18 +37,17 @@ public class ScanBuilderTest {
     public void buildScan() throws Exception {
         TiColumnInfo c1 = new TiColumnInfo(
                 1,
-                CIStr.newCIStr("c1"),
+                "c1",
                 0,
-                TiColumnInfo.DEF_INT_INTERNALTYPE,
-                0,
-                "");
+                DataTypeFactory.of(Types.TYPE_LONG),
+                true);
+
         TiColumnInfo c2 = new TiColumnInfo(
                 2,
-                CIStr.newCIStr("c2"),
+                "c2",
                 0,
-                TiColumnInfo.DEF_STR_INTERNALTYPE,
-                0,
-                "");
+                DataTypeFactory.of(Types.TYPE_STRING),
+                false);
 
 
         TiIndexInfo index = new TiIndexInfo(
