@@ -23,8 +23,6 @@ import com.pingcap.tikv.codec.InvalidCodecFormatException;
 import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
 
-import static com.pingcap.tikv.types.Flags.FLOATING_FLAG;
-
 public class RealType extends DataType {
     private static final long signMask = 0x8000000000000000L;
 

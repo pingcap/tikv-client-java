@@ -25,7 +25,6 @@ import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
 
-import static com.pingcap.tikv.types.Flags.*;
 import static com.pingcap.tikv.types.Types.*;
 
 /**
