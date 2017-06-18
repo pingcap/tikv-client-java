@@ -25,8 +25,6 @@ import com.pingcap.tikv.row.Row;
 import java.util.Arrays;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.pingcap.tikv.types.Flags.BYTES_FLAG;
-import static com.pingcap.tikv.types.Flags.COMPACT_BYTES_FLAG;
 
 public class BytesType extends DataType {
 
