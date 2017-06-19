@@ -26,7 +26,7 @@ import java.util.List;
 
 /**
  * SchemaInfer extract row's type after query is executed.
- * It is pretty rough version for. Optimization is on the way.
+ * It is pretty rough version. Optimization is on the way.
  * The problem we have right now is that TiDB promote Sum to Decimal which is
  * not compatible with column's type.
  * The solution we come up with right now is use record column's type ad finalFieldType
@@ -54,11 +54,13 @@ public class SchemaInfer {
     private void extractFieldTypes(TiSelectRequest tiSelectRequest) {
         tiSelectRequest.getGroupBys().forEach(
                groupBy -> {
-                   types.add(DataTypeFactory.of(TYPE_VARCHAR));
+                   types.add(groupBy.getExpr().getType());
                }
         );
 
         if (tiSelectRequest.getAggregates().size() > 0) {
+            // In some cases, aggregates come without group by clause, we need add a dummy
+            // single group for it.
             if(tiSelectRequest.getGroupBys().size() == 0) {
                 types.add(DataTypeFactory.of(TYPE_VARCHAR));
             }
