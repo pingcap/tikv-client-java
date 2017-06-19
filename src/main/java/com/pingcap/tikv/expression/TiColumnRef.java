@@ -76,4 +76,8 @@ public class TiColumnRef implements TiExpr {
     public String getName() {
         return this.columnInfo.getName();
     }
+
+    public TiColumnInfo getColumnInfo() {
+        return columnInfo;
+    }
 }

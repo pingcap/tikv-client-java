@@ -17,8 +17,8 @@ import java.util.logging.Logger;
 public class Main {
     public static void main(String[] args) throws Exception {
         // May need to save this reference
-//        Logger log = Logger.getLogger("io.grpc");
-//        log.setLevel(Level.WARNING);
+        Logger log = Logger.getLogger("io.grpc");
+        log.setLevel(Level.WARNING);
         TiConfiguration conf = TiConfiguration.createDefault(ImmutableList.of("127.0.0.1:" + 2379));
         TiCluster cluster = TiCluster.getCluster(conf);
         Catalog cat = cluster.getCatalog();
@@ -26,16 +26,17 @@ public class Main {
         TiTableInfo table = cat.getTable(db, "t1");
         Snapshot snapshot = cluster.createSnapshot();
 
-        TiExpr c1 = TiColumnRef.create("time", table);
-        TiExpr sum = new Sum(c1);
-        TiByItem groupBy = TiByItem.create(c1, false);
+        TiExpr number = TiColumnRef.create("number", table);
+        TiExpr name = TiColumnRef.create("name", table);
+        TiExpr sum = new Sum(number);
+        TiByItem groupBy = TiByItem.create(name, false);
         // TiExpr first = new First(s1);
-        //select s1 from t1;
         SelectBuilder sb = SelectBuilder.newBuilder(snapshot, table);
         sb.addRange(TiRange.create(0L, Long.MAX_VALUE));
-        // sb.addAggregate(sum);
-        sb.addField(c1);
-        // sb.addGroupBy(groupBy);
+        //select name, sum(number) from t1 group by name;
+        sb.addAggregate(sum);
+        sb.addField(name);
+        sb.addGroupBy(groupBy);
 
         Iterator<Row> it = snapshot.select(sb);
 

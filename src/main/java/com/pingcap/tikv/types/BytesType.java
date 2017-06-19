@@ -44,7 +44,7 @@ public class BytesType extends DataType {
         } else if (flag == BYTES_FLAG) {
             row.setString(pos, new String(readBytes(cdi)));
         } else {
-            throw new InvalidCodecFormatException("Invalid Flag type for  ClassString: " + typeNameMap.get(flag));
+            throw new InvalidCodecFormatException("Invalid Flag type for : " + flag);
         }
     }
 

@@ -15,6 +15,8 @@
 
 package com.pingcap.tikv.operation;
 
+import com.pingcap.tikv.expression.TiColumnRef;
+import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.DataTypeFactory;
@@ -22,7 +24,9 @@ import static com.pingcap.tikv.types.Types.*;
 import lombok.Getter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * SchemaInfer extract row's type after query is executed.
@@ -41,7 +45,7 @@ public class SchemaInfer {
         return new SchemaInfer(tiSelectRequest);
     }
 
-    public SchemaInfer(TiSelectRequest tiSelectRequest) {
+    private SchemaInfer(TiSelectRequest tiSelectRequest) {
         types = new ArrayList<>();
         extractFieldTypes(tiSelectRequest);
     }
@@ -52,9 +56,11 @@ public class SchemaInfer {
      * @param tiSelectRequest is SelectRequest
      */
     private void extractFieldTypes(TiSelectRequest tiSelectRequest) {
+        Set<TiExpr> groupByColumnRefSet = new HashSet<>();
         tiSelectRequest.getGroupBys().forEach(
                groupBy -> {
                    types.add(groupBy.getExpr().getType());
+                   groupByColumnRefSet.add(groupBy.getExpr());
                }
         );
 
@@ -71,7 +77,9 @@ public class SchemaInfer {
         // FieldType information.
         tiSelectRequest.getFields().forEach(
                 expr -> {
-                    types.add(expr.getType());
+                    if (!groupByColumnRefSet.contains(expr)) {
+                        types.add(expr.getType());
+                    }
                 }
         );
 
