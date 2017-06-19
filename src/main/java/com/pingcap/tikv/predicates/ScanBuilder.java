@@ -39,7 +39,7 @@ public class ScanBuilder {
 
         List<Range> ranges = rangeBuilder.exprToRanges(result.accessConditions, result.rangeType);
 
-        irs = IndexRange.appendRanges(irs, ranges);
+        irs = IndexRange.appendRanges(irs, ranges, result.rangeType);
 
         List<KeyRange> keyRanges = buildKeyRange(irs);
     }

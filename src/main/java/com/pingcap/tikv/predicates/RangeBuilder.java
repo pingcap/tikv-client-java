@@ -124,13 +124,13 @@ public class RangeBuilder {
             return result;
         }
 
-        public static List<IndexRange> appendRanges(List<IndexRange> indexRanges, List<Range> ranges) {
+        public static List<IndexRange> appendRanges(List<IndexRange> indexRanges, List<Range> ranges, DataType rangeType) {
             requireNonNull(indexRanges);
             requireNonNull(ranges);
             List<IndexRange> resultRanges = new ArrayList<>();
             for (IndexRange ir : indexRanges) {
                 for (Range r : ranges) {
-                    resultRanges.add(new IndexRange(ir.getAccessPoints(), ir.getTypes(), r, ir.getRangeType()));
+                    resultRanges.add(new IndexRange(ir.getAccessPoints(), ir.getTypes(), r, rangeType));
                 }
             }
             return resultRanges;
@@ -186,17 +186,18 @@ public class RangeBuilder {
     public List<Range> exprToRanges(List<TiExpr> accessConditions, DataType type) {
         RangeSet ranges = TreeRangeSet.create();
         ranges.add(Range.all());
-        for (TiExpr expr : accessConditions) {
-            NormalizedCondition cond = AccessConditionNormalizer.normalize(expr);
+        for (TiExpr ac : accessConditions) {
+            NormalizedCondition cond = AccessConditionNormalizer.normalize(ac);
             TiConstant constVal = cond.constantVals.get(0);
             Comparable<?> comparableVal = Comparables.wrap(constVal.getValue());
-            Range r = null;
+            TiExpr expr = cond.condition;
+
             if (expr instanceof GreaterThan) {
                 ranges = ranges.subRangeSet(Range.greaterThan(comparableVal));
             } else if (expr instanceof GreaterEqual) {
-                ranges.subRangeSet(Range.atLeast(comparableVal));
+                ranges = ranges.subRangeSet(Range.atLeast(comparableVal));
             } else if (expr instanceof LessThan) {
-                ranges.subRangeSet(Range.lessThan(comparableVal));
+                ranges = ranges.subRangeSet(Range.lessThan(comparableVal));
             } else if (expr instanceof LessEqual) {
                 ranges = ranges.subRangeSet(Range.atMost(comparableVal));
             } else if (expr instanceof Equal) {
