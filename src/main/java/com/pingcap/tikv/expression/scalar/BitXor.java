@@ -39,6 +39,6 @@ public class BitXor extends TiBinaryFunctionExpresson {
 
     @Override
     public DataType getType() {
-        return IntegerType.DEF_BOOLEAN_TYPE;
+        throw new UnsupportedOperationException();
     }
 }
