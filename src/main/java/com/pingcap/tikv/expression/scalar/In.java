@@ -15,15 +15,20 @@
 
 package com.pingcap.tikv.expression.scalar;
 
+import com.google.common.collect.Lists;
 import com.pingcap.tidb.tipb.ExprType;
+import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.expression.TiFunctionExpression;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.IntegerType;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
+
 public class In extends TiFunctionExpression {
-    public In(TiExpr...arg) {
-        super(arg);
+    public In(TiExpr...args) {
+        super(args);
     }
 
     @Override
@@ -38,6 +43,9 @@ public class In extends TiFunctionExpression {
 
     @Override
     protected void validateArguments(TiExpr... args) throws RuntimeException {
+        requireNonNull(args, "Expressions cannot be null");
+        checkArgument(args.length >= 2,
+                    "Value list cannot be empty for In Expression");
     }
 
     @Override

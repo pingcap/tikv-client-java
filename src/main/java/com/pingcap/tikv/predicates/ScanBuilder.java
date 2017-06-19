@@ -55,9 +55,9 @@ public class ScanBuilder {
     public static class IndexMatchingResult {
         public final List<TiExpr>       residualConditions;
         public final List<TiExpr>       accessPoints;
-        public final List<DataType>    accessPointsTypes;
+        public final List<DataType>     accessPointsTypes;
         public final List<TiExpr>       accessConditions;
-        public final DataType          rangeType;
+        public final DataType           rangeType;
 
         public IndexMatchingResult(List<TiExpr> residualConditions,
                                    List<TiExpr> accessPoints,

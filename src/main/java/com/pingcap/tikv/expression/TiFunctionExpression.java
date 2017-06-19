@@ -17,12 +17,15 @@ package com.pingcap.tikv.expression;
 
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.ImmutableList;
 import com.pingcap.tidb.tipb.Expr;
 import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.util.TiFluentIterable;
 
 import java.util.List;
+import java.util.Objects;
 
 public abstract class TiFunctionExpression implements TiExpr {
 
@@ -59,5 +62,10 @@ public abstract class TiFunctionExpression implements TiExpr {
 
     public abstract String getName();
 
-    protected abstract void validateArguments(TiExpr... args) throws RuntimeException;
+    protected void validateArguments(TiExpr... args) throws RuntimeException {
+        requireNonNull(args, "Expressions cannot be null");
+        for (TiExpr expr : args) {
+            requireNonNull(expr, "Expressions cannot be null.");
+        }
+    }
 }
