@@ -34,6 +34,7 @@ public class TiColumnRef implements TiExpr {
         }
         return columnInfo;
     }
+
     public static TiColumnRef create(String name, TiTableInfo table) {
         TiColumnInfo columnInfo = getColumnWithName(name, table);
         if (columnInfo == null) {

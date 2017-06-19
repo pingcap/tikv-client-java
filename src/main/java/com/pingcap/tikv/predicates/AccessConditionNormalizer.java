@@ -30,6 +30,12 @@ import java.util.List;
 
 
 public class AccessConditionNormalizer {
+    /**
+     * Validate an expression that if it is a valid predicate for access condition
+     * An access condition is an expression can be turn into access point or range
+     * @param expr expression to test
+     * @return
+     */
     public static boolean validate(TiExpr expr) {
         if (expr instanceof TiFunctionExpression) {
             TiFunctionExpression func = (TiFunctionExpression)expr;
@@ -72,7 +78,7 @@ public class AccessConditionNormalizer {
             } else if (expr instanceof LessThan) {
                 return new GreaterThan(expr.getArg(1), expr.getArg(0));
             } else if (expr instanceof LessEqual) {
-                return new LessThan(expr.getArg(1), expr.getArg(0));
+                return new GreaterEqual(expr.getArg(1), expr.getArg(0));
             } else if (expr instanceof Equal) {
                 return new Equal(expr.getArg(1), expr.getArg(0));
             } else if (expr instanceof NotEqual) {
@@ -108,9 +114,8 @@ public class AccessConditionNormalizer {
             if (func instanceof In) {
                 ImmutableList.Builder<TiConstant> vals = ImmutableList.builder();
                 for (int i = 1; i < func.getArgSize(); i++) {
-                    if (!(func.getArg(i) instanceof TiConstant)) {
-                        vals.add((TiConstant) func.getArg(i));
-                    }
+                    // Checked already
+                    vals.add((TiConstant) func.getArg(i));
                 }
                 return new NormalizedCondition((TiColumnRef) func.getArg(0),
                         vals.build(), func);
