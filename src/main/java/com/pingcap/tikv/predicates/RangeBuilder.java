@@ -32,22 +32,17 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 public class RangeBuilder {
-    private static Object checkAndExtractConst(TiConstant constVal, DataType type) {
-        if (type.needCast(constVal.getValue())) {
-            throw new TiClientInternalException("Casting not allowed: " + constVal + " to type " + type);
-        }
-        return constVal.getValue();
-    }
-
     /**
      * Turn access conditions into list of points
-     * All access conditions are bound to single key
+     * Each condition is bound to single key
+     * We pick up single condition for each index key
+     * and disregard if multiple EQ conditions in DNF
      * @param accessPoints expressions that convertible to access points
      * @param types index column types
      * @return access points for each index
      */
     public List<IndexRange> exprsToPoints(List<TiExpr> accessPoints,
-                                            List<DataType> types) {
+                                          List<DataType> types) {
         requireNonNull(accessPoints, "accessPoints cannot be null");
         requireNonNull(types, "Types cannot be null");
         checkArgument(accessPoints.size() == types.size(),
@@ -73,20 +68,26 @@ public class RangeBuilder {
         private Range               range;
         private DataType           rangeType;
 
-        public IndexRange(List<Object> accessPoints, List<DataType> types, Range range, DataType rangeType) {
+        private IndexRange(List<Object> accessPoints, List<DataType> types, Range range, DataType rangeType) {
             this.accessPoints = accessPoints;
             this.types = types;
             this.range = range;
             this.rangeType = rangeType;
         }
 
-        public IndexRange(List<Object> accessPoints, List<DataType> types) {
+        private IndexRange(List<Object> accessPoints, List<DataType> types) {
             this.accessPoints = accessPoints;
             this.types = types;
             this.range = null;
         }
 
-        public static List<IndexRange> appendPointsForSingleCondition(
+        private IndexRange() {
+            this.accessPoints = ImmutableList.of();
+            this.types = ImmutableList.of();
+            this.range = null;
+        }
+
+        private static List<IndexRange> appendPointsForSingleCondition(
                                                     List<IndexRange> indexRanges,
                                                     List<Object> points,
                                                     DataType type) {
@@ -96,17 +97,16 @@ public class RangeBuilder {
 
             List<IndexRange> resultRanges = new ArrayList<>();
             if (indexRanges.size() == 0) {
-                resultRanges.add(new IndexRange(points, ImmutableList.of(type)));
-                return resultRanges;
+                indexRanges.add(new IndexRange());
             }
 
             for (IndexRange ir : indexRanges) {
-                resultRanges.addAll(ir.appendPoint(points, type));
+                resultRanges.addAll(ir.appendPoints(points, type));
             }
             return resultRanges;
         }
 
-        private List<IndexRange> appendPoint(List<Object> points, DataType type) {
+        private List<IndexRange> appendPoints(List<Object> points, DataType type) {
             List<IndexRange> result = new ArrayList<>();
             for (Object p : points) {
                 ImmutableList.Builder<Object> newAccessPoints =
@@ -211,5 +211,12 @@ public class RangeBuilder {
             }
         }
         return ImmutableList.copyOf(ranges.asRanges());
+    }
+
+    private Object checkAndExtractConst(TiConstant constVal, DataType type) {
+        if (type.needCast(constVal.getValue())) {
+            throw new TiClientInternalException("Casting not allowed: " + constVal + " to type " + type);
+        }
+        return constVal.getValue();
     }
 }
