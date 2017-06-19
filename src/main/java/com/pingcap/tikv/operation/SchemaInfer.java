@@ -79,6 +79,7 @@ public class SchemaInfer {
         tiSelectRequest.getFields().forEach(
                 expr -> {
                         exprs.forEach(exp -> {
+                            // if group by and field share same expression, then just skip this.
                             if(!exp.equals(expr)) {
                                 types.add(expr.getType());
                             }
