@@ -19,6 +19,7 @@ public class Main {
         // May need to save this reference
         Logger log = Logger.getLogger("io.grpc");
         log.setLevel(Level.WARNING);
+
         TiConfiguration conf = TiConfiguration.createDefault(ImmutableList.of("127.0.0.1:" + 2379));
         TiCluster cluster = TiCluster.getCluster(conf);
         Catalog cat = cluster.getCatalog();

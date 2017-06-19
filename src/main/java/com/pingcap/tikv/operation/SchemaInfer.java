@@ -17,6 +17,7 @@ package com.pingcap.tikv.operation;
 
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiExpr;
+import com.pingcap.tikv.meta.TiColumnInfo;
 import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.DataTypeFactory;
@@ -56,11 +57,11 @@ public class SchemaInfer {
      * @param tiSelectRequest is SelectRequest
      */
     private void extractFieldTypes(TiSelectRequest tiSelectRequest) {
-        Set<TiExpr> groupByColumnRefSet = new HashSet<>();
+        List<TiExpr> exprs = new ArrayList<>();
         tiSelectRequest.getGroupBys().forEach(
                groupBy -> {
+                   exprs.add(groupBy.getExpr());
                    types.add(groupBy.getExpr().getType());
-                   groupByColumnRefSet.add(groupBy.getExpr());
                }
         );
 
@@ -77,9 +78,11 @@ public class SchemaInfer {
         // FieldType information.
         tiSelectRequest.getFields().forEach(
                 expr -> {
-                    if (!groupByColumnRefSet.contains(expr)) {
-                        types.add(expr.getType());
-                    }
+                        exprs.forEach(exp -> {
+                            if(!exp.equals(expr)) {
+                                types.add(expr.getType());
+                            }
+                        });
                 }
         );
 
