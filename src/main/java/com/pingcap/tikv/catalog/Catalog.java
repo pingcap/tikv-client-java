@@ -131,7 +131,7 @@ public class Catalog {
         return getDatabase(dbKey) == null;
     }
 
-    private static <T> T parseFromJson(ByteString json, Class<T> cls) {
+    public static <T> T parseFromJson(ByteString json, Class<T> cls) {
         logger.debug("Parse Json %s : %s", cls.getSimpleName(), json.toStringUtf8());
         ObjectMapper mapper = new ObjectMapper();
         try {

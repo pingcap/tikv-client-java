@@ -40,7 +40,6 @@ import java.util.Set;
  * the same type or not. If yes, no need for casting. If no, casting is needed here.
  */
 public class SchemaInfer {
-    @Getter
     private List<DataType> types;
     public static SchemaInfer create(TiSelectRequest tiSelectRequest) {
         return new SchemaInfer(tiSelectRequest);
@@ -78,12 +77,16 @@ public class SchemaInfer {
         // FieldType information.
         tiSelectRequest.getFields().forEach(
                 expr -> {
+                    if (exprs.size() > 0) {
                         exprs.forEach(exp -> {
                             // if group by and field share same expression, then just skip this.
                             if(!exp.equals(expr)) {
                                 types.add(expr.getType());
                             }
                         });
+                    } else {
+                        types.add(expr.getType());
+                    }
                 }
         );
 
@@ -97,4 +100,9 @@ public class SchemaInfer {
     public DataType getType(int index) {
         return types.get(index);
     }
+
+    public List<DataType> getTypes() {
+        return types;
+    }
+
 }

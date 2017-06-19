@@ -35,8 +35,6 @@ public class TiSelectRequest {
     private IndexInfo indexInfo;
     private final List<TiExpr> fields = new ArrayList<>();
     private final List<TiExpr> where = new ArrayList<>();
-    private final List<TiByItem> groupBys = new ArrayList<>();
-    private final List<TiByItem> orderBys = new ArrayList<>();
     private final List<TiExpr> aggregates = new ArrayList<>();
     private int limit;
     private int timeZoneOffset;
@@ -44,6 +42,10 @@ public class TiSelectRequest {
     private long startTs;
     private TiExpr having;
     private boolean distinct;
+
+    public TiSelectRequest(SelectRequest.Builder builder) {
+        this.builder = builder;
+    }
 
     public SelectRequest build() {
         List<TiColumnInfo> colToAdd = new ArrayList<>();
@@ -85,5 +87,28 @@ public class TiSelectRequest {
             columnInfos.add(((TiColumnRef)expr).getColumnInfo());
         }
         return columnInfos;
+    }
+
+    public List<TiExpr> getFields() {
+        return fields;
+    }
+    public List<TiByItem> getGroupBys() {
+        return groupBys;
+    }
+
+    private final List<TiByItem> groupBys = new ArrayList<>();
+
+    public List<TiByItem> getOrderBys() {
+        return orderBys;
+    }
+
+    private final List<TiByItem> orderBys = new ArrayList<>();
+
+    public List<TiExpr> getAggregates() {
+        return aggregates;
+    }
+
+    public List<TiExpr> getWhere() {
+        return where;
     }
   }
