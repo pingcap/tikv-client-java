@@ -19,10 +19,7 @@ import com.google.common.collect.ImmutableList;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiConstant;
 import com.pingcap.tikv.expression.TiExpr;
-import com.pingcap.tikv.expression.scalar.And;
-import com.pingcap.tikv.expression.scalar.Equal;
-import com.pingcap.tikv.expression.scalar.In;
-import com.pingcap.tikv.expression.scalar.Or;
+import com.pingcap.tikv.expression.scalar.*;
 import com.pingcap.tikv.meta.MetaUtils;
 import com.pingcap.tikv.meta.TiIndexColumn;
 import com.pingcap.tikv.meta.TiIndexInfo;
@@ -36,10 +33,8 @@ import static org.junit.Assert.assertTrue;
 
 
 public class IndexMatcherTest {
-    @Test
-    public void match() throws Exception {
-        MetaUtils.TableBuilder tableBuilder = new MetaUtils.TableBuilder();
-        TiTableInfo table = tableBuilder
+    private static TiTableInfo createTable() {
+        return new MetaUtils.TableBuilder()
                 .name("testTable")
                 .addColumn("c1", DataTypeFactory.of(Types.TYPE_LONG), true)
                 .addColumn("c2", DataTypeFactory.of(Types.TYPE_STRING))
@@ -47,6 +42,11 @@ public class IndexMatcherTest {
                 .addColumn("c4", DataTypeFactory.of(Types.TYPE_TINY))
                 .appendIndex("testIndex", ImmutableList.of("c1", "c2"), false)
                 .build();
+    }
+
+    @Test
+    public void matchOnlyEq() throws Exception {
+        TiTableInfo table = createTable();
         TiIndexInfo index = table.getIndices().get(0);
         TiIndexColumn col = index.getIndexColumns().get(0);
         IndexMatcher matcher = new IndexMatcher(col, true);
@@ -73,6 +73,56 @@ public class IndexMatcherTest {
         cond = new Or(
                 new Equal(TiConstant.create(1), TiColumnRef.create("c1", table)),
                 new Equal(TiColumnRef.create("c1", table), TiConstant.create(2))
+        );
+        assertTrue(matcher.match(cond));
+
+        cond = new In(
+                TiColumnRef.create("c1", table),
+                TiConstant.create(1),
+                TiConstant.create(2)
+        );
+        assertTrue(matcher.match(cond));
+
+        cond = new In(
+                new Equal(TiColumnRef.create("c1", table), TiConstant.create(2)),
+                TiConstant.create(1),
+                TiConstant.create(2)
+        );
+        assertFalse(matcher.match(cond));
+
+        cond = new LessEqual(TiConstant.create(0), TiColumnRef.create("c1", table));
+        assertFalse(matcher.match(cond));
+    }
+
+    @Test
+    public void matchAll() throws Exception {
+        TiTableInfo table = createTable();
+        TiIndexInfo index = table.getIndices().get(0);
+        TiIndexColumn col = index.getIndexColumns().get(0);
+        IndexMatcher matcher = new IndexMatcher(col, false);
+
+        // index col = c1, long
+        TiExpr cond = new LessEqual(TiColumnRef.create("c1", table), TiConstant.create(1));
+        assertTrue(matcher.match(cond));
+
+        cond = new GreaterEqual(TiConstant.create(1), TiColumnRef.create("c1", table));
+        assertTrue(matcher.match(cond));
+
+        cond = new LessThan(TiColumnRef.create("c2", table), TiColumnRef.create("c1", table));
+        assertFalse(matcher.match(cond));
+
+        cond = new LessThan(TiConstant.create(1), TiConstant.create(1));
+        assertFalse(matcher.match(cond));
+
+        cond = new And(
+                new LessThan(TiConstant.create(1), TiColumnRef.create("c1", table)),
+                new LessThan(TiColumnRef.create("c1", table), TiConstant.create(2))
+        );
+        assertTrue(matcher.match(cond));
+
+        cond = new Or(
+                new LessThan(TiConstant.create(1), TiColumnRef.create("c1", table)),
+                new LessThan(TiColumnRef.create("c1", table), TiConstant.create(2))
         );
         assertTrue(matcher.match(cond));
 
