@@ -122,6 +122,22 @@ public class DataType {
    public void decode(CodecDataInput cdi, Row row, int pos) {
    }
 
+    /**
+     * encode max value.
+     * @param cdo destination of data.
+     */
+   public void encodeMaxValue(CodecDataOutput cdo) {
+       cdo.writeByte(MAX_FLAG);
+   }
+
+    /**
+     * encode min value.
+     * @param cdo destination of data.
+     */
+    public void encodeMinValue(CodecDataOutput cdo) {
+        cdo.writeByte(BYTES_FLAG);
+    }
+
    /**
     * encode a Row to CodecDataOutput
     * @param cdo destination of data.

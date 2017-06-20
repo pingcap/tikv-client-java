@@ -17,10 +17,39 @@ package com.pingcap.tikv.codec;
 
 import com.google.protobuf.ByteString;
 
+import java.util.Arrays;
+
 public class KeyUtils {
     private static final ByteString ZERO_BYTE = ByteString.copyFrom(new byte[]{0});
+
     public static ByteString getNextKeyInByteOrder(ByteString key) {
         return key.concat(ZERO_BYTE);
+    }
+
+    public static byte[] getNextKeyInByteOrder(byte[] key) {
+        return Arrays.copyOf(key, key.length + 1);
+    }
+
+    /**
+     * returns the next prefix key.
+     * Original bytes will be reused if possible
+     * @param key key to encode
+     * @return
+     */
+    public static byte[] prefixNext(byte[] key) {
+        int i;
+        for (i = key.length - 1; i >= 0; i--) {
+            int b = key[i] & 0xff;
+            if (b != 255) {
+                b ++;
+                key[i] = (byte)b;
+                break;
+            }
+        }
+        if (i == -1) {
+            return getNextKeyInByteOrder(key);
+        }
+        return key;
     }
 
     public static boolean hasPrefix(ByteString str, ByteString prefix) {

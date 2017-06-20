@@ -17,8 +17,13 @@ package com.pingcap.tikv.predicates;
 
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.BoundType;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
+import com.google.protobuf.ByteString;
 import com.pingcap.tidb.tipb.KeyRange;
+import com.pingcap.tikv.codec.CodecDataOutput;
+import com.pingcap.tikv.codec.KeyUtils;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.meta.TiColumnInfo;
 import com.pingcap.tikv.meta.TiIndexColumn;
@@ -41,15 +46,71 @@ public class ScanBuilder {
 
         irs = IndexRange.appendRanges(irs, ranges, result.rangeType);
 
-        List<KeyRange> keyRanges = buildKeyRange(irs);
+        List<KeyRange> keyRanges = buildKeyRange(table, index, irs);
     }
 
-    private List<KeyRange> buildKeyRange(List<IndexRange> indexRanges) {
-        List<Object> keyPrefix = new ArrayList<>();
+    private List<KeyRange> buildKeyRange(TiTableInfo table, TiIndexInfo index, List<IndexRange> indexRanges) {
+        ImmutableList.Builder<KeyRange> ranges = ImmutableList.builder();
         for (IndexRange ir : indexRanges) {
-            // ir.getAccessPoints()
+            CodecDataOutput cdo = new CodecDataOutput();
+            List<Object> values = ir.getAccessPoints();
+            List<DataType> types = ir.getTypes();
+            for (int i = 0; i < values.size(); i++) {
+                Object v = values.get(i);
+                DataType t = types.get(i);
+                t.encode(cdo, DataType.EncodeType.KEY, v);
+            }
+
+            byte[] pointsData = cdo.toBytes();
+
+            cdo.reset();
+            Range r = ir.getRange();
+            DataType type = ir.getRangeType();
+            byte[] lKey;
+            if (!r.hasLowerBound()) {
+                // -INF
+                type.encodeMinValue(cdo);
+                lKey = cdo.toBytes();
+            } else {
+                Object lb = r.lowerEndpoint();
+                type.encode(cdo, DataType.EncodeType.KEY, lb);
+                lKey = cdo.toBytes();
+                if (r.lowerBoundType().equals(BoundType.OPEN)) {
+                    lKey = KeyUtils.prefixNext(lKey);
+                }
+            }
+
+            byte[] uKey;
+            cdo.reset();
+            if (!r.hasUpperBound()) {
+                // INF
+                type.encodeMaxValue(cdo);
+                uKey = cdo.toBytes();
+            } else {
+                Object ub = r.upperEndpoint();
+                type.encode(cdo, DataType.EncodeType.KEY, ub);
+                uKey = cdo.toBytes();
+                if (r.upperBoundType().equals(BoundType.CLOSED)) {
+                    uKey = KeyUtils.prefixNext(lKey);
+                }
+            }
+
+            ByteString lbsKey = ByteString
+                                    .copyFrom(pointsData)
+                                    .concat(ByteString.copyFrom(lKey));
+            ByteString ubsKey = ByteString
+                                    .copyFrom(pointsData)
+                                    .concat(ByteString.copyFrom(uKey));
+
+            ranges.add(
+                    KeyRange.newBuilder()
+                    .setLow(lbsKey)
+                    .setHigh(ubsKey)
+                    .build()
+            );
         }
-        return null;
+
+        return ranges.build();
     }
 
     public static class IndexMatchingResult {
