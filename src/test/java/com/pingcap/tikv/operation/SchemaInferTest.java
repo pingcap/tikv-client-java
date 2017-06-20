@@ -18,8 +18,6 @@
 package com.pingcap.tikv.operation;
 
 import com.google.protobuf.ByteString;
-import com.pingcap.tidb.tipb.SelectRequest;
-import com.pingcap.tikv.SelectBuilder;
 import com.pingcap.tikv.catalog.Catalog;
 import com.pingcap.tikv.expression.TiByItem;
 import com.pingcap.tikv.expression.TiColumnRef;
@@ -51,7 +49,7 @@ public class SchemaInferTest {
     @Test
     public void simpleSelectSchemaInferTest() throws Exception {
         // select name from t1;
-        TiSelectRequest selectRequest = new TiSelectRequest(SelectRequest.newBuilder());
+        TiSelectRequest selectRequest = new TiSelectRequest();
         selectRequest.getFields().add(name);
         List<DataType> dataTypes = SchemaInfer.create(selectRequest).getTypes();
         Assert.assertSame(1, dataTypes.size());
@@ -62,7 +60,7 @@ public class SchemaInferTest {
     public void selectAggSchemaInferTest() throws Exception {
         // select sum(number) from t1;
         // SingleGroup is added as dummy variable.
-        TiSelectRequest selectRequest = new TiSelectRequest(SelectRequest.newBuilder());
+        TiSelectRequest selectRequest = new TiSelectRequest();
         selectRequest.getAggregates().add(sum);
         List<DataType> dataTypes = SchemaInfer.create(selectRequest).getTypes();
         Assert.assertSame(2, dataTypes.size());
@@ -72,7 +70,19 @@ public class SchemaInferTest {
 
     @Test
     public void selectAggWithGroupBySchemaInferTest() throws Exception {
-        TiSelectRequest selectRequest = new TiSelectRequest(SelectRequest.newBuilder());
+        TiSelectRequest selectRequest = new TiSelectRequest();
+        selectRequest.getFields().add(name);
+        selectRequest.getAggregates().add(sum);
+        selectRequest.getGroupBys().add(groupBy);
+        List<DataType> dataTypes = SchemaInfer.create(selectRequest).getTypes();
+        Assert.assertSame(2, dataTypes.size());
+        Assert.assertSame(DataTypeFactory.of(TYPE_VARCHAR), dataTypes.get(0));
+        Assert.assertSame(DataTypeFactory.of(TYPE_NEW_DECIMAL), dataTypes.get(1));
+    }
+
+    @Test
+    public void SchemaInferGroupByComplexTest() {
+        TiSelectRequest selectRequest = new TiSelectRequest();
         selectRequest.getFields().add(name);
         selectRequest.getAggregates().add(sum);
         selectRequest.getGroupBys().add(groupBy);

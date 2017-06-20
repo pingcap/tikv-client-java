@@ -49,7 +49,7 @@ public class SelectBuilder {
     this.snapshot = snapshot;
     this.rangeListBuilder = ImmutableList.builder();
     this.table = table;
-    this.tiSelectReq = new TiSelectRequest(SelectRequest.newBuilder());
+    this.tiSelectReq = new TiSelectRequest();
 
     long flags = 0;
     if (getConf().isIgnoreTruncate()) {

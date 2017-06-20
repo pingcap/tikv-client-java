@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 
 @Data
 public class TiSelectRequest {
-    private final SelectRequest.Builder builder;
+    private final SelectRequest.Builder builder = SelectRequest.newBuilder();
     private TiTableInfo tableInfo;
     private IndexInfo indexInfo;
     private final List<TiExpr> fields = new ArrayList<>();
@@ -42,10 +42,6 @@ public class TiSelectRequest {
     private long startTs;
     private TiExpr having;
     private boolean distinct;
-
-    public TiSelectRequest(SelectRequest.Builder builder) {
-        this.builder = builder;
-    }
 
     public SelectRequest build() {
         List<TiColumnInfo> colToAdd = new ArrayList<>();
