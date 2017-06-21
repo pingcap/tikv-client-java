@@ -61,20 +61,6 @@ public class DataType {
     protected int           length;
     private   List<String> elems;
 
-
-   static final Map<Integer, String> typeNameMap = ImmutableMap.<Integer, String>builder()
-            .put(NULL_FLAG, "NULL")
-            .put(BYTES_FLAG, "STRING")
-            .put(COMPACT_BYTES_FLAG, "STRING")
-            .put(INT_FLAG, "INT")
-            .put(UINT_FLAG, "UINT")
-            .put(FLOATING_FLAG, "FLOAT")
-            .put(DECIMAL_FLAG, "DECIMAL")
-            .put(DURATION_FLAG, "Duration")
-            .put(VARINT_FLAG, "VARINT")
-            .put(UVARINT_FLAG, "UVARINT")
-            .build();
-
    protected DataType(TiColumnInfo.InternalTypeHolder holder) {
        this.tp = holder.getTp();
        this.flag = holder.getFlag();
