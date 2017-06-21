@@ -36,7 +36,8 @@ public class TiColumnInfo {
     private final String      comment;
     private final boolean     isPrimaryKey;
 
-    private static final int PK_MASK = 0x2;
+    @VisibleForTesting
+    public static final int PK_MASK = 0x2;
 
     @JsonCreator
     public TiColumnInfo(@JsonProperty("id")long                   id,

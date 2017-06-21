@@ -34,7 +34,7 @@ public class RealType extends DataType {
         super(tp);
     }
 
-    public RealType(TiColumnInfo.InternalTypeHolder holder) {
+    RealType(TiColumnInfo.InternalTypeHolder holder) {
         super(holder);
     }
 

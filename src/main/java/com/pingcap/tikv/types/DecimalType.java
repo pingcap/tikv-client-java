@@ -35,7 +35,7 @@ public class DecimalType extends DataType {
         super(tp);
     }
 
-    public DecimalType(TiColumnInfo.InternalTypeHolder holder) {
+    DecimalType(TiColumnInfo.InternalTypeHolder holder) {
         super(holder);
     }
 

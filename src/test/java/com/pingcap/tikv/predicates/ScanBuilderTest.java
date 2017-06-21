@@ -25,7 +25,6 @@ import com.pingcap.tikv.meta.MetaUtils;
 import com.pingcap.tikv.meta.TiColumnInfo.InternalTypeHolder;
 import com.pingcap.tikv.meta.TiIndexInfo;
 import com.pingcap.tikv.meta.TiTableInfo;
-import com.pingcap.tikv.types.BytesType;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.DataTypeFactory;
 import com.pingcap.tikv.types.Types;
@@ -57,7 +56,7 @@ public class ScanBuilderTest {
                 "",
                 ImmutableList.of());
 
-        DataType typePrefix = new BytesType(holder);
+        DataType typePrefix = DataTypeFactory.of(holder);
         return new MetaUtils.TableBuilder()
                 .name("testTable")
                 .addColumn("c1", DataTypeFactory.of(Types.TYPE_LONG), true)
@@ -65,6 +64,7 @@ public class ScanBuilderTest {
                 .addColumn("c3", DataTypeFactory.of(Types.TYPE_STRING))
                 .addColumn("c4", DataTypeFactory.of(Types.TYPE_TINY))
                 .appendIndex("testIndex", ImmutableList.of("c1", "c2", "c3"), false)
+                .setPkHandle(true)
                 .build();
     }
 
@@ -116,6 +116,35 @@ public class ScanBuilderTest {
         assertEquals(2, result.accessPoints.size());
         assertEquals(eq1, result.accessPoints.get(0));
         assertEquals(eq2, result.accessPoints.get(1));
+
+        assertEquals(0, result.accessConditions.size());
+    }
+
+    @Test
+    public void extractConditionsWithPrimaryKey() throws Exception {
+        TiTableInfo table = createTableWithPrefix();
+        TiIndexInfo index = TiIndexInfo.generateFakePrimaryKeyIndex(table);
+        assertEquals(1, index.getIndexColumns().size());
+        assertEquals("c1", index.getIndexColumns().get(0).getName());
+
+        TiExpr eq1 = new Equal(TiColumnRef.create("c1", table), TiConstant.create(0));
+        TiExpr eq2 = new Equal(TiColumnRef.create("c2", table), TiConstant.create("test"));
+        TiExpr le1 = new LessEqual(TiColumnRef.create("c3", table), TiConstant.create("fxxx"));
+        // Last one should be pushed back
+        TiExpr eq3 = new Equal(TiColumnRef.create("c4", table), TiConstant.create("fxxx"));
+
+        List<TiExpr> exprs = ImmutableList.of(eq1, eq2, le1, eq3);
+
+        ScanBuilder.IndexMatchingResult result = ScanBuilder.extractConditions(exprs, table, index);
+
+        // 3 remains since c2 condition pushed back as well
+        assertEquals(3, result.residualConditions.size());
+        assertEquals(eq2, result.residualConditions.get(0));
+        assertEquals(le1, result.residualConditions.get(1));
+        assertEquals(eq3, result.residualConditions.get(2));
+
+        assertEquals(1, result.accessPoints.size());
+        assertEquals(eq1, result.accessPoints.get(0));
 
         assertEquals(0, result.accessConditions.size());
     }

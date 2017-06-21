@@ -136,22 +136,4 @@ public class TiTableInfo {
         }
         return null;
     }
-
-    public TiIndexInfo getFakePkIndex() {
-        TiColumnInfo pkColumn = getPrimaryKeyColumn();
-        if (pkColumn != null) {
-            return new TiIndexInfo(
-                    -1,
-                    CIStr.newCIStr("fake_pk"),
-                    CIStr.newCIStr(getName()),
-                    ImmutableList.of(pkColumn.toIndexColumn()),
-                    true,
-                    true,
-                    SchemaState.StatePublic.getStateCode(),
-                    "Fake Column",
-                    IndexType.IndexTypeHash.getTypeCode()
-            );
-        }
-        return null;
-    }
 }

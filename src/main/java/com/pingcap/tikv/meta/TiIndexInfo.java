@@ -18,10 +18,14 @@ package com.pingcap.tikv.meta;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.pingcap.tidb.tipb.IndexInfo;
 import com.pingcap.tikv.util.TiFluentIterable;
 
 import java.util.List;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 public class TiIndexInfo {
     private final long                  id;
@@ -33,6 +37,7 @@ public class TiIndexInfo {
     private final SchemaState           schemaState;
     private final String                comment;
     private final IndexType             indexType;
+    private final boolean               isFakePrimaryKey;
 
     @JsonCreator
     public TiIndexInfo(@JsonProperty("id")long                       id,
@@ -43,7 +48,8 @@ public class TiIndexInfo {
                        @JsonProperty("is_primary")boolean            isPrimary,
                        @JsonProperty("state")int                     schemaState,
                        @JsonProperty("comment")String                comment,
-                       @JsonProperty("index_type")int                indexType) {
+                       @JsonProperty("index_type")int                indexType,
+                                                  boolean            isFakePrimaryKey) {
         this.id = id;
         this.name = name.getL();
         this.tableName = tableName.getL();
@@ -53,6 +59,26 @@ public class TiIndexInfo {
         this.schemaState = SchemaState.fromValue(schemaState);
         this.comment = comment;
         this.indexType = IndexType.fromValue(indexType);
+        this.isFakePrimaryKey = isFakePrimaryKey;
+    }
+
+    public static TiIndexInfo generateFakePrimaryKeyIndex(TiTableInfo table) {
+        TiColumnInfo pkColumn = table.getPrimaryKeyColumn();
+        if (pkColumn != null) {
+            return new TiIndexInfo(
+                    -1,
+                    CIStr.newCIStr("fake_pk_" + table.getId()),
+                    CIStr.newCIStr(table.getName()),
+                    ImmutableList.of(pkColumn.toIndexColumn()),
+                    true,
+                    true,
+                    SchemaState.StatePublic.getStateCode(),
+                    "Fake Column",
+                    IndexType.IndexTypeHash.getTypeCode(),
+                    true
+            );
+        }
+        return null;
     }
 
     public long getId() {
@@ -110,5 +136,9 @@ public class TiIndexInfo {
                     .forEach(col -> builder.addColumns(col));
         }
         return builder.build();
+    }
+
+    public boolean isFakePrimaryKey() {
+        return isFakePrimaryKey;
     }
 }

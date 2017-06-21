@@ -37,7 +37,7 @@ public class TimestampType extends DataType {
         super(tp);
     }
 
-    public TimestampType(TiColumnInfo.InternalTypeHolder holder) {
+    TimestampType(TiColumnInfo.InternalTypeHolder holder) {
         super(holder);
     }
 

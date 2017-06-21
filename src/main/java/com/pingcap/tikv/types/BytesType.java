@@ -33,7 +33,7 @@ public class BytesType extends DataType {
         return new BytesType(tp);
     }
 
-    public BytesType(TiColumnInfo.InternalTypeHolder holder) {
+    BytesType(TiColumnInfo.InternalTypeHolder holder) {
         super(holder);
     }
 

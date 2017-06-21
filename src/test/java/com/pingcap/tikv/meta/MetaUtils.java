@@ -86,13 +86,15 @@ public class MetaUtils {
                     isPk,
                     SchemaState.StatePublic.getStateCode(),
                     "",
-                    IndexType.IndexTypeBtree.getTypeCode()
+                    IndexType.IndexTypeBtree.getTypeCode(),
+                    false
             );
             indices.add(index);
             return this;
         }
 
-        public TableBuilder setPkHandle() {
+        public TableBuilder setPkHandle(boolean pkHandle) {
+            this.pkHandle = pkHandle;
             return this;
         }
 

@@ -40,7 +40,7 @@ public class IntegerType extends DataType {
         super(tp);
     }
 
-    public IntegerType(TiColumnInfo.InternalTypeHolder holder) {
+    IntegerType(TiColumnInfo.InternalTypeHolder holder) {
         super(holder);
     }
 
