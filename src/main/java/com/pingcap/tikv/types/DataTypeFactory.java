@@ -18,8 +18,10 @@
 package com.pingcap.tikv.types;
 
 import com.google.common.collect.ImmutableMap;
+import com.pingcap.tikv.meta.TiColumnInfo.InternalTypeHolder;
 
 import java.util.Map;
+import java.util.function.Function;
 
 import static com.pingcap.tikv.types.Types.*;
 
@@ -27,7 +29,7 @@ import static com.pingcap.tikv.types.Types.*;
  * Create DataType according to Type Flag.
  */
 public class DataTypeFactory {
-    // TODO add a test for testing mapping relationship
+    // TODO: the type system still needs another overhaul
     private static final Map<Integer, DataType> dataTypeMap = ImmutableMap.<Integer, DataType>builder()
             .put(TYPE_NULL, new DataType(TYPE_NULL))
             .put(TYPE_TINY, IntegerType.of(TYPE_TINY))
@@ -58,11 +60,49 @@ public class DataTypeFactory {
             .put(TYPE_GEOMETRY, BytesType.of(TYPE_GEOMETRY))
             .build();
 
+    private static final Map<Integer, Function<InternalTypeHolder, DataType>>
+            dataTypeCreatorMap = ImmutableMap.<Integer, Function<InternalTypeHolder, DataType>>builder()
+                .put(TYPE_TINY, h -> new IntegerType(h))
+                .put(TYPE_SHORT, h -> new IntegerType(h))
+                .put(TYPE_LONG, h -> new IntegerType(h))
+                .put(TYPE_INT24, h -> new IntegerType(h))
+                .put(TYPE_LONG_LONG, h -> new IntegerType(h))
+                .put(TYPE_YEAR, h -> new IntegerType(h))
+                .put(TYPE_BIT, h -> new IntegerType(h))
+                .put(TYPE_NEW_DECIMAL, h -> new DecimalType(h))
+                .put(TYPE_FLOAT, h -> new RealType(h))
+                .put(TYPE_DOUBLE, h -> new RealType(h))
+                .put(TYPE_DURATION, h -> new TimestampType(h))
+                .put(TYPE_DATETIME, h -> new TimestampType(h))
+                .put(TYPE_TIMESTAMP, h -> new TimestampType(h))
+                .put(TYPE_NEW_DATE, h -> new TimestampType(h))
+                .put(TYPE_DATE, h -> new TimestampType(h))
+                .put(TYPE_VARCHAR, h -> new BytesType(h))
+                .put(TYPE_JSON, h -> new BytesType(h))
+                .put(TYPE_ENUM, h -> new BytesType(h))
+                .put(TYPE_SET, h -> new BytesType(h))
+                .put(TYPE_TINY_BLOB, h -> new BytesType(h))
+                .put(TYPE_MEDIUM_BLOB, h -> new BytesType(h))
+                .put(TYPE_LONG_BLOB, h -> new BytesType(h))
+                .put(TYPE_BLOB, h -> new BytesType(h))
+                .put(TYPE_VAR_STRING, h -> new BytesType(h))
+                .put(TYPE_STRING, h -> new BytesType(h))
+                .put(TYPE_GEOMETRY, h -> new BytesType(h))
+                .build();
+
     public static DataType of(int tp) {
         DataType dataType = dataTypeMap.get(tp);
         if ( dataType == null) {
             throw new NullPointerException("tp " + tp + " passed in can not retrieved DataType info.");
         }
         return dataType;
+    }
+
+    public static DataType of(InternalTypeHolder holder) {
+        Function<InternalTypeHolder, DataType> ctor = dataTypeCreatorMap.get(holder.getTp());
+        if (ctor == null) {
+            throw new NullPointerException("tp " + holder.getTp() + " passed in can not retrieved DataType info.");
+        }
+        return ctor.apply(holder);
     }
 }

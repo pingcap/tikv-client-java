@@ -31,7 +31,24 @@ import java.util.List;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
+// TODO: reconsider class design and organization
 public class RangeBuilder {
+    /**
+     * Build index ranges from access points and access conditions
+     * @param accessPoints conditions converting to a single point access
+     * @param accessPointsTypes types of the column matches the condition
+     * @param accessConditions conditions converting to a range
+     * @param rangeType type of the range
+     * @return Index Range for scan
+     */
+    public static List<IndexRange> exprsToIndexRanges(List<TiExpr> accessPoints,
+                                                      List<DataType> accessPointsTypes,
+                                                      List<TiExpr> accessConditions,
+                                                      DataType rangeType) {
+        List<Range> ranges = exprToRanges(accessConditions, rangeType);
+        return appendRanges(exprsToPoints(accessPoints, accessPointsTypes), ranges, rangeType);
+    }
+
     /**
      * Turn access conditions into list of points
      * Each condition is bound to single key
@@ -41,7 +58,7 @@ public class RangeBuilder {
      * @param types index column types
      * @return access points for each index
      */
-    public List<IndexRange> exprsToPoints(List<TiExpr> accessPoints,
+    public static List<IndexRange> exprsToPoints(List<TiExpr> accessPoints,
                                           List<DataType> types) {
         requireNonNull(accessPoints, "accessPoints cannot be null");
         requireNonNull(types, "Types cannot be null");
@@ -62,98 +79,7 @@ public class RangeBuilder {
         return irs;
     }
 
-    public static class IndexRange {
-        private List<Object>        accessPoints;
-        private List<DataType>     types;
-        private Range               range;
-        private DataType           rangeType;
-
-        private IndexRange(List<Object> accessPoints, List<DataType> types, Range range, DataType rangeType) {
-            this.accessPoints = accessPoints;
-            this.types = types;
-            this.range = range;
-            this.rangeType = rangeType;
-        }
-
-        private IndexRange(List<Object> accessPoints, List<DataType> types) {
-            this.accessPoints = accessPoints;
-            this.types = types;
-            this.range = null;
-        }
-
-        private IndexRange() {
-            this.accessPoints = ImmutableList.of();
-            this.types = ImmutableList.of();
-            this.range = null;
-        }
-
-        private static List<IndexRange> appendPointsForSingleCondition(
-                                                    List<IndexRange> indexRanges,
-                                                    List<Object> points,
-                                                    DataType type) {
-            requireNonNull(indexRanges);
-            requireNonNull(points);
-            requireNonNull(type);
-
-            List<IndexRange> resultRanges = new ArrayList<>();
-            if (indexRanges.size() == 0) {
-                indexRanges.add(new IndexRange());
-            }
-
-            for (IndexRange ir : indexRanges) {
-                resultRanges.addAll(ir.appendPoints(points, type));
-            }
-            return resultRanges;
-        }
-
-        private List<IndexRange> appendPoints(List<Object> points, DataType type) {
-            List<IndexRange> result = new ArrayList<>();
-            for (Object p : points) {
-                ImmutableList.Builder<Object> newAccessPoints =
-                                                ImmutableList.builder()
-                                                        .addAll(accessPoints)
-                                                        .add(p);
-
-                ImmutableList.Builder<DataType> newTypes =
-                                                ImmutableList.<DataType>builder()
-                                                        .addAll(types)
-                                                        .add(type);
-
-                result.add(new IndexRange(newAccessPoints.build(), newTypes.build()));
-            }
-            return result;
-        }
-
-        public static List<IndexRange> appendRanges(List<IndexRange> indexRanges, List<Range> ranges, DataType rangeType) {
-            requireNonNull(indexRanges);
-            requireNonNull(ranges);
-            List<IndexRange> resultRanges = new ArrayList<>();
-            for (IndexRange ir : indexRanges) {
-                for (Range r : ranges) {
-                    resultRanges.add(new IndexRange(ir.getAccessPoints(), ir.getTypes(), r, rangeType));
-                }
-            }
-            return resultRanges;
-        }
-
-        public List<Object> getAccessPoints() {
-            return accessPoints;
-        }
-
-        public Range getRange() {
-            return range;
-        }
-
-        public List<DataType> getTypes() {
-            return types;
-        }
-
-        public DataType getRangeType() {
-            return rangeType;
-        }
-    }
-
-    private List<Object> exprToPoints(TiExpr expr, DataType type) {
+    private static List<Object> exprToPoints(TiExpr expr, DataType type) {
         try {
             if (expr instanceof Or) {
                 Or orExpr = (Or) expr;
@@ -164,7 +90,7 @@ public class RangeBuilder {
                         .build();
             }
             checkArgument(expr instanceof Equal || expr instanceof In,
-                       "Only In and Equal can convert to points");
+                    "Only In and Equal can convert to points");
             TiFunctionExpression func = (TiFunctionExpression)expr;
             NormalizedCondition cond = AccessConditionNormalizer.normalize(func);
             ImmutableList.Builder<Object> result = ImmutableList.builder();
@@ -183,7 +109,7 @@ public class RangeBuilder {
      * @param type index column type
      * @return access ranges
      */
-    public List<Range> exprToRanges(List<TiExpr> accessConditions, DataType type) {
+    public static List<Range> exprToRanges(List<TiExpr> accessConditions, DataType type) {
         RangeSet ranges = TreeRangeSet.create();
         ranges.add(Range.all());
         for (TiExpr ac : accessConditions) {
@@ -214,10 +140,101 @@ public class RangeBuilder {
         return ImmutableList.copyOf(ranges.asRanges());
     }
 
-    private Object checkAndExtractConst(TiConstant constVal, DataType type) {
+    public static List<IndexRange> appendRanges(List<IndexRange> indexRanges, List<Range> ranges, DataType rangeType) {
+        requireNonNull(indexRanges);
+        requireNonNull(ranges);
+        List<IndexRange> resultRanges = new ArrayList<>();
+        for (IndexRange ir : indexRanges) {
+            for (Range r : ranges) {
+                resultRanges.add(new IndexRange(ir.getAccessPoints(), ir.getTypes(), r, rangeType));
+            }
+        }
+        return resultRanges;
+    }
+
+    private static Object checkAndExtractConst(TiConstant constVal, DataType type) {
         if (type.needCast(constVal.getValue())) {
             throw new TiClientInternalException("Casting not allowed: " + constVal + " to type " + type);
         }
         return constVal.getValue();
+    }
+
+    public static class IndexRange {
+        private List<Object>        accessPoints;
+        private List<DataType>     types;
+        private Range               range;
+        private DataType           rangeType;
+
+        private IndexRange(List<Object> accessPoints, List<DataType> types, Range range, DataType rangeType) {
+            this.accessPoints = accessPoints;
+            this.types = types;
+            this.range = range;
+            this.rangeType = rangeType;
+        }
+
+        private IndexRange(List<Object> accessPoints, List<DataType> types) {
+            this.accessPoints = accessPoints;
+            this.types = types;
+            this.range = null;
+        }
+
+        private IndexRange() {
+            this.accessPoints = ImmutableList.of();
+            this.types = ImmutableList.of();
+            this.range = null;
+        }
+
+        private static List<IndexRange> appendPointsForSingleCondition(
+                List<IndexRange> indexRanges,
+                List<Object> points,
+                DataType type) {
+            requireNonNull(indexRanges);
+            requireNonNull(points);
+            requireNonNull(type);
+
+            List<IndexRange> resultRanges = new ArrayList<>();
+            if (indexRanges.size() == 0) {
+                indexRanges.add(new IndexRange());
+            }
+
+            for (IndexRange ir : indexRanges) {
+                resultRanges.addAll(ir.appendPoints(points, type));
+            }
+            return resultRanges;
+        }
+
+        private List<IndexRange> appendPoints(List<Object> points, DataType type) {
+            List<IndexRange> result = new ArrayList<>();
+            for (Object p : points) {
+                ImmutableList.Builder<Object> newAccessPoints =
+                        ImmutableList.builder()
+                                .addAll(accessPoints)
+                                .add(p);
+
+                ImmutableList.Builder<DataType> newTypes =
+                        ImmutableList.<DataType>builder()
+                                .addAll(types)
+                                .add(type);
+
+                result.add(new IndexRange(newAccessPoints.build(), newTypes.build()));
+            }
+            return result;
+        }
+
+        public List<Object> getAccessPoints() {
+            return accessPoints;
+        }
+
+        public Range getRange() {
+            return range;
+        }
+
+        public List<DataType> getTypes() {
+            return types;
+        }
+
+        public DataType getRangeType() {
+            return rangeType;
+        }
     }
 }

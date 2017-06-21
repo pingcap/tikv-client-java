@@ -20,6 +20,7 @@ package com.pingcap.tikv.types;
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.codec.InvalidCodecFormatException;
+import com.pingcap.tikv.meta.TiColumnInfo;
 import com.pingcap.tikv.row.Row;
 
 import java.util.Arrays;
@@ -30,6 +31,10 @@ public class BytesType extends DataType {
 
     static BytesType of(int tp) {
         return new BytesType(tp);
+    }
+
+    public BytesType(TiColumnInfo.InternalTypeHolder holder) {
+        super(holder);
     }
 
     private BytesType(int tp) {

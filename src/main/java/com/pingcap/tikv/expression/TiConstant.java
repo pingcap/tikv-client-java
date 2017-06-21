@@ -88,4 +88,15 @@ public class TiConstant implements TiExpr {
             throw new TiExpressionException("Constant type not supported.");
         }
     }
+
+    @Override
+    public String toString() {
+        if (value == null) {
+            return "null";
+        }
+        if (value instanceof String) {
+            return String.format("\"%s\"", value);
+        }
+        return value.toString();
+    }
 }

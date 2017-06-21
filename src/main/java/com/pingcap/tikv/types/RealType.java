@@ -34,6 +34,10 @@ public class RealType extends DataType {
         super(tp);
     }
 
+    public RealType(TiColumnInfo.InternalTypeHolder holder) {
+        super(holder);
+    }
+
     /**
      * decode value from cdi to row per tp.
      * @param cdi source of data.

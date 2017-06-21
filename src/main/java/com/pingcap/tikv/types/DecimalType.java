@@ -35,6 +35,10 @@ public class DecimalType extends DataType {
         super(tp);
     }
 
+    public DecimalType(TiColumnInfo.InternalTypeHolder holder) {
+        super(holder);
+    }
+
     /**
      *  decode a decimal value to Row from Cdi.
      * @param cdi source of data.

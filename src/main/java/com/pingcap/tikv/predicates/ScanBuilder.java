@@ -37,6 +37,7 @@ import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
+// TODO: Rethink value binding part since we abstract away datum of TiDB
 public class ScanBuilder {
     public void buildScan(List<TiExpr> conditions, TiIndexInfo index, TiTableInfo table) {
         requireNonNull(table, "Table cannot be null to encoding keyRange");
@@ -44,13 +45,8 @@ public class ScanBuilder {
         requireNonNull(conditions, "conditions cannot be null to encoding keyRange");
 
         IndexMatchingResult result = extractConditions(conditions, table, index);
-        RangeBuilder rangeBuilder = new RangeBuilder();
-        List<IndexRange> irs =
-                rangeBuilder.exprsToPoints(result.accessPoints, result.accessPointsTypes);
-
-        List<Range> ranges = rangeBuilder.exprToRanges(result.accessConditions, result.rangeType);
-
-        irs = IndexRange.appendRanges(irs, ranges, result.rangeType);
+        List<IndexRange> irs = RangeBuilder.exprsToIndexRanges(result.accessPoints, result.accessPointsTypes,
+                                                               result.accessConditions, result.rangeType);
 
         List<KeyRange> keyRanges = buildKeyRange(table, index, irs);
     }
@@ -149,7 +145,7 @@ public class ScanBuilder {
     }
 
     @VisibleForTesting
-    public IndexMatchingResult extractConditions(List<TiExpr> conditions, TiTableInfo table, TiIndexInfo index) {
+    public static IndexMatchingResult extractConditions(List<TiExpr> conditions, TiTableInfo table, TiIndexInfo index) {
         // 0. Different than TiDB implementation, here logic has been unified for TableScan and IndexScan by
         // adding fake index on clustered table's pk
         // 1. Generate access point based on equal conditions
@@ -204,6 +200,12 @@ public class ScanBuilder {
                 break;
             }
         }
+
+        // push remaining back
+        conditions.stream().filter(
+                cond -> !accessPoints.contains(cond) &&
+                        !accessConditions.contains(cond)
+        ).forEach(residualConditions::add);
 
         return new IndexMatchingResult(residualConditions,
                                         accessPoints,

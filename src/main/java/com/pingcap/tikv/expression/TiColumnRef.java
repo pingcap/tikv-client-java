@@ -81,4 +81,9 @@ public class TiColumnRef implements TiExpr {
     public TiColumnInfo getBindingColumn() {
         return columnInfo;
     }
+
+    @Override
+    public String toString() {
+        return String.format("`%s`", columnInfo.getName());
+    }
 }

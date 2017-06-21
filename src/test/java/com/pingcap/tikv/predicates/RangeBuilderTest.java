@@ -159,7 +159,7 @@ public class RangeBuilderTest {
         type = DataTypeFactory.of(Types.TYPE_STRING);
         ranges = builder.exprToRanges(conds, type);
 
-        indexRanges = RangeBuilder.IndexRange.appendRanges(indexRanges, ranges, type);
+        indexRanges = RangeBuilder.appendRanges(indexRanges, ranges, type);
         assertEquals(4, indexRanges.size());
 
         assertEquals(Range.closedOpen("a", "g"), indexRanges.get(0).getRange());

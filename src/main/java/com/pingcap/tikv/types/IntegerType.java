@@ -40,6 +40,10 @@ public class IntegerType extends DataType {
         super(tp);
     }
 
+    public IntegerType(TiColumnInfo.InternalTypeHolder holder) {
+        super(holder);
+    }
+
     /**
      * decode a int value from cdi to row per tp.
      * @param cdi source of data.
@@ -81,10 +85,6 @@ public class IntegerType extends DataType {
                 writeULongFull(cdo, val, comparable);
                 break;
         }
-    }
-
-    protected IntegerType(TiColumnInfo.InternalTypeHolder holder) {
-        super(holder);
     }
 
     private long decodeNotNullInternal(int flag, CodecDataInput cdi) {
