@@ -15,6 +15,7 @@
 
 package com.pingcap.tikv.codec;
 
+import com.google.common.primitives.UnsignedBytes;
 import com.google.protobuf.ByteString;
 
 import java.util.Arrays;
@@ -39,10 +40,8 @@ public class KeyUtils {
     public static byte[] prefixNext(byte[] key) {
         int i;
         for (i = key.length - 1; i >= 0; i--) {
-            int b = key[i] & 0xff;
-            if (b != 255) {
-                b ++;
-                key[i] = (byte)b;
+            if (key[i] != UnsignedBytes.MAX_VALUE) {
+                key[i] ++;
                 break;
             }
         }
