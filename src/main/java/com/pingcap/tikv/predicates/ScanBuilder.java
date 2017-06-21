@@ -33,7 +33,9 @@ import com.pingcap.tikv.predicates.RangeBuilder.IndexRange;
 import com.pingcap.tikv.types.DataType;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 
@@ -161,6 +163,8 @@ public class ScanBuilder {
         List<TiExpr> accessConditions = new ArrayList<>();
         DataType accessConditionType = null;
 
+        Set<TiExpr> visited = new HashSet<>();
+        IndexMatchingLoop:
         for (int i = 0; i < index.getIndexColumns().size(); i++) {
             // for each index column try matches an equal condition
             // and push remaining back
@@ -172,15 +176,19 @@ public class ScanBuilder {
             boolean found = false;
             // For first prefix index encountered, it equals to a range
             // and we cannot push equal conditions further
-            if (!col.isPrefixIndex()) {
-                for (TiExpr cond : conditions) {
-                    if (matcher.match(cond)) {
-                        accessPoints.add(cond);
-                        TiColumnInfo tiColumnInfo = table.getColumns().get(col.getOffset());
-                        accessPointTypes.add(tiColumnInfo.getType());
-                        found = true;
-                        break;
+            for (TiExpr cond : conditions) {
+                if (visited.contains(cond)) continue;
+                if (matcher.match(cond)) {
+                    accessPoints.add(cond);
+                    TiColumnInfo tiColumnInfo = table.getColumns().get(col.getOffset());
+                    accessPointTypes.add(tiColumnInfo.getType());
+                    if (col.isPrefixIndex()) {
+                        residualConditions.add(cond);
+                        break IndexMatchingLoop;
                     }
+                    visited.add(cond);
+                    found = true;
+                    break;
                 }
             }
             if (!found) {
@@ -188,6 +196,7 @@ public class ScanBuilder {
                 // search for a matching range condition
                 matcher = new IndexMatcher(col, false);
                 for (TiExpr cond : conditions) {
+                    if (visited.contains(cond)) continue;
                     if (matcher.match(cond)) {
                         accessConditions.add(cond);
                         TiColumnInfo tiColumnInfo = table.getColumns().get(col.getOffset());
@@ -204,7 +213,8 @@ public class ScanBuilder {
         // push remaining back
         conditions.stream().filter(
                 cond -> !accessPoints.contains(cond) &&
-                        !accessConditions.contains(cond)
+                        !accessConditions.contains(cond) &&
+                        !residualConditions.contains(cond)
         ).forEach(residualConditions::add);
 
         return new IndexMatchingResult(residualConditions,

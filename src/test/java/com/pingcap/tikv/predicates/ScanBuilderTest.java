@@ -21,15 +21,19 @@ import com.pingcap.tikv.expression.TiConstant;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.expression.scalar.Equal;
 import com.pingcap.tikv.expression.scalar.LessEqual;
-import com.pingcap.tikv.meta.*;
-import com.pingcap.tikv.types.*;
+import com.pingcap.tikv.meta.MetaUtils;
+import com.pingcap.tikv.meta.TiColumnInfo.InternalTypeHolder;
+import com.pingcap.tikv.meta.TiIndexInfo;
+import com.pingcap.tikv.meta.TiTableInfo;
+import com.pingcap.tikv.types.BytesType;
+import com.pingcap.tikv.types.DataType;
+import com.pingcap.tikv.types.DataTypeFactory;
+import com.pingcap.tikv.types.Types;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import static com.pingcap.tikv.types.Types.TYPE_STRING;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 
 public class ScanBuilderTest {
@@ -45,11 +49,19 @@ public class ScanBuilderTest {
     }
 
     private static TiTableInfo createTableWithPrefix() {
-        DataType typePrefx = BytesType.of(TYPE_STRING);
+        InternalTypeHolder holder = new InternalTypeHolder(Types.TYPE_STRING,
+                0,
+                3, // indicating a prefix type
+                0,
+                "",
+                "",
+                ImmutableList.of());
+
+        DataType typePrefix = new BytesType(holder);
         return new MetaUtils.TableBuilder()
                 .name("testTable")
                 .addColumn("c1", DataTypeFactory.of(Types.TYPE_LONG), true)
-                .addColumn("c2", DataTypeFactory.of(Types.TYPE_STRING))
+                .addColumn("c2", typePrefix)
                 .addColumn("c3", DataTypeFactory.of(Types.TYPE_STRING))
                 .addColumn("c4", DataTypeFactory.of(Types.TYPE_TINY))
                 .appendIndex("testIndex", ImmutableList.of("c1", "c2", "c3"), false)
@@ -79,12 +91,11 @@ public class ScanBuilderTest {
 
         assertEquals(1, result.accessConditions.size());
         assertEquals(le1, result.accessConditions.get(0));
-        return;
     }
 
     @Test
     public void extractConditionsWithPrefix() throws Exception {
-        TiTableInfo table = createTable();
+        TiTableInfo table = createTableWithPrefix();
         TiIndexInfo index = table.getIndices().get(0);
 
         TiExpr eq1 = new Equal(TiColumnRef.create("c1", table), TiConstant.create(0));
@@ -96,16 +107,17 @@ public class ScanBuilderTest {
         List<TiExpr> exprs = ImmutableList.of(eq1, eq2, le1, eq3);
 
         ScanBuilder.IndexMatchingResult result = ScanBuilder.extractConditions(exprs, table, index);
-        assertEquals(1, result.residualConditions.size());
-        assertEquals(eq3, result.residualConditions.get(0));
+        // 3 remains since c2 condition pushed back as well
+        assertEquals(3, result.residualConditions.size());
+        assertEquals(eq2, result.residualConditions.get(0));
+        assertEquals(le1, result.residualConditions.get(1));
+        assertEquals(eq3, result.residualConditions.get(2));
 
         assertEquals(2, result.accessPoints.size());
         assertEquals(eq1, result.accessPoints.get(0));
         assertEquals(eq2, result.accessPoints.get(1));
 
-        assertEquals(1, result.accessConditions.size());
-        assertEquals(le1, result.accessConditions.get(0));
-        return;
+        assertEquals(0, result.accessConditions.size());
     }
 
 }
