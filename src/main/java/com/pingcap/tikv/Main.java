@@ -33,7 +33,6 @@ public class Main {
         TiByItem groupBy = TiByItem.create(name, false);
         // TiExpr first = new First(s1);
         SelectBuilder sb = SelectBuilder.newBuilder(snapshot, table);
-        System.out.println(table.toProto().toString());
         sb.addRange(TiRange.create(0L, Long.MAX_VALUE));
         //select name, sum(number) from t1 group by name;
         sb.addAggregate(sum);

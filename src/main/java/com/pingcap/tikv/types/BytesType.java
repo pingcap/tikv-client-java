@@ -20,7 +20,6 @@ package com.pingcap.tikv.types;
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.codec.InvalidCodecFormatException;
-import com.pingcap.tikv.row.Row;
 
 import java.util.Arrays;
 
@@ -37,12 +36,11 @@ public class BytesType extends DataType {
     }
 
     @Override
-    public void decode(CodecDataInput cdi, Row row, int pos) {
-        int flag = cdi.readUnsignedByte();
+    public Object decodeNotNull(int flag, CodecDataInput cdi) {
         if (flag == COMPACT_BYTES_FLAG) {
-            row.setString(pos, new String(readCompactBytes(cdi)));
+            return new String(readCompactBytes(cdi));
         } else if (flag == BYTES_FLAG) {
-            row.setString(pos, new String(readBytes(cdi)));
+            return new String(readBytes(cdi));
         } else {
             throw new InvalidCodecFormatException("Invalid Flag type for : " + flag);
         }
@@ -55,7 +53,7 @@ public class BytesType extends DataType {
      * @param value need to be encoded.
      */
     @Override
-    public void encode(CodecDataOutput cdo, EncodeType encodeType, Object value) {
+    public void encodeNotNull(CodecDataOutput cdo, EncodeType encodeType, Object value) {
         byte[] bytes;
         if (value instanceof String) {
              bytes = ((String)value).getBytes();

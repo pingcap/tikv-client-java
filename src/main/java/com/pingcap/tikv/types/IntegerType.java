@@ -40,17 +40,9 @@ public class IntegerType extends DataType {
         super(tp);
     }
 
-    /**
-     * decode a int value from cdi to row per tp.
-     * @param cdi source of data.
-     * @param row destination of data
-     * @param pos position of row.
-     */
     @Override
-    public void decode(CodecDataInput cdi, Row row, int pos) {
-        int flag = cdi.readUnsignedByte();
-        long val = decodeNotNullInternal(flag, cdi);
-        row.setLong(pos, val);
+    public Object decodeNotNull(int flag, CodecDataInput cdi) {
+        return decodeNotNullInternal(flag, cdi);
     }
 
     /**
@@ -60,7 +52,7 @@ public class IntegerType extends DataType {
      * @param value need to be encoded.
      */
     @Override
-    public void encode(CodecDataOutput cdo, EncodeType encodeType, Object value) {
+    public void encodeNotNull(CodecDataOutput cdo, EncodeType encodeType, Object value) {
         long val;
         if (value instanceof Number) {
             val = ((Number) value).longValue();

@@ -34,16 +34,8 @@ public class RealType extends DataType {
         super(tp);
     }
 
-    /**
-     * decode value from cdi to row per tp.
-     * @param cdi source of data.
-     * @param row destination of data
-     * @param pos position of row.
-     */
     @Override
-    public void decode(CodecDataInput cdi, Row row, int pos) {
-        // check flag first and then read.
-        int flag = cdi.readUnsignedByte();
+    public Object decodeNotNull(int flag, CodecDataInput cdi) {
         if (flag != FLOATING_FLAG) {
             throw new InvalidCodecFormatException("Invalid Flag type for float type: " + flag);
         }
@@ -58,8 +50,7 @@ public class RealType extends DataType {
             // u = ^u
             u = ~u;
         }
-        float val =  Float.intBitsToFloat((int)u);
-        row.setDouble(pos, val);
+        return Float.intBitsToFloat((int)u);
     }
 
     /**
@@ -69,10 +60,10 @@ public class RealType extends DataType {
      * @param value need to be encoded.
      */
     @Override
-    public void encode(CodecDataOutput cdo, EncodeType encodeType, Object value) {
+    public void encodeNotNull(CodecDataOutput cdo, EncodeType encodeType, Object value) {
         float val;
         if(value instanceof  Float) {
-            val = ((Float)value).floatValue();
+            val = (Float) value;
         } else {
             throw new UnsupportedOperationException("Can not cast Un-number to Float");
         }
