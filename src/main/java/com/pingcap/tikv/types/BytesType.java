@@ -65,7 +65,7 @@ public class BytesType extends DataType {
         if (encodeType == EncodeType.KEY) {
             writeBytes(cdo, bytes);
         } else {
-            writeBytesDesc(cdo, bytes);
+            writeCompactBytes(cdo, bytes);
         }
     }
 
@@ -98,6 +98,17 @@ public class BytesType extends DataType {
             }
             cdo.write((byte) (MARKER - padCount));
         }
+    }
+
+    /**
+     * Write bytes in a compact form.
+     * @param cdo destination of data.
+     * @param data is value that will be written into cdo.
+     */
+    public static void writeCompactBytes(CodecDataOutput cdo, byte[] data) {
+        int length = data.length;
+        IntegerType.writeVarLong(cdo, length);
+        cdo.writeBytes(Arrays.toString(data));
     }
 
     // WriteBytesDesc first encodes bytes using EncodeBytes, then bitwise reverses

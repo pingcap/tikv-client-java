@@ -168,7 +168,7 @@ public class IntegerType extends DataType {
      * @param cdo For outputting data in bytes array
      * @param value The data to encode
      */
-    private static void writeVarLong(CodecDataOutput cdo, long value) {
+    public static void writeVarLong(CodecDataOutput cdo, long value) {
         long ux = value << 1;
         if (value < 0) {
             ux = ~ux;
@@ -181,7 +181,7 @@ public class IntegerType extends DataType {
      * @param cdo For outputting data in bytes array
      * @param value The data to encode
      */
-    private static void writeUVarLong(CodecDataOutput cdo, long value) {
+    public static void writeUVarLong(CodecDataOutput cdo, long value) {
         while ((value - 0x80) >= 0) {
             cdo.writeByte((byte)value | 0x80);
             value >>>= 7;
