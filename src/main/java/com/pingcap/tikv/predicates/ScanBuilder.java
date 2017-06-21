@@ -18,12 +18,12 @@ package com.pingcap.tikv.predicates;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.BoundType;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
 import com.google.protobuf.ByteString;
 import com.pingcap.tidb.tipb.KeyRange;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.codec.KeyUtils;
+import com.pingcap.tikv.codec.TableCodec;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.meta.TiColumnInfo;
 import com.pingcap.tikv.meta.TiIndexColumn;
@@ -35,8 +35,14 @@ import com.pingcap.tikv.types.DataType;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.util.Objects.requireNonNull;
+
 public class ScanBuilder {
     public void buildScan(List<TiExpr> conditions, TiIndexInfo index, TiTableInfo table) {
+        requireNonNull(table, "Table cannot be null to encoding keyRange");
+        requireNonNull(index, "Index cannot be null to encoding keyRange");
+        requireNonNull(conditions, "conditions cannot be null to encoding keyRange");
+
         IndexMatchingResult result = extractConditions(conditions, table, index);
         RangeBuilder rangeBuilder = new RangeBuilder();
         List<IndexRange> irs =
@@ -50,7 +56,12 @@ public class ScanBuilder {
     }
 
     private List<KeyRange> buildKeyRange(TiTableInfo table, TiIndexInfo index, List<IndexRange> indexRanges) {
-        ImmutableList.Builder<KeyRange> ranges = ImmutableList.builder();
+        requireNonNull(table, "Table cannot be null to encoding keyRange");
+        requireNonNull(index, "Index cannot be null to encoding keyRange");
+        requireNonNull(index, "indexRanges cannot be null to encoding keyRange");
+
+        List<KeyRange> ranges = new ArrayList<>(indexRanges.size());
+
         for (IndexRange ir : indexRanges) {
             CodecDataOutput cdo = new CodecDataOutput();
             List<Object> values = ir.getAccessPoints();
@@ -95,12 +106,16 @@ public class ScanBuilder {
                 }
             }
 
+
+            cdo.reset();
+            TableCodec.writeIndexSeekKey(cdo, table.getId(), index.getId(), pointsData, lKey);
             ByteString lbsKey = ByteString
-                                    .copyFrom(pointsData)
-                                    .concat(ByteString.copyFrom(lKey));
+                                    .copyFrom(cdo.toBytes());
+
+            cdo.reset();
+            TableCodec.writeIndexSeekKey(cdo, table.getId(), index.getId(), pointsData, uKey);
             ByteString ubsKey = ByteString
-                                    .copyFrom(pointsData)
-                                    .concat(ByteString.copyFrom(uKey));
+                                    .copyFrom(cdo.toBytes());
 
             ranges.add(
                     KeyRange.newBuilder()
@@ -110,7 +125,7 @@ public class ScanBuilder {
             );
         }
 
-        return ranges.build();
+        return ranges;
     }
 
     public static class IndexMatchingResult {
@@ -135,6 +150,8 @@ public class ScanBuilder {
 
     @VisibleForTesting
     public IndexMatchingResult extractConditions(List<TiExpr> conditions, TiTableInfo table, TiIndexInfo index) {
+        // 0. Different than TiDB implementation, here logic has been unified for TableScan and IndexScan by
+        // adding fake index on clustered table's pk
         // 1. Generate access point based on equal conditions
         // 2. Cut access point condition if index is not continuous
         // 3. Push back prefix index conditions since prefix index retrieve more result than needed
