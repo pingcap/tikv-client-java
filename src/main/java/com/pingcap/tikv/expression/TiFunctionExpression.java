@@ -50,4 +50,8 @@ public abstract class TiFunctionExpression implements TiExpr {
     public abstract String getName();
 
     protected abstract void validateArguments(TiExpr... args) throws RuntimeException;
+
+    public List<TiExpr> getArgs() {
+        return args;
+    }
 }

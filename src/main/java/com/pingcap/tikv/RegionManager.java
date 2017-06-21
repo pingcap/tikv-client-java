@@ -30,6 +30,7 @@ import com.pingcap.tikv.grpc.Metapb.Store;
 import com.pingcap.tikv.grpc.Metapb.Peer;
 import com.pingcap.tikv.util.Pair;
 
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -51,7 +52,8 @@ public class RegionManager {
         regionCache = CacheBuilder.newBuilder()
                 .maximumSize(MAX_CACHE_CAPACITY)
                 .build(new CacheLoader<Long, Future<Region>>() {
-                    public Future load(Long key) {
+                    @ParametersAreNonnullByDefault
+                    public Future<Region> load(Long key) {
                         return pdClient.getRegionByIDAsync(key);
                     }
                 });
@@ -134,12 +136,9 @@ public class RegionManager {
     }
 
     private boolean ifValidRegion(Region region) {
-        if (region.getPeersCount() == 0 ||
+        return !(region.getPeersCount() == 0 ||
                 !region.hasStartKey() ||
-                !region.hasEndKey()) {
-            return false;
-        }
-        return true;
+                !region.hasEndKey());
     }
 
     private boolean putRegion(Region region) {

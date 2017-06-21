@@ -29,7 +29,7 @@ import static com.pingcap.tikv.types.Types.*;
 public class DataTypeFactory {
     // TODO add a test for testing mapping relationship
     private static final Map<Integer, DataType> dataTypeMap = ImmutableMap.<Integer, DataType>builder()
-            .put(TYPE_NULL, new DataType(TYPE_NULL))
+//            .put(TYPE_NULL, new DataType(TYPE_NULL))
             .put(TYPE_TINY, IntegerType.of(TYPE_TINY))
             .put(TYPE_SHORT, IntegerType.of(TYPE_SHORT))
             .put(TYPE_LONG, IntegerType.of(TYPE_LONG))

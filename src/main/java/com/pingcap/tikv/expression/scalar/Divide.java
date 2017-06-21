@@ -37,7 +37,6 @@ public class Divide extends TiBinaryFunctionExpresson {
 
     @Override
     public DataType getType() {
-        // TODO: Add type inference
         throw new UnsupportedOperationException();
     }
 }

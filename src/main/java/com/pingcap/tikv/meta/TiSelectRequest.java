@@ -15,28 +15,26 @@
 
 package com.pingcap.tikv.meta;
 
-import com.google.common.collect.ImmutableSet;
 import com.pingcap.tidb.tipb.IndexInfo;
 import com.pingcap.tidb.tipb.SelectRequest;
+import com.pingcap.tidb.tipb.TableInfo;
 import com.pingcap.tikv.expression.TiByItem;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiExpr;
-import com.pingcap.tikv.util.TiFluentIterable;
-import jdk.nashorn.internal.ir.annotations.Immutable;
+import com.pingcap.tikv.expression.TiFunctionExpression;
 import lombok.Data;
-import lombok.Getter;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Data
 public class TiSelectRequest {
-    private final SelectRequest.Builder builder;
+    private final SelectRequest.Builder builder = SelectRequest.newBuilder();
     private TiTableInfo tableInfo;
     private IndexInfo indexInfo;
     private final List<TiExpr> fields = new ArrayList<>();
     private final List<TiExpr> where = new ArrayList<>();
-    private final List<TiByItem> groupBys = new ArrayList<>();
-    private final List<TiByItem> orderBys = new ArrayList<>();
     private final List<TiExpr> aggregates = new ArrayList<>();
     private int limit;
     private int timeZoneOffset;
@@ -45,39 +43,68 @@ public class TiSelectRequest {
     private TiExpr having;
     private boolean distinct;
 
-      public SelectRequest toProto() {
-          return build();
-      }
-
-      public SelectRequest build() {
-        // add optimize later
-        // Optimize merge groupBy
-        this.fields.forEach(expr -> this.builder.addFields(expr.toProto()));
-        if(!this.fields.isEmpty()) {
-            // convert fields type to set for later usage.
-            Set<String> fieldSet = ImmutableSet.copyOf(TiFluentIterable.from(this.fields).transform(
-                    expr -> ((TiColumnRef)expr).getName()
-            ));
-            // solve
-            List<TiColumnInfo> colToRemove = new ArrayList<>();
-            this.tableInfo.getColumns().forEach(
-                            col -> {
-                                // remove column from table if such column is not in fields
-                                if(!fieldSet.contains(col.getName())) {
-                                    colToRemove.add(col);
-                                }
-                            }
-            );
-
-            this.tableInfo.getColumns().removeAll(colToRemove);
-        }
+    public SelectRequest build() {
+        List<TiColumnInfo> colToAdd = new ArrayList<>();
+        this.fields.forEach(expr -> {
+            this.builder.addFields(expr.toProto());
+            colToAdd.addAll(getColumnInfoFromExpr(expr));
+        });
         this.groupBys.forEach(expr -> this.builder.addGroupBy(expr.toProto()));
         this.orderBys.forEach(expr -> this.builder.addOrderBy(expr.toProto()));
-        this.aggregates.forEach(expr -> this.builder.addAggregates(expr.toProto()));
+        this.aggregates.forEach(expr -> {
+            this.builder.addAggregates(expr.toProto());
+            colToAdd.addAll(getColumnInfoFromExpr(expr));
+        });
         this.builder.setFlags(flags);
-        this.builder.setTableInfo(tableInfo.toProto());
+
+        TableInfo table = TableInfo.newBuilder()
+                .setTableId(tableInfo.getId())
+                .addAllColumns(colToAdd.stream().map(TiColumnInfo::toProto).collect(Collectors.toList()))
+                .build();
+        this.builder.setTableInfo(table);
         this.builder.setTimeZoneOffset(timeZoneOffset);
         this.builder.setStartTs(startTs);
         return this.builder.build();
+    }
+
+    private List<TiColumnInfo> getColumnInfoFromExpr(TiExpr expr) {
+        List<TiColumnInfo> columnInfos = new ArrayList<>();
+        if (expr instanceof TiFunctionExpression) {
+            TiFunctionExpression tiF = (TiFunctionExpression)expr;
+            tiF.getArgs().forEach(
+                   arg -> {
+                       if (arg instanceof TiColumnRef) {
+                           TiColumnRef tiCR = (TiColumnRef) arg;
+                           columnInfos.add(tiCR.getColumnInfo());
+                       }
+                   }
+            );
+        } else if (expr instanceof TiColumnRef) {
+            columnInfos.add(((TiColumnRef)expr).getColumnInfo());
         }
+        return columnInfos;
+    }
+
+    public List<TiExpr> getFields() {
+        return fields;
+    }
+    public List<TiByItem> getGroupBys() {
+        return groupBys;
+    }
+
+    private final List<TiByItem> groupBys = new ArrayList<>();
+
+    public List<TiByItem> getOrderBys() {
+        return orderBys;
+    }
+
+    private final List<TiByItem> orderBys = new ArrayList<>();
+
+    public List<TiExpr> getAggregates() {
+        return aggregates;
+    }
+
+    public List<TiExpr> getWhere() {
+        return where;
+    }
   }
