@@ -23,6 +23,7 @@ import com.pingcap.tikv.expression.TiByItem;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.expression.aggregate.Sum;
+import com.pingcap.tikv.expression.scalar.Like;
 import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.types.DataType;
@@ -44,7 +45,8 @@ public class SchemaInferTest {
     private TiExpr number = TiColumnRef.create("number", table);
     private TiExpr name = TiColumnRef.create("name", table);
     private TiExpr sum = new Sum(number);
-    private TiByItem groupBy = TiByItem.create(name, false);
+    //TODO add a complex groupBy. Add is not defined in kv proto.
+    private TiByItem simpleGroupBy = TiByItem.create(name, false);
 
     @Test
     public void simpleSelectSchemaInferTest() throws Exception {
@@ -73,19 +75,7 @@ public class SchemaInferTest {
         TiSelectRequest selectRequest = new TiSelectRequest();
         selectRequest.getFields().add(name);
         selectRequest.getAggregates().add(sum);
-        selectRequest.getGroupBys().add(groupBy);
-        List<DataType> dataTypes = SchemaInfer.create(selectRequest).getTypes();
-        Assert.assertSame(2, dataTypes.size());
-        Assert.assertSame(DataTypeFactory.of(TYPE_VARCHAR), dataTypes.get(0));
-        Assert.assertSame(DataTypeFactory.of(TYPE_NEW_DECIMAL), dataTypes.get(1));
-    }
-
-    @Test
-    public void SchemaInferGroupByComplexTest() {
-        TiSelectRequest selectRequest = new TiSelectRequest();
-        selectRequest.getFields().add(name);
-        selectRequest.getAggregates().add(sum);
-        selectRequest.getGroupBys().add(groupBy);
+        selectRequest.getGroupBys().add(simpleGroupBy);
         List<DataType> dataTypes = SchemaInfer.create(selectRequest).getTypes();
         Assert.assertSame(2, dataTypes.size());
         Assert.assertSame(DataTypeFactory.of(TYPE_VARCHAR), dataTypes.get(0));
