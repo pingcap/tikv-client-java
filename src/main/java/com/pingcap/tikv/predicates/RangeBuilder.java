@@ -149,9 +149,11 @@ public class RangeBuilder {
     }
 
     public static List<IndexRange> appendRanges(List<IndexRange> indexRanges, List<Range> ranges, DataType rangeType) {
-        requireNonNull(indexRanges);
         requireNonNull(ranges);
         List<IndexRange> resultRanges = new ArrayList<>();
+        if (indexRanges == null || indexRanges.size() == 0) {
+            indexRanges = ImmutableList.of(new IndexRange());
+        }
         for (IndexRange ir : indexRanges) {
             for (Range r : ranges) {
                 resultRanges.add(new IndexRange(ir.getAccessPoints(), ir.getTypes(), r, rangeType));
