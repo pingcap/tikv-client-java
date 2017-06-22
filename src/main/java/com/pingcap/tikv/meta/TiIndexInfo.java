@@ -18,14 +18,11 @@ package com.pingcap.tikv.meta;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.pingcap.tidb.tipb.IndexInfo;
 import com.pingcap.tikv.util.TiFluentIterable;
 
 import java.util.List;
-
-import static com.google.common.base.Preconditions.checkArgument;
 
 public class TiIndexInfo {
     private final long                  id;
@@ -49,7 +46,9 @@ public class TiIndexInfo {
                        @JsonProperty("state")int                     schemaState,
                        @JsonProperty("comment")String                comment,
                        @JsonProperty("index_type")int                indexType,
-                                                  boolean            isFakePrimaryKey) {
+                       // This is a fake property and added JsonProperty only to
+                       // to by pass Jackson frameworks's check
+                       @JsonProperty("___isFakePrimaryKey")boolean   isFakePrimaryKey) {
         this.id = id;
         this.name = name.getL();
         this.tableName = tableName.getL();

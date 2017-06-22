@@ -45,8 +45,13 @@ public class RangeBuilder {
                                                       List<DataType> accessPointsTypes,
                                                       List<TiExpr> accessConditions,
                                                       DataType rangeType) {
-        List<Range> ranges = exprToRanges(accessConditions, rangeType);
-        return appendRanges(exprsToPoints(accessPoints, accessPointsTypes), ranges, rangeType);
+        List<IndexRange> irs = exprsToPoints(accessPoints, accessPointsTypes);
+        if (accessConditions != null && accessConditions.size() != 0) {
+            List<Range> ranges = exprToRanges(accessConditions, rangeType);
+            return appendRanges(irs, ranges, rangeType);
+        } else {
+            return irs;
+        }
     }
 
     /**
@@ -110,6 +115,9 @@ public class RangeBuilder {
      * @return access ranges
      */
     public static List<Range> exprToRanges(List<TiExpr> accessConditions, DataType type) {
+        if (accessConditions == null || accessConditions.size() == 0) {
+            return ImmutableList.of();
+        }
         RangeSet ranges = TreeRangeSet.create();
         ranges.add(Range.all());
         for (TiExpr ac : accessConditions) {

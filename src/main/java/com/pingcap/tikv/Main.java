@@ -35,12 +35,13 @@ public class Main {
 
         List<TiExpr> exprs = ImmutableList.of(
                 new Equal(TiColumnRef.create("c1", table),
-                          TiConstant.create(1))
+                          TiConstant.create(1L))
         );
         ScanBuilder scanBuilder = new ScanBuilder();
         ScanBuilder.ScanPlan scanPlan = scanBuilder.buildScan(exprs, index, table);
 
         SelectBuilder sb = SelectBuilder.newBuilder(snapshot, table);
+        //sb.addRanges(scanPlan.getKeyRanges());
         sb.addRanges(scanPlan.getKeyRanges());
 
         Iterator<Row> it = snapshot.select(sb);

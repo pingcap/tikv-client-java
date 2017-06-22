@@ -17,6 +17,7 @@ package com.pingcap.tikv.meta;
 
 import com.google.common.collect.ImmutableSet;
 import com.pingcap.tidb.tipb.IndexInfo;
+import com.pingcap.tidb.tipb.KeyRange;
 import com.pingcap.tidb.tipb.SelectRequest;
 import com.pingcap.tikv.expression.TiByItem;
 import com.pingcap.tikv.expression.TiColumnRef;
@@ -37,7 +38,8 @@ public class TiSelectRequest {
     private final List<TiExpr> where = new ArrayList<>();
     private final List<TiByItem> groupBys = new ArrayList<>();
     private final List<TiByItem> orderBys = new ArrayList<>();
-    private final List<TiExpr> aggregates = new ArrayList<>();
+    private final List<TiExpr>   aggregates = new ArrayList<>();
+    private final List<KeyRange> keyRanges = new ArrayList<>();
     private int limit;
     private int timeZoneOffset;
     private long flags;
@@ -78,6 +80,7 @@ public class TiSelectRequest {
         this.builder.setTableInfo(tableInfo.toProto());
         this.builder.setTimeZoneOffset(timeZoneOffset);
         this.builder.setStartTs(startTs);
+        this.builder.addAllRanges(keyRanges);
         return this.builder.build();
     }
 }

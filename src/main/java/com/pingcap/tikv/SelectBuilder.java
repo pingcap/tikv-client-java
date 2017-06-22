@@ -89,6 +89,7 @@ public class SelectBuilder {
    */
   public SelectBuilder addRanges(List<KeyRange> ranges) {
       rangeListBuilder.addAll(ranges);
+      this.tiSelectReq.getKeyRanges().addAll(ranges);
       return this;
   }
 
