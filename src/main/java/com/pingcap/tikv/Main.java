@@ -1,7 +1,10 @@
 package com.pingcap.tikv;
 
 import com.google.common.collect.ImmutableList;
+import com.google.protobuf.ByteString;
+import com.pingcap.tidb.tipb.KeyRange;
 import com.pingcap.tikv.catalog.Catalog;
+import com.pingcap.tikv.codec.TableCodec;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiConstant;
 import com.pingcap.tikv.expression.TiExpr;
@@ -20,6 +23,12 @@ import java.util.logging.Logger;
 
 
 public class Main {
+    private static List<KeyRange> getFullRange(TiTableInfo table) {
+        ByteString startKey = TableCodec.encodeRowKeyWithHandle(table.getId(), 1L);
+        ByteString endKey = TableCodec.encodeRowKeyWithHandle(table.getId(), 2);
+        return ImmutableList.of(KeyRange.newBuilder().setLow(startKey).setHigh(endKey).build());
+    }
+
     public static void main(String[] args) throws Exception {
         // May need to save this reference
         Logger log = Logger.getLogger("io.grpc");
@@ -35,14 +44,18 @@ public class Main {
 
         List<TiExpr> exprs = ImmutableList.of(
                 new Equal(TiColumnRef.create("c1", table),
-                          TiConstant.create(1L))
+                          TiConstant.create(2L))
         );
         ScanBuilder scanBuilder = new ScanBuilder();
         ScanBuilder.ScanPlan scanPlan = scanBuilder.buildScan(exprs, index, table);
 
         SelectBuilder sb = SelectBuilder.newBuilder(snapshot, table);
-        //sb.addRanges(scanPlan.getKeyRanges());
         sb.addRanges(scanPlan.getKeyRanges());
+
+        sb.addField(TiColumnRef.create("c1", table));
+        sb.addField(TiColumnRef.create("c2", table));
+        sb.addField(TiColumnRef.create("c3", table));
+        sb.addField(TiColumnRef.create("c4", table));
 
         Iterator<Row> it = snapshot.select(sb);
 
@@ -56,8 +69,10 @@ public class Main {
 //            r = builder.build().transform(r);
             for (int i = 0; i < r.fieldCount(); i++) {
                 Object val = r.get(i, schemaInfer.getType(i));
-                System.out.println(val);
+                System.out.print(val);
+                System.out.print(" ");
             }
+            System.out.print("\n");
         }
     }
 }

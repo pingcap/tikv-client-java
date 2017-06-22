@@ -103,7 +103,7 @@ public class ScanBuilder {
                 DataType type = ir.getTypes().get(0);
                 checkArgument(type instanceof IntegerType, "Table scan key range must be long value");
                 startKey = TableCodec.encodeRowKeyWithHandle(table.getId(), (long)v);
-                endKey = startKey;
+                endKey = ByteString.copyFrom(KeyUtils.prefixNext(startKey.toByteArray()));
             } else if (ir.hasRange()) {
                 checkArgument(!ir.hasAccessPoints(),
                         "Table scan must have one and only one access condition / point");
