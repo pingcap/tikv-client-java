@@ -2,15 +2,19 @@ package com.pingcap.tikv;
 
 import com.google.common.collect.ImmutableList;
 import com.pingcap.tikv.catalog.Catalog;
-import com.pingcap.tikv.expression.TiByItem;
 import com.pingcap.tikv.expression.TiColumnRef;
-import com.pingcap.tikv.expression.aggregate.Sum;
-import com.pingcap.tikv.meta.*;
+import com.pingcap.tikv.expression.TiConstant;
 import com.pingcap.tikv.expression.TiExpr;
+import com.pingcap.tikv.expression.scalar.Equal;
+import com.pingcap.tikv.meta.TiDBInfo;
+import com.pingcap.tikv.meta.TiIndexInfo;
+import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.operation.SchemaInfer;
+import com.pingcap.tikv.predicates.ScanBuilder;
 import com.pingcap.tikv.row.Row;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -25,20 +29,19 @@ public class Main {
         TiCluster cluster = TiCluster.getCluster(conf);
         Catalog cat = cluster.getCatalog();
         TiDBInfo db = cat.getDatabase("test");
-        TiTableInfo table = cat.getTable(db, "t1");
+        TiTableInfo table = cat.getTable(db, "test");
         Snapshot snapshot = cluster.createSnapshot();
+        TiIndexInfo index = TiIndexInfo.generateFakePrimaryKeyIndex(table);
 
-        TiExpr number = TiColumnRef.create("number", table);
-        TiExpr name = TiColumnRef.create("name", table);
-        TiExpr sum = new Sum(number);
-        TiByItem groupBy = TiByItem.create(name, false);
-        // TiExpr first = new First(s1);
+        List<TiExpr> exprs = ImmutableList.of(
+                new Equal(TiColumnRef.create("c1", table),
+                          TiConstant.create(1))
+        );
+        ScanBuilder scanBuilder = new ScanBuilder();
+        ScanBuilder.ScanPlan scanPlan = scanBuilder.buildScan(exprs, index, table);
+
         SelectBuilder sb = SelectBuilder.newBuilder(snapshot, table);
-        sb.addRange(TiRange.create(0L, Long.MAX_VALUE));
-        //select name, sum(number) from t1 group by name;
-        sb.addAggregate(sum);
-        sb.addField(name);
-        sb.addGroupBy(groupBy);
+        sb.addRanges(scanPlan.getKeyRanges());
 
         Iterator<Row> it = snapshot.select(sb);
 

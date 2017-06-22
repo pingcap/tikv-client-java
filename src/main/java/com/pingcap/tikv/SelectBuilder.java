@@ -1,12 +1,10 @@
 package com.pingcap.tikv;
 
 import com.google.common.collect.ImmutableList;
-import com.google.protobuf.ByteString;
+import com.pingcap.tidb.tipb.KeyRange;
 import com.pingcap.tidb.tipb.SelectRequest;
-import com.pingcap.tikv.codec.TableCodec;
 import com.pingcap.tikv.expression.TiByItem;
 import com.pingcap.tikv.expression.TiExpr;
-import com.pingcap.tikv.meta.TiRange;
 import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.meta.TiTableInfo;
 import lombok.Data;
@@ -24,7 +22,7 @@ public class SelectBuilder {
   private static long MASK_TRUNC_AS_WARNING = 0x2;
 
   private final Snapshot snapshot;
-  private final ImmutableList.Builder<TiRange<Long>> rangeListBuilder;
+  private final ImmutableList.Builder<KeyRange> rangeListBuilder;
   private TiTableInfo table;
   private TiSelectRequest tiSelectReq;
   private long timestamp;
@@ -86,11 +84,11 @@ public class SelectBuilder {
 
   /**
    * add key range in select request. This will be used in extract data from TiKV and PD.
-   * @param keyRange
+   * @param ranges ranges to add
    * @return
    */
-  public SelectBuilder addRange(TiRange<Long> keyRange) {
-      rangeListBuilder.add(keyRange);
+  public SelectBuilder addRanges(List<KeyRange> ranges) {
+      rangeListBuilder.addAll(ranges);
       return this;
   }
 

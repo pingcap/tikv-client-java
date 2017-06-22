@@ -22,11 +22,11 @@ import com.pingcap.tikv.expression.TiByItem;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.util.TiFluentIterable;
-import jdk.nashorn.internal.ir.annotations.Immutable;
 import lombok.Data;
-import lombok.Getter;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 @Data
 public class TiSelectRequest {

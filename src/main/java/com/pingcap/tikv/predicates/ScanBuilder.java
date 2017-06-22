@@ -61,6 +61,7 @@ public class ScanBuilder {
             return filters;
         }
     }
+
     public ScanPlan buildScan(List<TiExpr> conditions, TiIndexInfo index, TiTableInfo table) {
         requireNonNull(table, "Table cannot be null to encoding keyRange");
         requireNonNull(index, "Index cannot be null to encoding keyRange");
