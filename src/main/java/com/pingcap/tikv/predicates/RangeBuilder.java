@@ -225,6 +225,14 @@ public class RangeBuilder {
             return accessPoints;
         }
 
+        public boolean hasAccessPoints() {
+            return accessPoints != null && accessPoints.size() != 0;
+        }
+
+        public boolean hasRange() {
+            return range != null;
+        }
+
         public Range getRange() {
             return range;
         }

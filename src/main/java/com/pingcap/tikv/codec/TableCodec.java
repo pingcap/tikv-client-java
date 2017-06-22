@@ -47,7 +47,9 @@ public class TableCodec {
         appendTableIndexPrefix(cdo, tableId);
         IntegerType.writeLong(cdo, indexId);
         for (byte[] data : dataGroup) {
-            cdo.write(data);
+            if (data != null) {
+                cdo.write(data);
+            }
         }
     }
 
@@ -70,8 +72,7 @@ public class TableCodec {
     // encodeRowKeyWithHandle encodes the table id, row handle into a bytes buffer/array
     public static ByteString encodeRowKeyWithHandle(long tableId, long handle) {
         CodecDataOutput cdo = new CodecDataOutput();
-        appendTableRecordPrefix(cdo, tableId);
-        IntegerType.writeLong(cdo, handle);
+        writeRowKeyWithHandle(cdo, tableId, handle);
         return cdo.toByteString();
     }
 

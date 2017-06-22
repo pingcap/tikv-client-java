@@ -24,6 +24,7 @@ import com.pingcap.tidb.tipb.KeyRange;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.codec.KeyUtils;
 import com.pingcap.tikv.codec.TableCodec;
+import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.meta.TiColumnInfo;
 import com.pingcap.tikv.meta.TiIndexColumn;
@@ -31,17 +32,36 @@ import com.pingcap.tikv.meta.TiIndexInfo;
 import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.predicates.RangeBuilder.IndexRange;
 import com.pingcap.tikv.types.DataType;
+import com.pingcap.tikv.types.IntegerType;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 // TODO: Rethink value binding part since we abstract away datum of TiDB
 public class ScanBuilder {
-    public void buildScan(List<TiExpr> conditions, TiIndexInfo index, TiTableInfo table) {
+    public static class ScanPlan {
+        public ScanPlan(List<KeyRange> keyRanges, List<TiExpr> filters) {
+            this.filters = filters;
+            this.keyRanges = keyRanges;
+        }
+
+        private final List<KeyRange> keyRanges;
+        private final List<TiExpr> filters;
+
+        public List<KeyRange> getKeyRanges() {
+            return keyRanges;
+        }
+
+        public List<TiExpr> getFilters() {
+            return filters;
+        }
+    }
+    public ScanPlan buildScan(List<TiExpr> conditions, TiIndexInfo index, TiTableInfo table) {
         requireNonNull(table, "Table cannot be null to encoding keyRange");
         requireNonNull(index, "Index cannot be null to encoding keyRange");
         requireNonNull(conditions, "conditions cannot be null to encoding keyRange");
@@ -50,10 +70,97 @@ public class ScanBuilder {
         List<IndexRange> irs = RangeBuilder.exprsToIndexRanges(result.accessPoints, result.accessPointsTypes,
                                                                result.accessConditions, result.rangeType);
 
-        List<KeyRange> keyRanges = buildKeyRange(table, index, irs);
+        List<KeyRange> keyRanges;
+        if (index.isFakePrimaryKey()) {
+            keyRanges = buildTableScanKeyRange(table, index, irs);
+        } else {
+            keyRanges = buildIndexScanKeyRange(table, index, irs);
+        }
+
+        return new ScanPlan(keyRanges, result.residualConditions);
     }
 
-    private List<KeyRange> buildKeyRange(TiTableInfo table, TiIndexInfo index, List<IndexRange> indexRanges) {
+    private List<KeyRange> buildTableScanKeyRange(TiTableInfo       table,
+                                                  TiIndexInfo       index,
+                                                  List<IndexRange>  indexRanges) {
+        checkArgument(table.isPkHandle());
+        checkArgument(index.isFakePrimaryKey());
+        requireNonNull(table, "Table cannot be null to encoding keyRange");
+        requireNonNull(index, "Index cannot be null to encoding keyRange");
+        requireNonNull(index, "indexRanges cannot be null to encoding keyRange");
+
+        List<KeyRange> ranges = new ArrayList<>(indexRanges.size());
+        for (IndexRange ir : indexRanges) {
+            ByteString startKey;
+            ByteString endKey;
+            if (ir.hasAccessPoints()) {
+                checkArgument(!ir.hasRange(),
+                        "Table scan must have one and only one access condition / point");
+
+                Object v = ir.getAccessPoints().get(0);
+                checkArgument(v instanceof Long, "Table scan key range must be long value");
+                DataType type = ir.getTypes().get(0);
+                checkArgument(type instanceof IntegerType, "Table scan key range must be long value");
+                startKey = TableCodec.encodeRowKeyWithHandle(table.getId(), (long)v);
+                endKey = startKey;
+            } else if (ir.hasRange()) {
+                checkArgument(!ir.hasAccessPoints(),
+                        "Table scan must have one and only one access condition / point");
+                CodecDataOutput cdo = new CodecDataOutput();
+                Range r = ir.getRange();
+                DataType type = ir.getRangeType();
+                checkArgument(type instanceof IntegerType, "Table scan key range must be long value");
+
+                if (!r.hasLowerBound()) {
+                    // -INF
+                    // TODO: Domain and encoding should be further encapsulated
+                    startKey = TableCodec.encodeRowKeyWithHandle(table.getId(), Long.MIN_VALUE);
+                } else {
+                    // Comparision with null should be filtered since it yields unknown always
+                    Object lb = r.lowerEndpoint();
+                    checkArgument(lb instanceof Long, "Table scan key range must be long value");
+                    long lVal = (long)lb;
+                    if (r.lowerBoundType().equals(BoundType.OPEN)) {
+                        // TODO: Need push back?
+                        if (lVal != Long.MAX_VALUE) {
+                            lVal++;
+                        }
+                    }
+                    startKey = TableCodec.encodeRowKeyWithHandle(table.getId(), lVal);
+                }
+
+                if (!r.hasUpperBound()) {
+                    // INF
+                    endKey = TableCodec.encodeRowKeyWithHandle(table.getId(), Long.MAX_VALUE);
+                } else {
+                    Object ub = r.upperEndpoint();
+                    checkArgument(ub instanceof Long, "Table scan key range must be long value");
+                    long lVal = (long)ub;
+                    if (r.upperBoundType().equals(BoundType.CLOSED)) {
+                        if (lVal != Long.MAX_VALUE) {
+                            lVal++;
+                        }
+                    }
+                    endKey = TableCodec.encodeRowKeyWithHandle(table.getId(), lVal);
+                }
+            } else {
+                throw new TiClientInternalException("Empty access conditions");
+            }
+
+            ranges.add(
+                    KeyRange.newBuilder()
+                            .setLow(startKey)
+                            .setHigh(endKey)
+                            .build()
+            );
+        }
+
+        return ranges;
+    }
+
+    private List<KeyRange> buildIndexScanKeyRange(TiTableInfo           table,
+                                                  TiIndexInfo           index,
+                                                  List<IndexRange>      indexRanges) {
         requireNonNull(table, "Table cannot be null to encoding keyRange");
         requireNonNull(index, "Index cannot be null to encoding keyRange");
         requireNonNull(index, "indexRanges cannot be null to encoding keyRange");
@@ -104,9 +211,9 @@ public class ScanBuilder {
                 }
             }
 
-
             cdo.reset();
             TableCodec.writeIndexSeekKey(cdo, table.getId(), index.getId(), pointsData, lKey);
+
             ByteString lbsKey = ByteString
                                     .copyFrom(cdo.toBytes());
 

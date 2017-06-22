@@ -40,9 +40,7 @@ public class IntegerType extends DataType {
         super(tp);
     }
 
-    IntegerType(TiColumnInfo.InternalTypeHolder holder) {
-        super(holder);
-    }
+
 
     /**
      * decode a int value from cdi to row per tp.

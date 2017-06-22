@@ -94,7 +94,10 @@ public class Snapshot {
      * @return a Iterator that contains all result from this select request.
      */
     public Iterator<Row> select(SelectBuilder sb) {
-        return new SelectIterator(sb.getTiSelectReq(), convertHandleRangeToKeyRange(sb.getTable(), sb.getRangeListBuilder().build()), getSession(), regionCache);
+        return new SelectIterator(sb.getTiSelectReq(),
+                convertHandleRangeToKeyRange(sb.getTable(), sb.getRangeListBuilder().build()),
+                getSession(),
+                regionCache);
     }
 
     /*

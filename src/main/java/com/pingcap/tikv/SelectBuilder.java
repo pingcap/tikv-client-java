@@ -174,15 +174,4 @@ public class SelectBuilder {
       this.tiSelectReq.getFields().add(expr);
       return this;
   }
-
-  public List<TiRange<ByteString>> convertHandleRangeToKeyRange() {
-        ImmutableList.Builder<TiRange<ByteString>> builder = ImmutableList.builder();
-        for (TiRange<Long> r : getRangeListBuilder().build()) {
-            ByteString startKey = TableCodec.encodeRowKeyWithHandle(table.getId(), r.getLowValue());
-            ByteString endKey = TableCodec.encodeRowKeyWithHandle(table.getId(),
-                    Math.max(r.getHighValue() + 1, Long.MAX_VALUE));
-            builder.add(TiRange.createByteStringRange(startKey, endKey));
-        }
-        return builder.build();
-    }
 }

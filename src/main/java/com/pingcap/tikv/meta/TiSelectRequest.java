@@ -45,28 +45,28 @@ public class TiSelectRequest {
     private TiExpr having;
     private boolean distinct;
 
-      public SelectRequest toProto() {
-          return build();
-      }
+    public SelectRequest toProto() {
+        return build();
+    }
 
-      public SelectRequest build() {
+    public SelectRequest build() {
         // add optimize later
         // Optimize merge groupBy
         this.fields.forEach(expr -> this.builder.addFields(expr.toProto()));
-        if(!this.fields.isEmpty()) {
+        if (!this.fields.isEmpty()) {
             // convert fields type to set for later usage.
             Set<String> fieldSet = ImmutableSet.copyOf(TiFluentIterable.from(this.fields).transform(
-                    expr -> ((TiColumnRef)expr).getName()
+                    expr -> ((TiColumnRef) expr).getName()
             ));
             // solve
             List<TiColumnInfo> colToRemove = new ArrayList<>();
             this.tableInfo.getColumns().forEach(
-                            col -> {
-                                // remove column from table if such column is not in fields
-                                if(!fieldSet.contains(col.getName())) {
-                                    colToRemove.add(col);
-                                }
-                            }
+                    col -> {
+                        // remove column from table if such column is not in fields
+                        if (!fieldSet.contains(col.getName())) {
+                            colToRemove.add(col);
+                        }
+                    }
             );
 
             this.tableInfo.getColumns().removeAll(colToRemove);
@@ -79,5 +79,5 @@ public class TiSelectRequest {
         this.builder.setTimeZoneOffset(timeZoneOffset);
         this.builder.setStartTs(startTs);
         return this.builder.build();
-        }
-  }
+    }
+}
