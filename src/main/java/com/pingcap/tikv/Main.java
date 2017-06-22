@@ -44,7 +44,9 @@ public class Main {
 
         List<TiExpr> exprs = ImmutableList.of(
                 new NotEqual(TiColumnRef.create("c1", table),
-                             TiConstant.create(4L))
+                             TiConstant.create(4L)),
+                new GreaterThan(TiColumnRef.create("c4", table),
+                        TiConstant.create(100L))
         );
 
         ScanBuilder scanBuilder = new ScanBuilder();
@@ -57,6 +59,7 @@ public class Main {
         sb.addField(TiColumnRef.create("c2", table));
         sb.addField(TiColumnRef.create("c3", table));
         sb.addField(TiColumnRef.create("c4", table));
+        scanPlan.getFilters().stream().forEach(sb::addWhere);
 
         Iterator<Row> it = snapshot.select(sb);
 

@@ -16,16 +16,15 @@
 package com.pingcap.tikv.expression;
 
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.Objects.requireNonNull;
-
 import com.google.common.collect.ImmutableList;
 import com.pingcap.tidb.tipb.Expr;
 import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.util.TiFluentIterable;
 
 import java.util.List;
-import java.util.Objects;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
 
 public abstract class TiFunctionExpression implements TiExpr {
 
@@ -67,5 +66,31 @@ public abstract class TiFunctionExpression implements TiExpr {
         for (TiExpr expr : args) {
             requireNonNull(expr, "Expressions cannot be null.");
         }
+    }
+
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == null) return false;
+        if (this.getClass().equals(other.getClass())) {
+            TiFunctionExpression func = (TiFunctionExpression)other;
+            for (int i = 0; i < func.getArgSize(); i++) {
+                TiExpr arg = func.getArg(i);
+                if (!getArg(i).equals(arg)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 31 * getClass().hashCode();
+        for (TiExpr arg : args) {
+            hash *= arg.hashCode();
+        }
+        return hash;
     }
 }

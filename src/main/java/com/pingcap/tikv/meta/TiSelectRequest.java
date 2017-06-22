@@ -22,6 +22,7 @@ import com.pingcap.tidb.tipb.SelectRequest;
 import com.pingcap.tikv.expression.TiByItem;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiExpr;
+import com.pingcap.tikv.predicates.PredicateUtils;
 import com.pingcap.tikv.util.TiFluentIterable;
 import lombok.Data;
 
@@ -73,6 +74,7 @@ public class TiSelectRequest {
 
             this.tableInfo.getColumns().removeAll(colToRemove);
         }
+        this.builder.setWhere(PredicateUtils.mergeCNFExpressions(this.where).toProto());
         this.groupBys.forEach(expr -> this.builder.addGroupBy(expr.toProto()));
         this.orderBys.forEach(expr -> this.builder.addOrderBy(expr.toProto()));
         this.aggregates.forEach(expr -> this.builder.addAggregates(expr.toProto()));
