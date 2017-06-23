@@ -16,7 +16,6 @@
 package com.pingcap.tikv.meta;
 
 import com.google.common.collect.ImmutableSet;
-import com.pingcap.tidb.tipb.IndexInfo;
 import com.pingcap.tidb.tipb.KeyRange;
 import com.pingcap.tidb.tipb.SelectRequest;
 import com.pingcap.tikv.expression.TiByItem;
@@ -34,7 +33,7 @@ import java.util.Set;
 public class TiSelectRequest {
     private final SelectRequest.Builder builder;
     private TiTableInfo tableInfo;
-    private IndexInfo indexInfo;
+    private TiIndexInfo indexInfo;
     private final List<TiExpr> fields = new ArrayList<>();
     private final List<TiExpr> where = new ArrayList<>();
     private final List<TiByItem> groupBys = new ArrayList<>();
@@ -53,17 +52,21 @@ public class TiSelectRequest {
     }
 
     public SelectRequest build() {
-        // add optimize later
+        // TODO: add optimize later
         // Optimize merge groupBy
-        this.fields.forEach(expr -> this.builder.addFields(expr.toProto()));
-        if (!this.fields.isEmpty()) {
+        fields.forEach(expr -> builder.addFields(expr.toProto()));
+
+        if (indexInfo != null) {
+            builder.setIndexInfo(indexInfo.toProto(tableInfo));
+        }
+        if (!fields.isEmpty()) {
             // convert fields type to set for later usage.
-            Set<String> fieldSet = ImmutableSet.copyOf(TiFluentIterable.from(this.fields).transform(
+            Set<String> fieldSet = ImmutableSet.copyOf(TiFluentIterable.from(fields).transform(
                     expr -> ((TiColumnRef) expr).getName()
             ));
             // solve
             List<TiColumnInfo> colToRemove = new ArrayList<>();
-            this.tableInfo.getColumns().forEach(
+            tableInfo.getColumns().forEach(
                     col -> {
                         // remove column from table if such column is not in fields
                         if (!fieldSet.contains(col.getName())) {
@@ -71,18 +74,18 @@ public class TiSelectRequest {
                         }
                     }
             );
-
-            this.tableInfo.getColumns().removeAll(colToRemove);
+            // TODO: Add a clone before modify
+            tableInfo.getColumns().removeAll(colToRemove);
         }
-        this.builder.setWhere(PredicateUtils.mergeCNFExpressions(this.where).toProto());
-        this.groupBys.forEach(expr -> this.builder.addGroupBy(expr.toProto()));
-        this.orderBys.forEach(expr -> this.builder.addOrderBy(expr.toProto()));
-        this.aggregates.forEach(expr -> this.builder.addAggregates(expr.toProto()));
-        this.builder.setFlags(flags);
-        this.builder.setTableInfo(tableInfo.toProto());
-        this.builder.setTimeZoneOffset(timeZoneOffset);
-        this.builder.setStartTs(startTs);
-        this.builder.addAllRanges(keyRanges);
-        return this.builder.build();
+        builder.setWhere(PredicateUtils.mergeCNFExpressions(where).toProto());
+        groupBys.forEach(expr -> builder.addGroupBy(expr.toProto()));
+        orderBys.forEach(expr -> builder.addOrderBy(expr.toProto()));
+        aggregates.forEach(expr -> builder.addAggregates(expr.toProto()));
+        builder.setFlags(flags);
+        builder.setTableInfo(tableInfo.toProto());
+        builder.setTimeZoneOffset(timeZoneOffset);
+        builder.setStartTs(startTs);
+        //builder.addAllRanges(keyRanges);
+        return builder.build();
     }
 }

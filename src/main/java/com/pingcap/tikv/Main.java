@@ -1,14 +1,12 @@
 package com.pingcap.tikv;
 
 import com.google.common.collect.ImmutableList;
-import com.google.protobuf.ByteString;
-import com.pingcap.tidb.tipb.KeyRange;
 import com.pingcap.tikv.catalog.Catalog;
-import com.pingcap.tikv.codec.TableCodec;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiConstant;
 import com.pingcap.tikv.expression.TiExpr;
-import com.pingcap.tikv.expression.scalar.*;
+import com.pingcap.tikv.expression.scalar.GreaterThan;
+import com.pingcap.tikv.expression.scalar.NotEqual;
 import com.pingcap.tikv.meta.TiDBInfo;
 import com.pingcap.tikv.meta.TiIndexInfo;
 import com.pingcap.tikv.meta.TiTableInfo;
@@ -23,11 +21,6 @@ import java.util.logging.Logger;
 
 
 public class Main {
-    private static List<KeyRange> getFullRange(TiTableInfo table) {
-        ByteString startKey = TableCodec.encodeRowKeyWithHandle(table.getId(), 1L);
-        ByteString endKey = TableCodec.encodeRowKeyWithHandle(table.getId(), 2);
-        return ImmutableList.of(KeyRange.newBuilder().setLow(startKey).setHigh(endKey).build());
-    }
 
     public static void main(String[] args) throws Exception {
         // May need to save this reference
@@ -46,7 +39,7 @@ public class Main {
                 new NotEqual(TiColumnRef.create("c1", table),
                              TiConstant.create(4L)),
                 new GreaterThan(TiColumnRef.create("c4", table),
-                        TiConstant.create(100L))
+                        TiConstant.create(300L))
         );
 
         ScanBuilder scanBuilder = new ScanBuilder();
