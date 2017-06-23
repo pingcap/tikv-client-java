@@ -15,7 +15,6 @@ junit_suite_test(
     ),
     deps = [
         "//src/main/java/com/pingcap/tikv:tikv-java-client-lib",
-        "//src/main/java/com/pingcap/tikv:lombok",
         "//src/main/proto:java",
         "//src/main/proto:java_compile_imports",
         "@com_fasterxml_jackson_core_jackson_annotations//jar",
