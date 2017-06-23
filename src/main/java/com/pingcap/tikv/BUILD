@@ -20,23 +20,9 @@ java_library(
         "@org_pubref_rules_protobuf//java:netty_runtime_deps",
         "@org_apache_logging_log4j_log4j_api//jar",
         "@org_apache_logging_log4j_log4j_core//jar",
-        "@org_projectlombok_lombok//jar",
-         "@net_sf_trove4j_trove4j//jar",
-         ":lombok", 
+        "@net_sf_trove4j_trove4j//jar",
     ],
 )
-
-java_plugin( 
-  name = "lombok_plugin", 
-  processor_class = "lombok.launch.AnnotationProcessorHider$AnnotationProcessor", 
-  deps = ["@org_projectlombok_lombok//jar"], 
-) 
-
-java_library( 
-  name = "lombok", 
-  exports = ["@org_projectlombok_lombok//jar"], 
-  exported_plugins = [":lombok_plugin"], 
-) 
 
 filegroup(
     name = "srcs",

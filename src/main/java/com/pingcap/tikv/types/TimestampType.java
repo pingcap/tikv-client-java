@@ -42,16 +42,14 @@ public class TimestampType extends DataType {
         if (flag == UVARINT_FLAG) {
             // read packedUint
             LocalDateTime localDateTime = fromPackedLong(IntegerType.readUVarLong(cdi));
-            Timestamp timestamp = Timestamp.valueOf(localDateTime);
-            return timestamp;
-//            row.setTimestamp(pos, timestamp);
+            return Timestamp.valueOf(localDateTime);
+        // row.setTimestamp(pos, timestamp);
         } else if (flag == INT_FLAG){
             long nanoSec = IntegerType.readLong(cdi);
             Duration duration = Duration.ofNanos(nanoSec);
             // Go and Java share the same behavior. Time is calculated from 1970 Jan 1 UTC.
-            Time time = new Time(duration.toMillis());
-//            row.setTime(pos, time);
-            return time;
+            // row.setTime(pos, time);
+            return new Time(duration.toMillis());
         } else {
             throw new InvalidCodecFormatException("Invalid Flag type for TimestampType: " + flag);
         }

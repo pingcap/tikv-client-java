@@ -49,7 +49,7 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub> impleme
     @Override
     public TiTimestamp getTimestamp() {
         FutureObserver<Timestamp, TsoResponse> responseObserver =
-                new FutureObserver<>((TsoResponse resp) -> resp.getTimestamp());
+                new FutureObserver<>(TsoResponse::getTimestamp);
         StreamObserver<TsoRequest> requestObserver = callBidiStreamingWithRetry(PDGrpc.METHOD_TSO, responseObserver);
 
         requestObserver.onNext(tsoReq);
@@ -79,7 +79,7 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub> impleme
     @Override
     public Future<Region> getRegionByKeyAsync(ByteString key) {
         FutureObserver<Region, GetRegionResponse> responseObserver =
-                new FutureObserver<>((GetRegionResponse resp) -> resp.getRegion());
+                new FutureObserver<>(GetRegionResponse::getRegion);
         GetRegionRequest request = GetRegionRequest.newBuilder()
                 .setHeader(header)
                 .setRegionKey(key)
@@ -104,7 +104,7 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub> impleme
     @Override
     public Future<Region> getRegionByIDAsync(long id) {
         FutureObserver<Region, GetRegionResponse> responseObserver =
-                new FutureObserver<>((GetRegionResponse resp) -> resp.getRegion());
+                new FutureObserver<>(GetRegionResponse::getRegion);
 
         GetRegionByIDRequest request = GetRegionByIDRequest.newBuilder()
                 .setHeader(header)
@@ -186,11 +186,11 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub> impleme
         private final ManagedChannel        channel;
         private final long                  createTime;
 
-        public LeaderWrapper(HostAndPort leaderInfo,
-                             PDGrpc.PDBlockingStub blockingStub,
-                             PDGrpc.PDStub asyncStub,
-                             ManagedChannel channel,
-                             long createTime) {
+        LeaderWrapper(HostAndPort leaderInfo,
+                      PDGrpc.PDBlockingStub blockingStub,
+                      PDGrpc.PDStub asyncStub,
+                      ManagedChannel channel,
+                      long createTime) {
             this.leaderInfo = leaderInfo;
             this.blockingStub = blockingStub;
             this.asyncStub = asyncStub;
@@ -198,21 +198,21 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub> impleme
             this.createTime = createTime;
         }
 
-        public HostAndPort getLeaderInfo() {
+        HostAndPort getLeaderInfo() {
             return leaderInfo;
         }
 
-        public PDBlockingStub getBlockingStub() { return blockingStub; }
+        PDBlockingStub getBlockingStub() { return blockingStub; }
 
-        public PDStub getAsyncStub() {
+        PDStub getAsyncStub() {
             return asyncStub;
         }
 
-        public long getCreateTime() {
+        long getCreateTime() {
             return createTime;
         }
 
-        public void close() {
+        void close() {
             channel.isShutdown();
         }
     }

@@ -4,13 +4,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.codec.TableCodec;
 import com.pingcap.tikv.meta.TiSelectRequest;
-import lombok.Data;
-import com.pingcap.tidb.tipb.SelectRequest;
 import com.pingcap.tikv.expression.TiByItem;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.meta.TiRange;
 import com.pingcap.tikv.meta.TiTableInfo;
-import com.pingcap.tidb.tipb.ExprType;
 
 import java.util.Date;
 import java.util.List;
@@ -19,10 +16,9 @@ import java.util.TimeZone;
 /**
  * SelectBuilder is builder that you can build a select request which can be sent to TiKV and PD.
  */
-@Data
 public class SelectBuilder {
-  private static long MASK_IGNORE_TRUNCATE = 0x1;
-  private static long MASK_TRUNC_AS_WARNING = 0x2;
+  private static final long MASK_IGNORE_TRUNCATE = 0x1;
+  private static final long MASK_TRUNC_AS_WARNING = 0x2;
 
   private final Snapshot snapshot;
   private final ImmutableList.Builder<TiRange<Long>> rangeListBuilder;
@@ -185,5 +181,17 @@ public class SelectBuilder {
             builder.add(TiRange.createByteStringRange(startKey, endKey));
         }
         return builder.build();
-    }
+  }
+
+  ImmutableList.Builder<TiRange<Long>> getRangeListBuilder() {
+        return rangeListBuilder;
+  }
+
+  TiSelectRequest getTiSelectReq() {
+      return tiSelectReq;
+  }
+
+  public TiTableInfo getTable() {
+      return table;
+  }
 }
