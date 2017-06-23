@@ -16,6 +16,7 @@
 package com.pingcap.tikv.meta;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import com.pingcap.tidb.tipb.KeyRange;
 import com.pingcap.tidb.tipb.SelectRequest;
 import com.pingcap.tikv.expression.TiByItem;
@@ -59,14 +60,16 @@ public class TiSelectRequest {
         if (indexInfo != null) {
             builder.setIndexInfo(indexInfo.toProto(tableInfo));
         }
+        TiTableInfo filteredTable = tableInfo;
         if (!fields.isEmpty()) {
+            List<TiColumnInfo> columns = Lists.newArrayList(tableInfo.getColumns());
             // convert fields type to set for later usage.
             Set<String> fieldSet = ImmutableSet.copyOf(TiFluentIterable.from(fields).transform(
                     expr -> ((TiColumnRef) expr).getName()
             ));
             // solve
             List<TiColumnInfo> colToRemove = new ArrayList<>();
-            tableInfo.getColumns().forEach(
+            columns.forEach(
                     col -> {
                         // remove column from table if such column is not in fields
                         if (!fieldSet.contains(col.getName())) {
@@ -75,14 +78,31 @@ public class TiSelectRequest {
                     }
             );
             // TODO: Add a clone before modify
-            tableInfo.getColumns().removeAll(colToRemove);
+            columns.removeAll(colToRemove);
+            filteredTable = new TiTableInfo(
+                    tableInfo.getId(),
+                    CIStr.newCIStr(tableInfo.getName()),
+                    tableInfo.getCharset(),
+                    tableInfo.getCollate(),
+                    tableInfo.isPkHandle(),
+                    tableInfo.getColumns(),
+                    tableInfo.getIndices(),
+                    tableInfo.getComment(),
+                    tableInfo.getAutoIncId(),
+                    tableInfo.getMaxColumnId(),
+                    tableInfo.getMaxIndexId(),
+                    tableInfo.getOldSchemaId()
+            );
         }
-        builder.setWhere(PredicateUtils.mergeCNFExpressions(where).toProto());
-        groupBys.forEach(expr -> builder.addGroupBy(expr.toProto()));
-        orderBys.forEach(expr -> builder.addOrderBy(expr.toProto()));
-        aggregates.forEach(expr -> builder.addAggregates(expr.toProto()));
+        if (indexInfo == null) {
+            builder.setWhere(PredicateUtils.mergeCNFExpressions(where).toProto());
+            groupBys.forEach(expr -> builder.addGroupBy(expr.toProto()));
+            orderBys.forEach(expr -> builder.addOrderBy(expr.toProto()));
+            aggregates.forEach(expr -> builder.addAggregates(expr.toProto()));
+            builder.setTableInfo(filteredTable.toProto());
+        }
         builder.setFlags(flags);
-        builder.setTableInfo(tableInfo.toProto());
+
         builder.setTimeZoneOffset(timeZoneOffset);
         builder.setStartTs(startTs);
         //builder.addAllRanges(keyRanges);

@@ -33,7 +33,7 @@ public class Main {
         TiDBInfo db = cat.getDatabase("test");
         TiTableInfo table = cat.getTable(db, "test");
         Snapshot snapshot = cluster.createSnapshot();
-        TiIndexInfo index = TiIndexInfo.generateFakePrimaryKeyIndex(table);
+        TiIndexInfo index = table.getIndices().get(0);
 
         List<TiExpr> exprs = ImmutableList.of(
                 new NotEqual(TiColumnRef.create("c1", table),
@@ -47,11 +47,12 @@ public class Main {
 
         SelectBuilder sb = SelectBuilder.newBuilder(snapshot, table);
         sb.addRanges(scanPlan.getKeyRanges());
+        sb.setIndex(index);
 
         sb.addField(TiColumnRef.create("c1", table));
-        sb.addField(TiColumnRef.create("c2", table));
-        sb.addField(TiColumnRef.create("c3", table));
-        sb.addField(TiColumnRef.create("c4", table));
+        //sb.addField(TiColumnRef.create("c2", table));
+        //sb.addField(TiColumnRef.create("c3", table));
+        //sb.addField(TiColumnRef.create("c4", table));
         scanPlan.getFilters().stream().forEach(sb::addWhere);
 
         Iterator<Row> it = snapshot.select(sb);
@@ -59,11 +60,6 @@ public class Main {
         while (it.hasNext()) {
             Row r = it.next();
             SchemaInfer schemaInfer = SchemaInfer.create(sb.getTiSelectReq());
-//            RowTransformer.Builder builder = RowTransformer.newBuilder();
-//            builder.addProjection(new Skip(null));
-//            builder.addProjection(new Cast(DataTypeFactory.of(Types.TYPE_LONG)));
-//            builder.addSourceFieldTypes(schemaInfer.getTypes());
-//            r = builder.build().transform(r);
             for (int i = 0; i < r.fieldCount(); i++) {
                 Object val = r.get(i, schemaInfer.getType(i));
                 System.out.print(val);

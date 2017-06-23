@@ -5,6 +5,7 @@ import com.pingcap.tidb.tipb.KeyRange;
 import com.pingcap.tidb.tipb.SelectRequest;
 import com.pingcap.tikv.expression.TiByItem;
 import com.pingcap.tikv.expression.TiExpr;
+import com.pingcap.tikv.meta.TiIndexInfo;
 import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.meta.TiTableInfo;
 import lombok.Data;
@@ -171,6 +172,11 @@ public class SelectBuilder {
    */
   public SelectBuilder addField(TiExpr expr) {
       this.tiSelectReq.getFields().add(expr);
+      return this;
+  }
+
+  public SelectBuilder setIndex(TiIndexInfo index) {
+      this.tiSelectReq.setIndexInfo(index);
       return this;
   }
 }

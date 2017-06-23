@@ -24,6 +24,8 @@ import com.pingcap.tikv.util.TiFluentIterable;
 
 import java.util.List;
 
+import static java.util.Objects.requireNonNull;
+
 public class TiIndexInfo {
     private final long                  id;
     private final String                name;
@@ -50,9 +52,9 @@ public class TiIndexInfo {
                        // to by pass Jackson frameworks's check
                        @JsonProperty("___isFakePrimaryKey")boolean   isFakePrimaryKey) {
         this.id = id;
-        this.name = name.getL();
-        this.tableName = tableName.getL();
-        this.indexColumns = indexColumns;
+        this.name = requireNonNull(name, "index name is null").getL();
+        this.tableName = requireNonNull(tableName, "table name is null").getL();
+        this.indexColumns = ImmutableList.copyOf(requireNonNull(indexColumns, "indexColumns is null"));
         this.isUnique = isUnique;
         this.isPrimary = isPrimary;
         this.schemaState = SchemaState.fromValue(schemaState);

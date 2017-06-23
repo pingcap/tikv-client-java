@@ -20,12 +20,12 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.pingcap.tidb.tipb.TableInfo;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static java.util.Objects.requireNonNull;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TiTableInfo {
@@ -59,9 +59,9 @@ public class TiTableInfo {
         this.name = name.getL();
         this.charset = charset;
         this.collate = collate;
-        this.columns = columns;
+        this.columns = ImmutableList.copyOf(requireNonNull(columns, "columns is null"));
         this.pkIsHandle = pkIsHandle;
-        this.indices = indices;
+        this.indices = indices != null ? ImmutableList.copyOf(indices) : null;
         this.comment = comment;
         this.autoIncId = autoIncId;
         this.maxColumnId = maxColumnId;
