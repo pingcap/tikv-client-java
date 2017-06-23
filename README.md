@@ -58,9 +58,6 @@ Since it's not quite complete, a usage sample for now can be given is:
         }
 ```
 
-## Dependencies
-Before you start to work on this project, remember to install lombok plugin. This project is
-rely on this/
 ## TODO
 Contributions are welcomed. Here is a [TODO](https://github.com/pingcap/tikv-client-java/wiki/TODO-Lists) and you might contact maxiaoyu@pingcap.com if needed.
 
