@@ -17,11 +17,21 @@ mvn package
 ```
 
 Alternatively, you can use bazel for much faster build.
+
+Making a uber jar:
 ```
-bazel build //src/...
-bazel run //src/main/java/com/pingcap/tikv:tikv-runner
-bazel test //src/...
+make uber_jar
 ```
+run Main class:
+```
+make run
+```
+
+run test cases:
+```
+make test
+```
+
 this project is designed to hook with `pd` and `tikv` which you can find in `PingCap` github page.
 For the sake of saving your and our time, we submoudle these already. The following command can download them.
 ```
@@ -34,7 +44,6 @@ cd scripts
 make pd
 make tikv
 ```
-
 
 ## How to use for now
 Since it's not quite complete, a usage sample for now can be given is:
