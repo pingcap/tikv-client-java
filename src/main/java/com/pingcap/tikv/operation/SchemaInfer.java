@@ -17,17 +17,14 @@ package com.pingcap.tikv.operation;
 
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiExpr;
-import com.pingcap.tikv.meta.TiColumnInfo;
 import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.DataTypeFactory;
 import static com.pingcap.tikv.types.Types.*;
-import lombok.Getter;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * SchemaInfer extract row's type after query is executed.
@@ -56,10 +53,10 @@ public class SchemaInfer {
      * @param tiSelectRequest is SelectRequest
      */
     private void extractFieldTypes(TiSelectRequest tiSelectRequest) {
-        List<TiExpr> exprs = new ArrayList<>();
+        List<TiExpr> groupByExprs = new ArrayList<>();
         tiSelectRequest.getGroupBys().forEach(
                groupBy -> {
-                   exprs.add(groupBy.getExpr());
+                   groupByExprs.add(groupBy.getExpr());
                    types.add(groupBy.getExpr().getType());
                }
         );
@@ -73,17 +70,16 @@ public class SchemaInfer {
         }
 
         // Extract all column type information from TiExpr
-        // Since fields are simple expression, intermediateFieldTypes shares the same
-        // FieldType information.
         tiSelectRequest.getFields().forEach(
                 expr -> {
-                    if (exprs.size() > 0) {
-                        exprs.forEach(exp -> {
-                            // if group by and field share same expression, then just skip this.
-                            if(!exp.equals(expr)) {
-                                types.add(expr.getType());
-                            }
-                        });
+                    if (groupByExprs.size() > 0 ) {
+                        // collect all TiExpr in groupByExpr who does not agree with expr.
+                        groupByExprs.stream()
+                                .map(TiSelectRequest::getColumnRefFromExpr)
+                                .flatMap(Collection::stream)
+                                .filter(x -> !x.equals(expr))
+                                .collect(Collectors.toList())
+                                .forEach(x -> types.add(x.getType()));
                     } else {
                         types.add(expr.getType());
                     }

@@ -28,8 +28,8 @@ public abstract class TiFunctionExpression implements TiExpr {
     protected final List<TiExpr> args;
 
     protected TiFunctionExpression(TiExpr... args) {
-        validateArguments(args);
         this.args = ImmutableList.copyOf(args);
+        validateArguments(args);
     }
 
     protected abstract ExprType getExprType();

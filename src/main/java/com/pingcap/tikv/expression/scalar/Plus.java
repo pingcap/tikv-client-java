@@ -35,9 +35,12 @@ public class Plus extends TiBinaryFunctionExpresson {
         return "Plus";
     }
 
+    /**
+     * return left child expression's type.
+     * @return a dataType that plus results.
+     */
     @Override
     public DataType getType() {
-        // TODO: Add type inference
-        throw new UnsupportedOperationException();
+        return this.args.get(0).getType();
     }
 }

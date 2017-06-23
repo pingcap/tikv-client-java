@@ -67,7 +67,7 @@ public class TiSelectRequest {
         return this.builder.build();
     }
 
-    private List<TiColumnInfo> getColumnInfoFromExpr(TiExpr expr) {
+    public static List<TiColumnInfo> getColumnInfoFromExpr(TiExpr expr) {
         List<TiColumnInfo> columnInfos = new ArrayList<>();
         if (expr instanceof TiFunctionExpression) {
             TiFunctionExpression tiF = (TiFunctionExpression)expr;
@@ -83,6 +83,24 @@ public class TiSelectRequest {
             columnInfos.add(((TiColumnRef)expr).getColumnInfo());
         }
         return columnInfos;
+    }
+
+        public static List<TiColumnRef> getColumnRefFromExpr(TiExpr expr) {
+        List<TiColumnRef> columnRefss = new ArrayList<>();
+        if (expr instanceof TiFunctionExpression) {
+            TiFunctionExpression tiF = (TiFunctionExpression)expr;
+            tiF.getArgs().forEach(
+                   arg -> {
+                       if (arg instanceof TiColumnRef) {
+                           TiColumnRef tiCR = (TiColumnRef) arg;
+                           columnRefss.add(tiCR);
+                       }
+                   }
+            );
+        } else if (expr instanceof TiColumnRef) {
+            columnRefss.add(((TiColumnRef)expr));
+        }
+        return columnRefss;
     }
 
     public List<TiExpr> getFields() {
