@@ -15,7 +15,6 @@
 
 package com.pingcap.tikv.operation;
 
-import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.types.DataType;
@@ -24,7 +23,6 @@ import static com.pingcap.tikv.types.Types.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * SchemaInfer extract row's type after query is executed.
@@ -87,9 +85,7 @@ public class SchemaInfer {
         );
 
         tiSelectRequest.getAggregates().forEach(
-                expr -> {
-                    types.add(expr.getType());
-                }
+                expr -> types.add(expr.getType())
         );
     }
 

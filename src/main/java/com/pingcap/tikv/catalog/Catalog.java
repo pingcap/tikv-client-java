@@ -37,8 +37,8 @@ public class Catalog {
     private static ByteString KEY_DB = ByteString.copyFromUtf8("DBs");
     private static ByteString KEY_TABLE = ByteString.copyFromUtf8("Table");
 
-    private static String DB_PREFIX = "DB";
-    private static String TBL_PREFIX = "Table";
+    private static final String DB_PREFIX = "DB";
+    private static final String TBL_PREFIX = "Table";
 
     private CatalogTransaction trx;
 

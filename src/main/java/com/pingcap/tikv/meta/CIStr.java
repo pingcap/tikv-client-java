@@ -18,9 +18,11 @@ package com.pingcap.tikv.meta;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-// This class is mapping tidb's CIStr
-// For internal use only
-public class CIStr {
+/**
+ * This class is mapping TiDB's CIStr/
+ * For internal use only.
+ */
+class CIStr {
     private final String o; // original
     private final String l;
 

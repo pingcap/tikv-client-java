@@ -20,7 +20,6 @@ package com.pingcap.tikv.operation.transformer;
 import com.pingcap.tikv.row.ObjectRowImpl;
 import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.types.DataType;
-import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -78,9 +77,16 @@ public class RowTransformer {
         }
     }
 
-    @Setter
+    public void setProjections(List<Projection> projections) {
+        this.projections = projections;
+    }
+
     private List<Projection> projections;
-    @Setter
+
+    public void setSourceFieldTypes(List<DataType> sourceFieldTypes) {
+        this.sourceFieldTypes = sourceFieldTypes;
+    }
+
     private List<DataType> sourceFieldTypes;
 
     private RowTransformer(List<DataType> sourceTypes, List<Projection> projections) {

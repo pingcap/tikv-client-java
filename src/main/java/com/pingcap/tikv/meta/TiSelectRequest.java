@@ -22,13 +22,11 @@ import com.pingcap.tikv.expression.TiByItem;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.expression.TiFunctionExpression;
-import lombok.Data;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Data
 public class TiSelectRequest {
     private final SelectRequest.Builder builder = SelectRequest.newBuilder();
     private TiTableInfo tableInfo;
@@ -125,4 +123,32 @@ public class TiSelectRequest {
     public List<TiExpr> getWhere() {
         return where;
     }
-  }
+
+    public void setStartTs(long startTs) {
+        this.startTs = startTs;
+    }
+
+    public void setTimeZoneOffset(int timeZoneOffset) {
+        this.timeZoneOffset = timeZoneOffset;
+    }
+
+    public void setDistinct(boolean distinct) {
+        this.distinct = distinct;
+    }
+
+    public void setHaving(TiExpr having) {
+        this.having = having;
+    }
+
+    public void setLimit(int limit) {
+        this.limit = limit;
+    }
+
+    public void setFlags(long flags) {
+        this.flags = flags;
+    }
+
+    public void setTableInfo(TiTableInfo tableInfo) {
+        this.tableInfo = tableInfo;
+    }
+}
