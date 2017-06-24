@@ -95,7 +95,10 @@ public class TiSelectRequest {
             );
         }
         if (indexInfo == null) {
-            builder.setWhere(PredicateUtils.mergeCNFExpressions(where).toProto());
+            TiExpr whereExpr = PredicateUtils.mergeCNFExpressions(where);
+            if (whereExpr != null) {
+                builder.setWhere(whereExpr.toProto());
+            }
             groupBys.forEach(expr -> builder.addGroupBy(expr.toProto()));
             orderBys.forEach(expr -> builder.addOrderBy(expr.toProto()));
             aggregates.forEach(expr -> builder.addAggregates(expr.toProto()));

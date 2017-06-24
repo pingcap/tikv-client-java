@@ -73,7 +73,7 @@ public class ScanBuilder {
 
         List<KeyRange> keyRanges;
         if (index.isFakePrimaryKey()) {
-            keyRanges = buildTableScanKeyRange(table, index, irs);
+            keyRanges = buildTableScanKeyRange(table, irs);
         } else {
             keyRanges = buildIndexScanKeyRange(table, index, irs);
         }
@@ -82,13 +82,10 @@ public class ScanBuilder {
     }
 
     private List<KeyRange> buildTableScanKeyRange(TiTableInfo       table,
-                                                  TiIndexInfo       index,
-                                                  List<IndexRange>  indexRanges) {
+                                                        List<IndexRange>  indexRanges) {
         checkArgument(table.isPkHandle());
-        checkArgument(index.isFakePrimaryKey());
         requireNonNull(table, "Table cannot be null to encoding keyRange");
-        requireNonNull(index, "Index cannot be null to encoding keyRange");
-        requireNonNull(index, "indexRanges cannot be null to encoding keyRange");
+        requireNonNull(indexRanges, "indexRanges cannot be null to encoding keyRange");
 
         List<KeyRange> ranges = new ArrayList<>(indexRanges.size());
         for (IndexRange ir : indexRanges) {
