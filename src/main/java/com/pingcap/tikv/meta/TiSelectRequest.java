@@ -15,7 +15,6 @@
 
 package com.pingcap.tikv.meta;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.pingcap.tidb.tipb.KeyRange;
@@ -32,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 
@@ -68,7 +68,7 @@ public class TiSelectRequest implements Serializable {
     private boolean distinct;
 
     public SelectRequest buildAsIndexScan() {
-        Preconditions.checkArgument(startTs != 0, "timestamp is 0");
+        checkArgument(startTs != 0, "timestamp is 0");
         SelectRequest.Builder builder = SelectRequest.newBuilder();
         if (indexInfo == null) {
             throw new TiClientInternalException("Index is empty for index scan");
@@ -82,6 +82,7 @@ public class TiSelectRequest implements Serializable {
     }
 
     public SelectRequest build() {
+        checkArgument(startTs != 0, "timestamp is 0");
         SelectRequest.Builder builder = SelectRequest.newBuilder();
         // TODO: add optimize later
         // Optimize merge groupBy
