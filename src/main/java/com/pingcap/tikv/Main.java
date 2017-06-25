@@ -56,7 +56,8 @@ public class Main {
         selReq.addRanges(scanPlan.getKeyRanges())
                 .setTableInfo(table)
                 .setIndexInfo(index)
-                .addField(TiColumnRef.create("c1", table));
+                .addField(TiColumnRef.create("c1", table))
+                .setStartTs(snapshot.getVersion());
 
         // scanPlan.getFilters().stream().forEach(sb::addWhere);
         if (conf.isIgnoreTruncate()) {
@@ -73,9 +74,9 @@ public class Main {
             SchemaInfer schemaInfer = SchemaInfer.create(selReq);
             for (int i = 0; i < r.fieldCount(); i++) {
                 Object val = r.get(i, schemaInfer.getType(i));
-                printByHandle(table, (long)val, scanPlan.getFilters());
-                //System.out.print(val);
-                //System.out.print(" ");
+                //printByHandle(table, (long)val, scanPlan.getFilters());
+                System.out.print(val);
+                System.out.print(" ");
             }
             System.out.print("\n");
         }

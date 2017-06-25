@@ -15,6 +15,7 @@
 
 package com.pingcap.tikv.meta;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.pingcap.tidb.tipb.KeyRange;
@@ -67,6 +68,7 @@ public class TiSelectRequest implements Serializable {
     private boolean distinct;
 
     public SelectRequest buildAsIndexScan() {
+        Preconditions.checkArgument(startTs != 0, "timestamp is 0");
         SelectRequest.Builder builder = SelectRequest.newBuilder();
         if (indexInfo == null) {
             throw new TiClientInternalException("Index is empty for index scan");
@@ -141,6 +143,10 @@ public class TiSelectRequest implements Serializable {
     public TiSelectRequest setTableInfo(TiTableInfo tableInfo) {
         this.tableInfo = requireNonNull(tableInfo, "tableInfo is null");
         return this;
+    }
+
+    public TiTableInfo getTableInfo() {
+        return this.tableInfo;
     }
 
     public TiSelectRequest setIndexInfo(TiIndexInfo indexInfo) {
@@ -269,6 +275,12 @@ public class TiSelectRequest implements Serializable {
      */
     public TiSelectRequest addRanges(List<KeyRange> ranges) {
         keyRanges.addAll(requireNonNull(ranges, "KeyRange is null"));
+        return this;
+    }
+
+    public TiSelectRequest resetRanges(List<KeyRange> ranges) {
+        keyRanges.clear();
+        keyRanges.addAll(ranges);
         return this;
     }
 

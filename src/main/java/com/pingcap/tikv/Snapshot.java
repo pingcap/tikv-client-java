@@ -77,7 +77,7 @@ public class Snapshot {
 
     //TODO remove this
     static public List<TiRange<ByteString>> convertHandleRangeToKeyRange(TiTableInfo table,
-                                                                   List<TiRange<Long>> ranges) {
+                                                                         List<TiRange<Long>> ranges) {
         ImmutableList.Builder<TiRange<ByteString>> builder = ImmutableList.builder();
         for (TiRange<Long> r : ranges) {
             ByteString startKey = TableCodec.encodeRowKeyWithHandle(table.getId(), r.getLowValue());
@@ -90,13 +90,15 @@ public class Snapshot {
 
     /**
      * Issue a select request to TiKV and PD.
+     *
      * @param selReq is SelectRequest.
      * @return a Iterator that contains all result from this select request.
      */
     public Iterator<Row> select(TiSelectRequest selReq) {
         return new SelectIterator(selReq,
-                                  getSession(),
-                                  regionCache);
+                getSession(),
+                regionCache,
+                false);
     }
 
     /*
@@ -109,9 +111,17 @@ public class Snapshot {
                                 TiRange<ByteString> range) {
         Pair<Region, Store> regionStorePair = Pair.create(region, store);
         Pair<Pair<Region, Store>,
-             TiRange<ByteString>> regionToRangePair = Pair.create(regionStorePair, range);
+                TiRange<ByteString>> regionToRangePair = Pair.create(regionStorePair, range);
 
-        return new SelectIterator(req, ImmutableList.of(regionToRangePair), getSession());
+        return new SelectIterator(req, ImmutableList.of(regionToRangePair), getSession(), false);
+    }
+
+    public Iterator<Row> selectByIndex(TiSelectRequest req, Region region, Store store, TiRange<ByteString> range) {
+        Pair<Region, Store> regionStorePair = Pair.create(region, store);
+        Pair<Pair<Region, Store>,
+                TiRange<ByteString>> regionToRangePair = Pair.create(regionStorePair, range);
+
+        return new SelectIterator(req, ImmutableList.of(regionToRangePair), getSession(), true);
     }
 
     public Iterator<KvPair> scan(ByteString startKey) {
