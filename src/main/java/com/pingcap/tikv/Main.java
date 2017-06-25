@@ -57,6 +57,9 @@ public class Main {
                 .setTableInfo(table)
                 .setIndexInfo(index)
                 .addField(TiColumnRef.create("c1", table))
+                .addField(TiColumnRef.create("c2", table))
+                .addField(TiColumnRef.create("c3", table))
+                .addField(TiColumnRef.create("c4", table))
                 .setStartTs(snapshot.getVersion());
 
         // scanPlan.getFilters().stream().forEach(sb::addWhere);
@@ -67,7 +70,7 @@ public class Main {
         }
 
         System.out.println(exprs);
-        Iterator<Row> it = snapshot.select(selReq);
+        Iterator<Row> it = snapshot.selectByIndex(selReq);
 
         while (it.hasNext()) {
             Row r = it.next();

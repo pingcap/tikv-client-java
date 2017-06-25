@@ -87,9 +87,6 @@ public class TiSelectRequest implements Serializable {
         // Optimize merge groupBy
         fields.forEach(expr -> builder.addFields(expr.toProto()));
 
-        if (indexInfo != null) {
-            builder.setIndexInfo(indexInfo.toProto(tableInfo));
-        }
         TiTableInfo filteredTable = tableInfo;
         if (!fields.isEmpty()) {
             List<TiColumnInfo> columns = Lists.newArrayList(tableInfo.getColumns());
@@ -122,16 +119,14 @@ public class TiSelectRequest implements Serializable {
                     tableInfo.getOldSchemaId()
             );
         }
-        if (indexInfo == null) {
-            TiExpr whereExpr = PredicateUtils.mergeCNFExpressions(where);
-            if (whereExpr != null) {
-                builder.setWhere(whereExpr.toProto());
-            }
-            groupBys.forEach(expr -> builder.addGroupBy(expr.toProto()));
-            orderBys.forEach(expr -> builder.addOrderBy(expr.toProto()));
-            aggregates.forEach(expr -> builder.addAggregates(expr.toProto()));
-            builder.setTableInfo(filteredTable.toProto());
+        TiExpr whereExpr = PredicateUtils.mergeCNFExpressions(where);
+        if (whereExpr != null) {
+            builder.setWhere(whereExpr.toProto());
         }
+        groupBys.forEach(expr -> builder.addGroupBy(expr.toProto()));
+        orderBys.forEach(expr -> builder.addOrderBy(expr.toProto()));
+        aggregates.forEach(expr -> builder.addAggregates(expr.toProto()));
+        builder.setTableInfo(filteredTable.toProto());
         builder.setFlags(flags);
 
         builder.setTimeZoneOffset(timeZoneOffset);
