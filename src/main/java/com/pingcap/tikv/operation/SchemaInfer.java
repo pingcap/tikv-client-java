@@ -18,11 +18,12 @@ package com.pingcap.tikv.operation;
 import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.DataTypeFactory;
-import static com.pingcap.tikv.types.Types.*;
 import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.pingcap.tikv.types.Types.TYPE_VARCHAR;
 
 /**
  * SchemaInfer extract row's type after query is executed.
@@ -37,6 +38,7 @@ import java.util.List;
 public class SchemaInfer {
     @Getter
     private List<DataType> types;
+
     public static SchemaInfer create(TiSelectRequest tiSelectRequest) {
         return new SchemaInfer(tiSelectRequest);
     }
@@ -49,17 +51,18 @@ public class SchemaInfer {
     /**
      * TODO: order by
      * extract field types from tiSelectRequest for reading data to row.
+     *
      * @param tiSelectRequest is SelectRequest
      */
     private void extractFieldTypes(TiSelectRequest tiSelectRequest) {
         tiSelectRequest.getGroupBys().forEach(
-               groupBy -> {
-                   types.add(DataTypeFactory.of(TYPE_VARCHAR));
-               }
+                groupBy -> {
+                    types.add(DataTypeFactory.of(TYPE_VARCHAR));
+                }
         );
 
         if (tiSelectRequest.getAggregates().size() > 0) {
-            if(tiSelectRequest.getGroupBys().size() == 0) {
+            if (tiSelectRequest.getGroupBys().size() == 0) {
                 types.add(DataTypeFactory.of(TYPE_VARCHAR));
             }
         }

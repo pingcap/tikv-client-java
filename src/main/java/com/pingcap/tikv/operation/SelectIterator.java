@@ -19,25 +19,26 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import com.pingcap.tidb.tipb.Chunk;
-import com.pingcap.tidb.tipb.KeyRange;
 import com.pingcap.tidb.tipb.SelectResponse;
 import com.pingcap.tikv.RegionManager;
 import com.pingcap.tikv.RegionStoreClient;
-import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.TiSession;
 import com.pingcap.tikv.codec.CodecDataInput;
-import com.pingcap.tikv.row.RowReader;
-import com.pingcap.tikv.row.RowReaderFactory;
+import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.grpc.Metapb.Region;
 import com.pingcap.tikv.grpc.Metapb.Store;
-import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.meta.TiRange;
 import com.pingcap.tikv.meta.TiSelectRequest;
+import com.pingcap.tikv.row.Row;
+import com.pingcap.tikv.row.RowReader;
+import com.pingcap.tikv.row.RowReaderFactory;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.util.Pair;
 import com.pingcap.tikv.util.RangeSplitter;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -99,12 +100,11 @@ public class SelectIterator implements Iterator<Row> {
     }
 
     public SelectIterator(TiSelectRequest req,
-                          List<KeyRange> ranges,
                           TiSession session,
                           RegionManager rm) {
         // TODO: Unify TiRange with Range in predicates
         this(req, RangeSplitter.newSplitter(rm).splitRangeByRegion(
-                ranges.stream()
+                req.getRanges().stream()
                         .map(r -> TiRange.createByteStringRange(r.getLow(), r.getHigh()))
                         .collect(Collectors.toList())
         ), session);

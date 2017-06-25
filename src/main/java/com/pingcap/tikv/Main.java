@@ -13,6 +13,7 @@ import com.pingcap.tikv.expression.scalar.GreaterThan;
 import com.pingcap.tikv.expression.scalar.NotEqual;
 import com.pingcap.tikv.meta.TiDBInfo;
 import com.pingcap.tikv.meta.TiIndexInfo;
+import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.operation.SchemaInfer;
 import com.pingcap.tikv.predicates.ScanBuilder;
@@ -51,22 +52,24 @@ public class Main {
         ScanBuilder scanBuilder = new ScanBuilder();
         ScanBuilder.ScanPlan scanPlan = scanBuilder.buildScan(exprs, index, table);
 
-        SelectBuilder sb = SelectBuilder.newBuilder(snapshot, table);
-        sb.addRanges(scanPlan.getKeyRanges());
-        sb.setIndex(index);
+        TiSelectRequest selReq = new TiSelectRequest();
+        selReq.addRanges(scanPlan.getKeyRanges())
+                .setIndexInfo(index)
+                .addField(TiColumnRef.create("c1", table));
 
-        sb.addField(TiColumnRef.create("c1", table));
-        //sb.addField(TiColumnRef.create("c2", table));
-        //sb.addField(TiColumnRef.create("c3", table));
-        //sb.addField(TiColumnRef.create("c4", table));
         // scanPlan.getFilters().stream().forEach(sb::addWhere);
+        if (conf.isIgnoreTruncate()) {
+            selReq.setTruncateMode(TiSelectRequest.TruncateMode.IgnoreTruncation);
+        } else if (conf.isTruncateAsWarning()) {
+            selReq.setTruncateMode(TiSelectRequest.TruncateMode.TruncationAsWarning);
+        }
 
         System.out.println(exprs);
-        Iterator<Row> it = snapshot.select(sb);
+        Iterator<Row> it = snapshot.select(selReq);
 
         while (it.hasNext()) {
             Row r = it.next();
-            SchemaInfer schemaInfer = SchemaInfer.create(sb.getTiSelectReq());
+            SchemaInfer schemaInfer = SchemaInfer.create(selReq);
             for (int i = 0; i < r.fieldCount(); i++) {
                 Object val = r.get(i, schemaInfer.getType(i));
                 printByHandle(table, (long)val, scanPlan.getFilters());
@@ -78,24 +81,24 @@ public class Main {
     }
 
     private static void printByHandle(TiTableInfo table, long handle, List<TiExpr> filters) {
-        SelectBuilder sb = SelectBuilder.newBuilder(snapshot, table);
         ByteString startKey = TableCodec.encodeRowKeyWithHandle(table.getId(), handle);
         ByteString endKey = ByteString.copyFrom(KeyUtils.prefixNext(startKey.toByteArray()));
 
-        sb.addRanges(ImmutableList.of(KeyRange.newBuilder().setLow(startKey).setHigh(endKey).build()));
-        sb.addField(TiColumnRef.create("c1", table));
-        sb.addField(TiColumnRef.create("c2", table));
-        sb.addField(TiColumnRef.create("c3", table));
-        sb.addField(TiColumnRef.create("c4", table));
+        TiSelectRequest selReq = new TiSelectRequest();
+        selReq.addRanges(ImmutableList.of(KeyRange.newBuilder().setLow(startKey).setHigh(endKey).build()));
+        selReq.addField(TiColumnRef.create("c1", table));
+        selReq.addField(TiColumnRef.create("c2", table));
+        selReq.addField(TiColumnRef.create("c3", table));
+        selReq.addField(TiColumnRef.create("c4", table));
         if (filters != null) {
-            filters.stream().forEach(sb::addWhere);
+            filters.stream().forEach(selReq::addWhere);
         }
 
-        Iterator<Row> it = snapshot.select(sb);
+        Iterator<Row> it = snapshot.select(selReq);
 
         while (it.hasNext()) {
             Row r = it.next();
-            SchemaInfer schemaInfer = SchemaInfer.create(sb.getTiSelectReq());
+            SchemaInfer schemaInfer = SchemaInfer.create(selReq);
             for (int i = 0; i < r.fieldCount(); i++) {
                 Object val = r.get(i, schemaInfer.getType(i));
                 System.out.print(val);

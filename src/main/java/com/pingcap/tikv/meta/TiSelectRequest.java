@@ -24,35 +24,49 @@ import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.predicates.PredicateUtils;
 import com.pingcap.tikv.util.TiFluentIterable;
-import lombok.Data;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-@Data
-public class TiSelectRequest {
-    private final SelectRequest.Builder builder;
+import static java.util.Objects.requireNonNull;
+
+
+public class TiSelectRequest implements Serializable {
+    public enum TruncateMode {
+        IgnoreTruncation(0x1),
+        TruncationAsWarning(0x2);
+
+        private final long mask;
+
+        TruncateMode(long mask) {
+            this.mask = mask;
+        }
+
+        public long mask(long flags) {
+            return flags | mask;
+        }
+    }
+
     private TiTableInfo tableInfo;
     private TiIndexInfo indexInfo;
     private final List<TiExpr> fields = new ArrayList<>();
     private final List<TiExpr> where = new ArrayList<>();
     private final List<TiByItem> groupBys = new ArrayList<>();
     private final List<TiByItem> orderBys = new ArrayList<>();
-    private final List<TiExpr>   aggregates = new ArrayList<>();
-    private final List<KeyRange> keyRanges = new ArrayList<>();
+    private final List<TiExpr> aggregates = new ArrayList<>();
+
     private int limit;
     private int timeZoneOffset;
     private long flags;
     private long startTs;
     private TiExpr having;
     private boolean distinct;
-
-    public SelectRequest toProto() {
-        return build();
-    }
+    private List<KeyRange> keyRanges;
 
     public SelectRequest build() {
+        SelectRequest.Builder builder = SelectRequest.newBuilder();
         // TODO: add optimize later
         // Optimize merge groupBy
         fields.forEach(expr -> builder.addFields(expr.toProto()));
@@ -69,15 +83,13 @@ public class TiSelectRequest {
             ));
             // solve
             List<TiColumnInfo> colToRemove = new ArrayList<>();
-            columns.forEach(
-                    col -> {
-                        // remove column from table if such column is not in fields
-                        if (!fieldSet.contains(col.getName())) {
-                            colToRemove.add(col);
-                        }
-                    }
-            );
-            // TODO: Add a clone before modify
+            for (TiColumnInfo column : columns) {
+                // remove column from table if such column is not in fields
+                if (!fieldSet.contains(column.getName())) {
+                    colToRemove.add(column);
+                }
+            }
+
             columns.removeAll(colToRemove);
             filteredTable = new TiTableInfo(
                     tableInfo.getId(),
@@ -110,5 +122,148 @@ public class TiSelectRequest {
         builder.setStartTs(startTs);
         //builder.addAllRanges(keyRanges);
         return builder.build();
+    }
+
+    public TiSelectRequest setTableInfo(TiTableInfo tableInfo) {
+        this.tableInfo = tableInfo;
+        return this;
+    }
+
+    public TiSelectRequest setIndexInfo(TiIndexInfo indexInfo) {
+        this.indexInfo = indexInfo;
+        return this;
+    }
+
+    public int getLimit() {
+        return limit;
+    }
+
+    /**
+     * add limit clause to select query.
+     * @param limit is just a integer.
+     * @return a SelectBuilder
+     */
+    public TiSelectRequest setLimit(int limit) {
+        this.limit = limit;
+        return this;
+    }
+
+    /**
+     * set timezone offset
+     * @param timeZoneOffset timezone offset
+     * @return a TiSelectRequest
+     */
+    public TiSelectRequest setTimeZoneOffset(int timeZoneOffset) {
+        this.timeZoneOffset = timeZoneOffset;
+        return this;
+    }
+
+    /**
+     * set truncate mode
+     * @param mode truncate mode
+     * @return a TiSelectRequest
+     */
+    public TiSelectRequest setTruncateMode(TruncateMode mode) {
+        flags = requireNonNull(mode, "mode is null").mask(flags);
+        return this;
+    }
+
+    /**
+     * set start timestamp for the transaction
+     * @param startTs timestamp
+     * @return a TiSelectRequest
+     */
+    public TiSelectRequest setStartTs(long startTs) {
+        this.startTs = startTs;
+        return this;
+    }
+
+    /**
+     * set having clause to select query
+     * @param having is a expression represents Having
+     * @return a TiSelectRequest
+     */
+    public TiSelectRequest setHaving(TiExpr having) {
+        this.having = requireNonNull(having, "having is null");
+        return this;
+    }
+
+    public TiSelectRequest setDistinct(boolean distinct) {
+        distinct = distinct;
+        return this;
+    }
+
+    /**
+     * add aggregate function to select query
+     *
+     * @param expr is a TiUnaryFunction expression.
+     * @return a SelectBuilder
+     */
+    public TiSelectRequest addAggregate(TiExpr expr) {
+        aggregates.add(expr);
+        return this;
+    }
+
+    public List<TiExpr> getAggregates() {
+        return aggregates;
+    }
+
+    /**
+     * add a order by clause to select query.
+     * @param byItem is a TiByItem.
+     * @return a SelectBuilder
+     */
+    public TiSelectRequest addOrderBy(TiByItem byItem) {
+        orderBys.add(byItem);
+        return this;
+    }
+
+    /**
+     * add a group by clause to select query
+     * @param byItem is a TiByItem
+     * @return a SelectBuilder
+     */
+    public TiSelectRequest addGroupBy(TiByItem byItem) {
+        groupBys.add(byItem);
+        return this;
+    }
+
+    public List<TiByItem> getGroupBys() {
+        return groupBys;
+    }
+
+    /**
+     * field is not support in TiDB yet, but we still implement this
+     * in case of TiDB support it in future.
+     * The usage of this function will be simple query such as select c1 from t.
+     *
+     * @param expr expr is a TiExpr. It is usually TiColumnRef.
+     */
+    public TiSelectRequest addField(TiExpr expr) {
+        fields.add(expr);
+        return this;
+    }
+
+    public List<TiExpr> getFields() {
+        return fields;
+    }
+
+    /**
+     * set key range of scan
+     *
+     * @param ranges key range of scan
+     */
+    public TiSelectRequest addRanges(List<KeyRange> ranges) {
+        keyRanges.addAll(ranges);
+        return this;
+    }
+
+    public List<KeyRange> getRanges() {
+        return keyRanges;
+    }
+
+    public TiSelectRequest addWhere(TiExpr where) {
+        this.where.add(where);
+        return this;
     }
 }

@@ -90,14 +90,13 @@ public class Snapshot {
 
     /**
      * Issue a select request to TiKV and PD.
-     * @param sb is Select Builder.
+     * @param selReq is SelectRequest.
      * @return a Iterator that contains all result from this select request.
      */
-    public Iterator<Row> select(SelectBuilder sb) {
-        return new SelectIterator(sb.getTiSelectReq(),
-                sb.getRangeListBuilder().build(),
-                getSession(),
-                regionCache);
+    public Iterator<Row> select(TiSelectRequest selReq) {
+        return new SelectIterator(selReq,
+                                  getSession(),
+                                  regionCache);
     }
 
     /*
