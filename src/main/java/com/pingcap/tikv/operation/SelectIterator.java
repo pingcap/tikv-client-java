@@ -85,7 +85,7 @@ public class SelectIterator implements Iterator<Row> {
             Region region = pair.first;
             Store store = pair.second;
             try (RegionStoreClient client = RegionStoreClient.create(region, store, session)) {
-                SelectResponse resp = client.coprocess(req.build(), ImmutableList.of(range));
+                SelectResponse resp = client.coprocess(req.buildAsIndexScan(), ImmutableList.of(range));
                 if (resp == null) {
                     eof = true;
                     return false;

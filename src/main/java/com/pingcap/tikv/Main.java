@@ -54,6 +54,7 @@ public class Main {
 
         TiSelectRequest selReq = new TiSelectRequest();
         selReq.addRanges(scanPlan.getKeyRanges())
+                .setTableInfo(table)
                 .setIndexInfo(index)
                 .addField(TiColumnRef.create("c1", table));
 

@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.pingcap.tidb.tipb.KeyRange;
 import com.pingcap.tidb.tipb.SelectRequest;
+import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.expression.TiByItem;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiExpr;
@@ -56,6 +57,7 @@ public class TiSelectRequest implements Serializable {
     private final List<TiByItem> groupBys = new ArrayList<>();
     private final List<TiByItem> orderBys = new ArrayList<>();
     private final List<TiExpr> aggregates = new ArrayList<>();
+    private final List<KeyRange> keyRanges = new ArrayList<>();
 
     private int limit;
     private int timeZoneOffset;
@@ -63,7 +65,19 @@ public class TiSelectRequest implements Serializable {
     private long startTs;
     private TiExpr having;
     private boolean distinct;
-    private List<KeyRange> keyRanges;
+
+    public SelectRequest buildAsIndexScan() {
+        SelectRequest.Builder builder = SelectRequest.newBuilder();
+        if (indexInfo == null) {
+            throw new TiClientInternalException("Index is empty for index scan");
+        }
+        builder.setIndexInfo(indexInfo.toProto(tableInfo));
+        builder.setFlags(flags);
+
+        builder.setTimeZoneOffset(timeZoneOffset);
+        builder.setStartTs(startTs);
+        return builder.build();
+    }
 
     public SelectRequest build() {
         SelectRequest.Builder builder = SelectRequest.newBuilder();
@@ -125,12 +139,12 @@ public class TiSelectRequest implements Serializable {
     }
 
     public TiSelectRequest setTableInfo(TiTableInfo tableInfo) {
-        this.tableInfo = tableInfo;
+        this.tableInfo = requireNonNull(tableInfo, "tableInfo is null");
         return this;
     }
 
     public TiSelectRequest setIndexInfo(TiIndexInfo indexInfo) {
-        this.indexInfo = indexInfo;
+        this.indexInfo = requireNonNull(indexInfo, "indexInfo is null");
         return this;
     }
 
@@ -200,7 +214,7 @@ public class TiSelectRequest implements Serializable {
      * @return a SelectBuilder
      */
     public TiSelectRequest addAggregate(TiExpr expr) {
-        aggregates.add(expr);
+        aggregates.add(requireNonNull(expr, "aggregation expr is null"));
         return this;
     }
 
@@ -214,7 +228,7 @@ public class TiSelectRequest implements Serializable {
      * @return a SelectBuilder
      */
     public TiSelectRequest addOrderBy(TiByItem byItem) {
-        orderBys.add(byItem);
+        orderBys.add(requireNonNull(byItem, "byItem is null"));
         return this;
     }
 
@@ -224,7 +238,7 @@ public class TiSelectRequest implements Serializable {
      * @return a SelectBuilder
      */
     public TiSelectRequest addGroupBy(TiByItem byItem) {
-        groupBys.add(byItem);
+        groupBys.add(requireNonNull(byItem, "byItem is null"));
         return this;
     }
 
@@ -240,7 +254,7 @@ public class TiSelectRequest implements Serializable {
      * @param expr expr is a TiExpr. It is usually TiColumnRef.
      */
     public TiSelectRequest addField(TiExpr expr) {
-        fields.add(expr);
+        fields.add(requireNonNull(expr, "Field expr is null"));
         return this;
     }
 
@@ -254,7 +268,7 @@ public class TiSelectRequest implements Serializable {
      * @param ranges key range of scan
      */
     public TiSelectRequest addRanges(List<KeyRange> ranges) {
-        keyRanges.addAll(ranges);
+        keyRanges.addAll(requireNonNull(ranges, "KeyRange is null"));
         return this;
     }
 
@@ -263,7 +277,7 @@ public class TiSelectRequest implements Serializable {
     }
 
     public TiSelectRequest addWhere(TiExpr where) {
-        this.where.add(where);
+        this.where.add(requireNonNull(where, "where expr is null"));
         return this;
     }
 }
