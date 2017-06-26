@@ -16,7 +16,6 @@
 package com.pingcap.tikv.predicates;
 
 
-import com.google.common.collect.ImmutableList;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.expression.TiFunctionExpression;
@@ -37,7 +36,7 @@ public class PredicateUtils {
         return new And(exprs.get(0), mergeCNFExpressions(exprs.subList(1, exprs.size())));
     }
 
-    public static List<TiColumnRef> extractColumnRefFromExpr(TiExpr expr) {
+    public static Set<TiColumnRef> extractColumnRefFromExpr(TiExpr expr) {
         Set<TiColumnRef> columnRefs = new HashSet<>();
         if (expr instanceof TiFunctionExpression) {
             TiFunctionExpression tiF = (TiFunctionExpression)expr;
@@ -50,6 +49,6 @@ public class PredicateUtils {
         } else if (expr instanceof TiColumnRef) {
             columnRefs.add(((TiColumnRef)expr));
         }
-        return ImmutableList.copyOf(columnRefs);
+        return columnRefs;
     }
 }

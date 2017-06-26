@@ -15,23 +15,23 @@
 
 package com.pingcap.tikv.meta;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 import com.pingcap.tidb.tipb.KeyRange;
 import com.pingcap.tidb.tipb.SelectRequest;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.expression.TiByItem;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiExpr;
-import com.pingcap.tikv.predicates.PredicateUtils;
-import com.pingcap.tikv.util.TiFluentIterable;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.pingcap.tikv.predicates.PredicateUtils.extractColumnRefFromExpr;
+import static com.pingcap.tikv.predicates.PredicateUtils.mergeCNFExpressions;
 import static java.util.Objects.requireNonNull;
 
 
@@ -88,51 +88,57 @@ public class TiSelectRequest implements Serializable {
         // Optimize merge groupBy
         fields.forEach(expr -> builder.addFields(expr.toProto()));
 
-        TiTableInfo filteredTable = tableInfo;
+        Set<TiColumnRef> usedColumnRef = new HashSet<>();
         if (!fields.isEmpty()) {
-            List<TiColumnInfo> columns = Lists.newArrayList(tableInfo.getColumns());
-            // convert fields type to set for later usage.
-            Set<String> fieldSet = ImmutableSet.copyOf(TiFluentIterable.from(fields).transform(
-                    expr -> ((TiColumnRef) expr).getName()
-            ));
-            // solve
-            List<TiColumnInfo> colToRemove = new ArrayList<>();
-            for (TiColumnInfo column : columns) {
-                // remove column from table if such column is not in fields
-                if (!fieldSet.contains(column.getName())) {
-                    colToRemove.add(column);
-                }
+            for (TiExpr field : fields) {
+                builder.addFields(field.toProto());
+                usedColumnRef.addAll(extractColumnRefFromExpr(field));
             }
-
-            columns.removeAll(colToRemove);
-            filteredTable = new TiTableInfo(
-                    tableInfo.getId(),
-                    CIStr.newCIStr(tableInfo.getName()),
-                    tableInfo.getCharset(),
-                    tableInfo.getCollate(),
-                    tableInfo.isPkHandle(),
-                    tableInfo.getColumns(),
-                    tableInfo.getIndices(),
-                    tableInfo.getComment(),
-                    tableInfo.getAutoIncId(),
-                    tableInfo.getMaxColumnId(),
-                    tableInfo.getMaxIndexId(),
-                    tableInfo.getOldSchemaId()
-            );
         }
-        TiExpr whereExpr = PredicateUtils.mergeCNFExpressions(where);
+
+        for (TiByItem item : groupByItems) {
+            builder.addGroupBy(item.toProto());
+            usedColumnRef.addAll(extractColumnRefFromExpr(item.getExpr()));
+        }
+
+        for (TiByItem item : orderByItems) {
+            builder.addOrderBy(item.toProto());
+        }
+
+        for (TiExpr agg : aggregates) {
+            builder.addAggregates(agg.toProto());
+        }
+
+        List<TiColumnInfo> columns = usedColumnRef
+                                    .stream()
+                                    .map(colRef -> colRef.getColumnInfo())
+                                    .collect(Collectors.toList());
+
+        TiTableInfo filteredTable = new TiTableInfo(
+                tableInfo.getId(),
+                CIStr.newCIStr(tableInfo.getName()),
+                tableInfo.getCharset(),
+                tableInfo.getCollate(),
+                tableInfo.isPkHandle(),
+                columns,
+                tableInfo.getIndices(),
+                tableInfo.getComment(),
+                tableInfo.getAutoIncId(),
+                tableInfo.getMaxColumnId(),
+                tableInfo.getMaxIndexId(),
+                tableInfo.getOldSchemaId()
+        );
+
+        TiExpr whereExpr = mergeCNFExpressions(where);
         if (whereExpr != null) {
             builder.setWhere(whereExpr.toProto());
         }
-        groupByItems.forEach(expr -> builder.addGroupBy(expr.toProto()));
-        orderByItems.forEach(expr -> builder.addOrderBy(expr.toProto()));
-        aggregates.forEach(expr -> builder.addAggregates(expr.toProto()));
+
         builder.setTableInfo(filteredTable.toProto());
         builder.setFlags(flags);
 
         builder.setTimeZoneOffset(timeZoneOffset);
         builder.setStartTs(startTs);
-        //builder.addAllRanges(keyRanges);
         return builder.build();
     }
 
@@ -156,6 +162,7 @@ public class TiSelectRequest implements Serializable {
 
     /**
      * add limit clause to select query.
+     *
      * @param limit is just a integer.
      * @return a SelectBuilder
      */
@@ -166,6 +173,7 @@ public class TiSelectRequest implements Serializable {
 
     /**
      * set timezone offset
+     *
      * @param timeZoneOffset timezone offset
      * @return a TiSelectRequest
      */
@@ -176,6 +184,7 @@ public class TiSelectRequest implements Serializable {
 
     /**
      * set truncate mode
+     *
      * @param mode truncate mode
      * @return a TiSelectRequest
      */
@@ -186,6 +195,7 @@ public class TiSelectRequest implements Serializable {
 
     /**
      * set start timestamp for the transaction
+     *
      * @param startTs timestamp
      * @return a TiSelectRequest
      */
@@ -196,6 +206,7 @@ public class TiSelectRequest implements Serializable {
 
     /**
      * set having clause to select query
+     *
      * @param having is a expression represents Having
      * @return a TiSelectRequest
      */
@@ -226,6 +237,7 @@ public class TiSelectRequest implements Serializable {
 
     /**
      * add a order by clause to select query.
+     *
      * @param byItem is a TiByItem.
      * @return a SelectBuilder
      */
@@ -236,6 +248,7 @@ public class TiSelectRequest implements Serializable {
 
     /**
      * add a group by clause to select query
+     *
      * @param byItem is a TiByItem
      * @return a SelectBuilder
      */
