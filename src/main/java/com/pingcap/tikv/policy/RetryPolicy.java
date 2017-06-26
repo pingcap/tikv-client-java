@@ -21,7 +21,6 @@ import io.grpc.Status;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-
 import java.util.concurrent.Callable;
 
 public abstract class RetryPolicy {
@@ -30,11 +29,11 @@ public abstract class RetryPolicy {
     // Basically a leader recheck method
     private Callable<Void> recoverMethod;
 
-    private ImmutableSet<Status> unrecoverableStatus = ImmutableSet.of(
-            Status.ALREADY_EXISTS, Status.PERMISSION_DENIED,
-            Status.INVALID_ARGUMENT, Status.NOT_FOUND,
-            Status.UNIMPLEMENTED, Status.OUT_OF_RANGE,
-            Status.UNAUTHENTICATED
+    private ImmutableSet<Status.Code> unrecoverableStatus = ImmutableSet.of(
+            Status.Code.ALREADY_EXISTS, Status.Code.PERMISSION_DENIED,
+            Status.Code.INVALID_ARGUMENT, Status.Code.NOT_FOUND,
+            Status.Code.UNIMPLEMENTED, Status.Code.OUT_OF_RANGE,
+            Status.Code.UNAUTHENTICATED
     );
 
     public RetryPolicy(Callable<Void> recoverMethod) {
@@ -49,7 +48,7 @@ public abstract class RetryPolicy {
     }
 
     protected boolean checkNotRecoverableException(Status status) {
-        return unrecoverableStatus.contains(status);
+        return unrecoverableStatus.contains(status.getCode());
     }
 
     public <T> T callWithRetry(Callable<T> proc, String methodName) {
