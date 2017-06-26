@@ -205,7 +205,7 @@ public class TiSelectRequest implements Serializable {
     }
 
     public TiSelectRequest setDistinct(boolean distinct) {
-        distinct = distinct;
+        this.distinct = distinct;
         return this;
     }
 
