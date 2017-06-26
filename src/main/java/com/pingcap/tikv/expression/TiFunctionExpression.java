@@ -23,6 +23,9 @@ import com.pingcap.tikv.util.TiFluentIterable;
 
 import java.util.List;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
+
 public abstract class TiFunctionExpression implements TiExpr {
 
     protected final List<TiExpr> args;
@@ -33,6 +36,19 @@ public abstract class TiFunctionExpression implements TiExpr {
     }
 
     protected abstract ExprType getExprType();
+
+    public TiExpr getArg(int i) {
+        checkArgument(i < args.size(), "Index out of bound for TiExpression Arguments");
+        return args.get(i);
+    }
+
+    public int getArgSize() {
+        return args.size();
+    }
+
+    public List<TiExpr> getArgs() {
+        return args;
+    }
 
     @Override
     public Expr toProto() {
@@ -49,9 +65,36 @@ public abstract class TiFunctionExpression implements TiExpr {
 
     public abstract String getName();
 
-    protected abstract void validateArguments(TiExpr... args) throws RuntimeException;
+    protected void validateArguments(TiExpr... args) throws RuntimeException {
+        requireNonNull(args, "Expressions cannot be null");
+        for (TiExpr expr : args) {
+            requireNonNull(expr, "Expressions cannot be null.");
+        }
+    }
 
-    public List<TiExpr> getArgs() {
-        return args;
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == null) return false;
+        if (this.getClass().equals(other.getClass())) {
+            TiFunctionExpression func = (TiFunctionExpression)other;
+            for (int i = 0; i < func.getArgSize(); i++) {
+                TiExpr arg = func.getArg(i);
+                if (!getArg(i).equals(arg)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 31 * getClass().hashCode();
+        for (TiExpr arg : args) {
+            hash *= arg.hashCode();
+        }
+        return hash;
     }
 }

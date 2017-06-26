@@ -20,6 +20,7 @@ package com.pingcap.tikv.types;
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.codec.InvalidCodecFormatException;
+import com.pingcap.tikv.meta.TiColumnInfo;
 import com.pingcap.tikv.row.Row;
 
 import java.sql.Time;
@@ -34,6 +35,10 @@ public class TimestampType extends DataType {
 
     private TimestampType(int tp) {
         super(tp);
+    }
+
+    TimestampType(TiColumnInfo.InternalTypeHolder holder) {
+        super(holder);
     }
 
     @Override

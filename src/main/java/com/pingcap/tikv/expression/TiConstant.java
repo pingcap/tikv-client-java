@@ -21,6 +21,8 @@ import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.types.*;
 
+import java.util.Objects;
+
 import static com.pingcap.tikv.types.Types.*;
 
 public class TiConstant implements TiExpr {
@@ -34,11 +36,15 @@ public class TiConstant implements TiExpr {
         this.value = value;
     }
 
-    private boolean isIntegerType() {
+    public boolean isIntegerType() {
         return value instanceof Long ||
                 value instanceof Integer ||
                 value instanceof Short ||
                 value instanceof Byte;
+    }
+
+    public Object getValue() {
+        return value;
     }
 
     @Override
@@ -83,5 +89,29 @@ public class TiConstant implements TiExpr {
         } else {
             throw new TiExpressionException("Constant type not supported.");
         }
+    }
+
+    @Override
+    public String toString() {
+        if (value == null) {
+            return "null";
+        }
+        if (value instanceof String) {
+            return String.format("\"%s\"", value);
+        }
+        return value.toString();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other instanceof TiConstant) {
+            return Objects.equals(value, ((TiConstant)other).value);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return value == null ? 0 : value.hashCode();
     }
 }

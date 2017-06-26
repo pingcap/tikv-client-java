@@ -13,15 +13,14 @@
  * limitations under the License.
  */
 
-package com.pingcap.tikv.expression;
+package com.pingcap.tikv.exception;
 
-import com.pingcap.tidb.tipb.Expr;
-import com.pingcap.tikv.types.DataType;
 
-public interface TiExpr {
-    Expr toProto();
-    default boolean isSupportedExpr() {
-        return true;
+public class CastingException extends RuntimeException {
+    public CastingException(Exception e) {
+        super(e);
     }
-    DataType getType();
+    public CastingException(String msg) {
+        super(msg);
+    }
 }

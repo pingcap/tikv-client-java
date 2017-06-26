@@ -39,16 +39,40 @@ public class TableCodec {
         cdo.write(encodeHandle);
     }
 
+    // EncodeIndexSeekKey encodes an index value to kv.Key.
+    public static void writeIndexSeekKey(CodecDataOutput cdo,
+                                         long tableId,
+                                         long indexId,
+                                         byte[]...dataGroup) {
+        appendTableIndexPrefix(cdo, tableId);
+        IntegerType.writeLong(cdo, indexId);
+        for (byte[] data : dataGroup) {
+            if (data != null) {
+                cdo.write(data);
+            }
+        }
+    }
+
+    // appendTableRecordPrefix appends table record prefix  "t[tableID]_r".
+    // tablecodec.go:appendTableRecordPrefix
     private static void appendTableRecordPrefix(CodecDataOutput cdo, long tableId) {
         cdo.write(TBL_PREFIX);
         IntegerType.writeLong(cdo, tableId);
         cdo.write(REC_PREFIX_SEP);
     }
+
+    // appendTableIndexPrefix appends table index prefix  "t[tableID]_i".
+    // tablecodec.go:appendTableIndexPrefix
+    private static void appendTableIndexPrefix(CodecDataOutput cdo, long tableId) {
+        cdo.write(TBL_PREFIX);
+        IntegerType.writeLong(cdo, tableId);
+        cdo.write(IDX_PREFIX_SEP);
+    }
+
     // encodeRowKeyWithHandle encodes the table id, row handle into a bytes buffer/array
     public static ByteString encodeRowKeyWithHandle(long tableId, long handle) {
         CodecDataOutput cdo = new CodecDataOutput();
-        appendTableRecordPrefix(cdo, tableId);
-        IntegerType.writeLong(cdo, handle);
+        writeRowKeyWithHandle(cdo, tableId, handle);
         return cdo.toByteString();
     }
 

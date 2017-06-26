@@ -22,7 +22,6 @@ import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.codec.InvalidCodecFormatException;
 import com.pingcap.tikv.codec.TableCodec;
 import com.pingcap.tikv.exception.TiClientInternalException;
-import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
 
 import static com.pingcap.tikv.types.Types.*;
@@ -42,7 +41,18 @@ public class IntegerType extends DataType {
 
     @Override
     public Object decodeNotNull(int flag, CodecDataInput cdi) {
-        return decodeNotNullInternal(flag, cdi);
+        switch (flag) {
+            case UVARINT_FLAG:
+                return readUVarLong(cdi);
+            case UINT_FLAG:
+                return readULong(cdi);
+            case VARINT_FLAG:
+                return readVarLong(cdi);
+            case INT_FLAG:
+                return readLong(cdi);
+            default:
+                throw new TiClientInternalException("Invalid " + toString() + " flag: " + flag);
+        }
     }
 
     /**
@@ -77,21 +87,6 @@ public class IntegerType extends DataType {
 
     protected IntegerType(TiColumnInfo.InternalTypeHolder holder) {
         super(holder);
-    }
-
-    private long decodeNotNullInternal(int flag, CodecDataInput cdi) {
-        switch (flag) {
-            case UVARINT_FLAG:
-                return readUVarLong(cdi);
-            case UINT_FLAG:
-                return readULong(cdi);
-            case VARINT_FLAG:
-                return readVarLong(cdi);
-            case INT_FLAG:
-                return readLong(cdi);
-            default:
-                throw new TiClientInternalException("Invalid " + toString() + " flag: " + flag);
-        }
     }
 
     @Override

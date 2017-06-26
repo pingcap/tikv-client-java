@@ -23,6 +23,7 @@ import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.grpc.Kvrpcpb.KvPair;
 import com.pingcap.tikv.grpc.Metapb.Region;
 import com.pingcap.tikv.grpc.Metapb.Store;
+import com.pingcap.tikv.operation.IndexScanIterator;
 import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.meta.TiRange;
 import com.pingcap.tikv.meta.TiSelectRequest;
@@ -77,7 +78,7 @@ public class Snapshot {
 
     //TODO remove this
     static public List<TiRange<ByteString>> convertHandleRangeToKeyRange(TiTableInfo table,
-                                                                   List<TiRange<Long>> ranges) {
+                                                                         List<TiRange<Long>> ranges) {
         ImmutableList.Builder<TiRange<ByteString>> builder = ImmutableList.builder();
         for (TiRange<Long> r : ranges) {
             ByteString startKey = TableCodec.encodeRowKeyWithHandle(table.getId(), r.getLowValue());
@@ -90,16 +91,33 @@ public class Snapshot {
 
     /**
      * Issue a select request to TiKV and PD.
-     * @param sb is Select Builder.
+     *
+     * @param selReq is SelectRequest.
      * @return a Iterator that contains all result from this select request.
      */
-    public Iterator<Row> select(SelectBuilder sb) {
-        return new SelectIterator(sb.getTiSelectReq(), convertHandleRangeToKeyRange(sb.getTable(), sb.getRangeListBuilder().build()), getSession(), regionCache);
+    public Iterator<Row> select(TiSelectRequest selReq) {
+        return new SelectIterator(selReq,
+                getSession(),
+                regionCache,
+                false);
     }
 
-    /*
-     * Below method is lower level interface for distributed environment
-     * which avoids calling PD on slave nodes
+    public Iterator<Row> selectByIndex(TiSelectRequest selReq) {
+        Iterator<Row> iter = new SelectIterator(selReq,
+                getSession(),
+                regionCache,
+                true);
+        return new IndexScanIterator(this, selReq, iter);
+    }
+
+    /**
+     * Below is lower level API for env like Spark which already did key range split
+     * Perform table scan
+     * @param req SelectRequest for coprocessor
+     * @param region Region of the coprocessor request to send
+     * @param store Store of the coprocessor request to send
+     * @param range Keyrange of the request
+     * @return Row iterator to iterate over resulting rows
      */
     public Iterator<Row> select(TiSelectRequest req,
                                 Region region,
@@ -107,9 +125,27 @@ public class Snapshot {
                                 TiRange<ByteString> range) {
         Pair<Region, Store> regionStorePair = Pair.create(region, store);
         Pair<Pair<Region, Store>,
-             TiRange<ByteString>> regionToRangePair = Pair.create(regionStorePair, range);
+                TiRange<ByteString>> regionToRangePair = Pair.create(regionStorePair, range);
 
-        return new SelectIterator(req, ImmutableList.of(regionToRangePair), getSession());
+        return new SelectIterator(req, ImmutableList.of(regionToRangePair), getSession(), false);
+    }
+
+    /**
+     * Below is lower level API for env like Spark which already did key range split
+     * Perform index double read
+     * @param req SelectRequest for coprocessor
+     * @param region Region of the coprocessor request to send
+     * @param store Store of the coprocessor request to send
+     * @param range KeyRange of the request
+     * @return Row iterator to iterate over resulting rows
+     */
+    public Iterator<Row> selectByIndex(TiSelectRequest req, Region region, Store store, TiRange<ByteString> range) {
+        Pair<Region, Store> regionStorePair = Pair.create(region, store);
+        Pair<Pair<Region, Store>,
+                TiRange<ByteString>> regionToRangePair = Pair.create(regionStorePair, range);
+
+        Iterator<Row> iter = new SelectIterator(req, ImmutableList.of(regionToRangePair), getSession(), true);
+        return new IndexScanIterator(this, req, iter);
     }
 
     public Iterator<KvPair> scan(ByteString startKey) {

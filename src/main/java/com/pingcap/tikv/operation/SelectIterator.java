@@ -22,35 +22,42 @@ import com.pingcap.tidb.tipb.Chunk;
 import com.pingcap.tidb.tipb.SelectResponse;
 import com.pingcap.tikv.RegionManager;
 import com.pingcap.tikv.RegionStoreClient;
-import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.TiSession;
 import com.pingcap.tikv.codec.CodecDataInput;
-import com.pingcap.tikv.row.RowReader;
-import com.pingcap.tikv.row.RowReaderFactory;
+import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.grpc.Metapb.Region;
 import com.pingcap.tikv.grpc.Metapb.Store;
-import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.meta.TiRange;
 import com.pingcap.tikv.meta.TiSelectRequest;
+import com.pingcap.tikv.row.Row;
+import com.pingcap.tikv.row.RowReader;
+import com.pingcap.tikv.row.RowReaderFactory;
 import com.pingcap.tikv.types.DataType;
+import com.pingcap.tikv.types.DataTypeFactory;
+import com.pingcap.tikv.types.Types;
 import com.pingcap.tikv.util.Pair;
 import com.pingcap.tikv.util.RangeSplitter;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class SelectIterator implements Iterator<Row> {
-    protected final TiSession                                   session;
+    protected final TiSession session;
     private final List<Pair<Pair<Region, Store>,
-                              TiRange<ByteString>>>             rangeToRegions;
+            TiRange<ByteString>>> rangeToRegions;
 
 
-    private ChunkIterator                         chunkIterator;
-    protected int                                   index = 0;
-    private boolean                               eof = false;
+    private ChunkIterator chunkIterator;
+    protected int index = 0;
+    private boolean eof = false;
     private Function<List<Pair<Pair<Region, Store>,
-                              TiRange<ByteString>>>, Boolean>  readNextRegionFn;
+            TiRange<ByteString>>>, Boolean> readNextRegionFn;
     private SchemaInfer schemaInfer;
+    private final boolean indexScan;
+    private static final DataType[] handleTypes = new DataType[]{DataTypeFactory.of(Types.TYPE_LONG)};
 
     @VisibleForTesting
     public SelectIterator(List<Chunk> chunks, TiSelectRequest req) {
@@ -61,16 +68,19 @@ public class SelectIterator implements Iterator<Row> {
             chunkIterator = new ChunkIterator(chunks);
             return true;
         };
+        indexScan = false;
     }
 
     public SelectIterator(TiSelectRequest req,
-                          List<Pair<Pair<Region, Store> ,
+                          List<Pair<Pair<Region, Store>,
                                   TiRange<ByteString>>> rangeToRegionsIn,
-                          TiSession session) {
+                          TiSession session,
+                          boolean indexScan) {
         this.rangeToRegions = rangeToRegionsIn;
         this.session = session;
         this.schemaInfer = SchemaInfer.create(req);
-        this.readNextRegionFn  = (rangeToRegions) -> {
+        this.indexScan = indexScan;
+        this.readNextRegionFn = (rangeToRegions) -> {
             if (eof || index >= rangeToRegions.size()) {
                 return false;
             }
@@ -82,7 +92,9 @@ public class SelectIterator implements Iterator<Row> {
             Region region = pair.first;
             Store store = pair.second;
             try (RegionStoreClient client = RegionStoreClient.create(region, store, session)) {
-                SelectResponse resp = client.coprocess(req.build(), ImmutableList.of(range));
+                SelectResponse resp =
+                        client.coprocess(indexScan ? req.buildAsIndexScan() : req.build(),
+                                         ImmutableList.of(range));
                 if (resp == null) {
                     eof = true;
                     return false;
@@ -97,10 +109,15 @@ public class SelectIterator implements Iterator<Row> {
     }
 
     public SelectIterator(TiSelectRequest req,
-                          List<TiRange<ByteString>> ranges,
                           TiSession session,
-                          RegionManager rm) {
-        this(req, RangeSplitter.newSplitter(rm).splitRangeByRegion(ranges), session);
+                          RegionManager rm,
+                          boolean indexScan) {
+        // TODO: Unify TiRange with Range in predicates
+        this(req, RangeSplitter.newSplitter(rm).splitRangeByRegion(
+                req.getRanges().stream()
+                        .map(r -> TiRange.createByteStringRange(r.getLow(), r.getHigh()))
+                        .collect(Collectors.toList())
+        ), session, indexScan);
     }
 
     private boolean readNextRegion() {
@@ -124,8 +141,13 @@ public class SelectIterator implements Iterator<Row> {
         if (hasNext()) {
             ByteString rowData = chunkIterator.next();
             RowReader reader = RowReaderFactory
-                                .createRowReader(new CodecDataInput(rowData));
-            return reader.readRow(this.schemaInfer.getTypes().toArray(new DataType[0]));
+                    .createRowReader(new CodecDataInput(rowData));
+            // TODO: Make sure if only handle returned
+            if (indexScan) {
+                return reader.readRow(handleTypes);
+            } else {
+                return reader.readRow(this.schemaInfer.getTypes().toArray(new DataType[0]));
+            }
         } else {
             throw new NoSuchElementException();
         }
@@ -145,8 +167,8 @@ public class SelectIterator implements Iterator<Row> {
             metaIndex = 0;
             bufOffset = 0;
             if (chunks.size() == 0 ||
-                chunks.get(0).getRowsMetaCount() == 0 ||
-                chunks.get(0).getRowsData().size() == 0) {
+                    chunks.get(0).getRowsMetaCount() == 0 ||
+                    chunks.get(0).getRowsData().size() == 0) {
                 eof = true;
             }
         }
@@ -163,7 +185,7 @@ public class SelectIterator implements Iterator<Row> {
             if (metaIndex >= c.getRowsMetaCount()) {
                 // seek for next non-empty chunk
                 while (++chunkIndex < chunks.size() &&
-                       chunks.get(chunkIndex).getRowsMetaCount() == 0) {
+                        chunks.get(chunkIndex).getRowsMetaCount() == 0) {
                     ;
                 }
                 if (chunkIndex >= chunks.size()) {
@@ -183,7 +205,7 @@ public class SelectIterator implements Iterator<Row> {
                 throw new TiClientInternalException("Offset exceeded MAX_INT.");
             }
             ByteString rowData = c.getRowsData();
-            ByteString result = rowData.substring(bufOffset, (int)endOffset);
+            ByteString result = rowData.substring(bufOffset, (int) endOffset);
             advance();
             return result;
         }

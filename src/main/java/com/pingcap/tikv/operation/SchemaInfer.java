@@ -17,12 +17,16 @@ package com.pingcap.tikv.operation;
 
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.meta.TiSelectRequest;
+import com.pingcap.tikv.predicates.PredicateUtils;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.DataTypeFactory;
-import static com.pingcap.tikv.types.Types.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
+
+import static com.pingcap.tikv.types.Types.TYPE_VARCHAR;
 
 /**
  * SchemaInfer extract row's type after query is executed.
@@ -52,7 +56,7 @@ public class SchemaInfer {
      */
     private void extractFieldTypes(TiSelectRequest tiSelectRequest) {
         List<TiExpr> groupByExprs = new ArrayList<>();
-        tiSelectRequest.getGroupBys().forEach(
+        tiSelectRequest.getGroupByItems().forEach(
                groupBy -> {
                    groupByExprs.add(groupBy.getExpr());
                    types.add(groupBy.getExpr().getType());
@@ -62,7 +66,7 @@ public class SchemaInfer {
         if (tiSelectRequest.getAggregates().size() > 0) {
             // In some cases, aggregates come without group by clause, we need add a dummy
             // single group for it.
-            if(tiSelectRequest.getGroupBys().size() == 0) {
+            if(tiSelectRequest.getGroupByItems().size() == 0) {
                 types.add(DataTypeFactory.of(TYPE_VARCHAR));
             }
         }
@@ -73,7 +77,7 @@ public class SchemaInfer {
                     if (groupByExprs.size() > 0 ) {
                         // collect all TiExpr in groupByExpr who does not agree with expr.
                         groupByExprs.stream()
-                                .map(TiSelectRequest::getColumnRefFromExpr)
+                                .map(PredicateUtils::extractColumnRefFromExpr)
                                 .flatMap(Collection::stream)
                                 .filter(x -> !x.equals(expr))
                                 .collect(Collectors.toList())

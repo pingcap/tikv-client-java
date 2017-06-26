@@ -27,7 +27,13 @@ public abstract class TiBinaryFunctionExpresson extends TiFunctionExpression {
 
     @Override
     protected void validateArguments(TiExpr... args) throws RuntimeException {
-        checkNotNull(this.args, "Arguments of " + getName() + " cannot be null");
+        checkNotNull(args, "Arguments of " + getName() + " cannot be null");
         checkArgument(this.args.size() == 2, getName() + " takes only 2 argument");
+    }
+
+    @Override
+    public String toString() {
+        return String.format("(%s %s %s)",
+                             getArg(0), getName(), getArg(1));
     }
 }

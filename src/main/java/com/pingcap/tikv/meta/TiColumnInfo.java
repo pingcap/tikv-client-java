@@ -18,6 +18,7 @@ package com.pingcap.tikv.meta;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.annotations.VisibleForTesting;
 import com.pingcap.tidb.tipb.ColumnInfo;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.DataTypeFactory;
@@ -35,7 +36,8 @@ public class TiColumnInfo {
     private final String      comment;
     private final boolean     isPrimaryKey;
 
-    private static final int PK_MASK = 0x2;
+    @VisibleForTesting
+    public static final int PK_MASK = 0x2;
 
     @JsonCreator
     public TiColumnInfo(@JsonProperty("id")long                   id,
@@ -53,6 +55,17 @@ public class TiColumnInfo {
         // I don't think pk flag should be set on type
         // Refactor against original tidb code
         this.isPrimaryKey = (type.getFlag() & PK_MASK) > 0;
+    }
+
+    @VisibleForTesting
+    public TiColumnInfo(long id, String name, int offset, DataType type, boolean isPrimaryKey) {
+        this.id = id;
+        this.name = name;
+        this.offset = offset;
+        this.type = type;
+        this.schemaState = SchemaState.StatePublic;
+        this.comment = "";
+        this.isPrimaryKey = isPrimaryKey;
     }
 
     public long getId() {
@@ -161,6 +174,10 @@ public class TiColumnInfo {
             dataType.setFlag(flag);
             return dataType;
         }
+    }
+
+    public TiIndexColumn toIndexColumn() {
+        return new TiIndexColumn(CIStr.newCIStr(getName()), getOffset(), type.getLength());
     }
 
     public ColumnInfo toProto() {

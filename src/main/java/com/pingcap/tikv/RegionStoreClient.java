@@ -16,7 +16,6 @@
 package com.pingcap.tikv;
 
 
-import com.google.common.collect.Iterables;
 import com.google.common.net.HostAndPort;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;

@@ -17,15 +17,13 @@ package com.pingcap.tikv.types;
 
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.meta.Collation;
-import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
+import com.pingcap.tikv.row.Row;
 
 import java.util.List;
-import java.util.Map;
 
 import static com.pingcap.tikv.types.Types.*;
 
@@ -125,6 +123,22 @@ public abstract class DataType {
        decodeValueNoNullToRow(row, pos, decodeNotNull(flag, cdi));
    }
 
+    /**
+     * encode max value.
+     * @param cdo destination of data.
+     */
+   public void encodeMaxValue(CodecDataOutput cdo) {
+       cdo.writeByte(MAX_FLAG);
+   }
+
+    /**
+     * encode min value.
+     * @param cdo destination of data.
+     */
+    public void encodeMinValue(CodecDataOutput cdo) {
+        cdo.writeByte(BYTES_FLAG);
+    }
+
    /**
     * encode a Row to CodecDataOutput
     * @param cdo destination of data.
@@ -206,6 +220,11 @@ public abstract class DataType {
 
    public static boolean hasOnUpdateNowFlag(int flag) {
        return (flag & OnUpdateNowFlag) > 0;
+   }
+
+   public boolean needCast(Object val) {
+       // TODO: Add implementations
+       return false;
    }
 
    @Override

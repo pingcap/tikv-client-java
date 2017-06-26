@@ -20,7 +20,6 @@ package com.pingcap.tikv.types;
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.codec.InvalidCodecFormatException;
-import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
 
 public class RealType extends DataType {
@@ -36,6 +35,7 @@ public class RealType extends DataType {
 
     @Override
     public Object decodeNotNull(int flag, CodecDataInput cdi) {
+        // check flag first and then read.
         if (flag != FLOATING_FLAG) {
             throw new InvalidCodecFormatException("Invalid Flag type for float type: " + flag);
         }
@@ -51,6 +51,10 @@ public class RealType extends DataType {
             u = ~u;
         }
         return Float.intBitsToFloat((int)u);
+    }
+
+    RealType(TiColumnInfo.InternalTypeHolder holder) {
+        super(holder);
     }
 
     /**

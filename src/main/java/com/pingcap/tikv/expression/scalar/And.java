@@ -47,7 +47,7 @@ public class And extends TiBinaryFunctionExpresson {
     protected void validateArguments(TiExpr... args) throws RuntimeException {
         // Validate 2 arguments
         super.validateArguments();
-        // Validate 2 arguments are strings
+        // Validate 2 arguments are boolean
         checkArgument(this.args.get(0).getType() instanceof IntegerType);
         checkArgument(this.args.get(1).getType() instanceof IntegerType);
     }

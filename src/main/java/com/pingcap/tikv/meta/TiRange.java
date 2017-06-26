@@ -14,11 +14,17 @@
  */
 
 package com.pingcap.tikv.meta;
+import com.google.common.collect.*;
 import com.google.protobuf.ByteString;
+import com.pingcap.tikv.util.TiFluentIterable;
 
 import java.io.Serializable;
 import java.util.Comparator;
+import java.util.List;
 
+// Basically this one should reuse Guava's Range but make it work with
+// non-comparable type ByteString
+// TODO: Refactor needed
 public class TiRange<E> implements Serializable {
     private final E lowVal;
     private final E highVal;
@@ -31,6 +37,14 @@ public class TiRange<E> implements Serializable {
 
     public static <T> TiRange<T> create(T l, T h, boolean lopen, boolean ropen, Comparator<T> c) {
         return new TiRange<T>(l, h, lopen, ropen, c);
+    }
+
+    public static TiRange<Long> createLongRange(long l, long h, boolean lOpen, boolean rOpen) {
+        return new TiRange(l, h, lOpen, rOpen, Comparator.naturalOrder());
+    }
+
+    public static TiRange<Long> createLongPoint(long v) {
+        return new TiRange(v, v, false, false, Comparator.naturalOrder());
     }
 
     public static <T extends Comparable<T>> TiRange<T> create(T l, T h) {
@@ -55,6 +69,52 @@ public class TiRange<E> implements Serializable {
         this.leftOpen = lopen;
         this.rightOpen = ropen;
         this.comparator = comp;
+    }
+
+    static public <T extends Comparable<T>> List<TiRange<T>> intersect(List<TiRange<T>> ranges, List<TiRange<T>> others) {
+        // TODO: Unify range operations instead of wrap around guava utilities
+        // This implementation is just for "make it work"
+        RangeSet<T> rangeSet = TreeRangeSet.create();
+        for (TiRange<T> range : ranges) {
+            rangeSet.add(toGuavaRange(range));
+        }
+
+        for (TiRange<T> other : others) {
+            rangeSet = rangeSet.subRangeSet(toGuavaRange(other));
+        }
+
+        return ImmutableList.copyOf(
+                TiFluentIterable
+                        .from(rangeSet.asRanges())
+                        .transform(TiRange::toTiRange)
+        );
+    }
+
+    static public <T extends Comparable<T>> List<TiRange<T>> union(List<TiRange<T>> ranges, List<TiRange<T>> others) {
+        // TODO: Unify range operations instead of wrap around guava utilities
+        // This implementation is just for "make it work"
+        RangeSet<T> rangeSet = TreeRangeSet.create();
+        FluentIterable.from(ranges)
+                .append(others)
+                .forEach(range -> rangeSet.add(toGuavaRange(range)));
+
+        return ImmutableList.copyOf(TiFluentIterable.from(rangeSet.asRanges())
+                .transform(TiRange::toTiRange));
+    }
+
+    public static <T extends Comparable<T>> Range<T> toGuavaRange(TiRange<T> range) {
+        return Range.range(range.getLowValue(),
+                range.isLeftOpen() ? BoundType.OPEN : BoundType.CLOSED,
+                range.getHighValue(),
+                range.isRightOpen() ? BoundType.OPEN : BoundType.CLOSED);
+    }
+
+    public static <T extends Comparable<T>> TiRange<T> toTiRange(Range<T> range) {
+        return TiRange.create(range.lowerEndpoint(),
+                              range.upperEndpoint(),
+                              range.lowerBoundType().equals(BoundType.OPEN),
+                              range.upperBoundType().equals(BoundType.OPEN),
+                              Comparator.naturalOrder());
     }
 
     public E getLowValue() {
@@ -94,6 +154,8 @@ public class TiRange<E> implements Serializable {
         }
         return 0;
     }
+
+    public static final TiRange<Long> FULL_LONG_RANGE = TiRange.create(Long.MIN_VALUE, Long.MAX_VALUE);
 
     @Override
     public String toString() {
