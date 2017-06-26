@@ -18,7 +18,9 @@ package com.pingcap.tikv.expression;
 import com.pingcap.tidb.tipb.Expr;
 import com.pingcap.tikv.types.DataType;
 
-public interface TiExpr {
+import java.io.Serializable;
+
+public interface TiExpr extends Serializable {
     Expr toProto();
     default boolean isSupportedExpr() {
         return true;

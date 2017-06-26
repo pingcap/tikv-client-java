@@ -22,11 +22,12 @@ import com.google.common.collect.ImmutableList;
 import com.pingcap.tidb.tipb.IndexInfo;
 import com.pingcap.tikv.util.TiFluentIterable;
 
+import java.io.Serializable;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
-public class TiIndexInfo {
+public class TiIndexInfo implements Serializable {
     private final long                  id;
     private final String                name;
     private final String                tableName;

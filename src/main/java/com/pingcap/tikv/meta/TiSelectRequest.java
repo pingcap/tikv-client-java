@@ -15,6 +15,7 @@
 
 package com.pingcap.tikv.meta;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.pingcap.tidb.tipb.KeyRange;
 import com.pingcap.tidb.tipb.SelectRequest;
 import com.pingcap.tikv.exception.TiClientInternalException;
@@ -156,6 +157,10 @@ public class TiSelectRequest implements Serializable {
         return this;
     }
 
+    public TiIndexInfo getIndexInfo() {
+        return indexInfo;
+    }
+
     public int getLimit() {
         return limit;
     }
@@ -182,6 +187,10 @@ public class TiSelectRequest implements Serializable {
         return this;
     }
 
+    public int getTimeZoneOffset() {
+        return timeZoneOffset;
+    }
+
     /**
      * set truncate mode
      *
@@ -193,6 +202,11 @@ public class TiSelectRequest implements Serializable {
         return this;
     }
 
+    @VisibleForTesting
+    public long getFlags() {
+        return flags;
+    }
+
     /**
      * set start timestamp for the transaction
      *
@@ -202,6 +216,10 @@ public class TiSelectRequest implements Serializable {
     public TiSelectRequest setStartTs(long startTs) {
         this.startTs = startTs;
         return this;
+    }
+
+    public long getStartTs() {
+        return startTs;
     }
 
     /**
@@ -218,6 +236,10 @@ public class TiSelectRequest implements Serializable {
     public TiSelectRequest setDistinct(boolean distinct) {
         this.distinct = distinct;
         return this;
+    }
+
+    public boolean isDistinct() {
+        return distinct;
     }
 
     /**
@@ -244,6 +266,10 @@ public class TiSelectRequest implements Serializable {
     public TiSelectRequest addOrderByItem(TiByItem byItem) {
         orderByItems.add(requireNonNull(byItem, "byItem is null"));
         return this;
+    }
+
+    public List<TiByItem> getOrderByItems() {
+        return orderByItems;
     }
 
     /**
@@ -300,5 +326,9 @@ public class TiSelectRequest implements Serializable {
     public TiSelectRequest addWhere(TiExpr where) {
         this.where.add(requireNonNull(where, "where expr is null"));
         return this;
+    }
+
+    public List<TiExpr> getWhere() {
+        return where;
     }
 }

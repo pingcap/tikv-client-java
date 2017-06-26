@@ -22,13 +22,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 import com.pingcap.tidb.tipb.TableInfo;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TiTableInfo {
+public class TiTableInfo implements Serializable {
     private final long                id;
     private final String              name;
     private final String              charset;
