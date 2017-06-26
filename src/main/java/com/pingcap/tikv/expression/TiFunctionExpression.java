@@ -19,6 +19,7 @@ package com.pingcap.tikv.expression;
 import com.google.common.collect.ImmutableList;
 import com.pingcap.tidb.tipb.Expr;
 import com.pingcap.tidb.tipb.ExprType;
+import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.util.TiFluentIterable;
 
 import java.util.List;
@@ -96,5 +97,12 @@ public abstract class TiFunctionExpression implements TiExpr {
             hash *= arg.hashCode();
         }
         return hash;
+    }
+
+    @Override
+    public void bind(TiTableInfo table) {
+        for (TiExpr arg : args) {
+            arg.bind(table);
+        }
     }
 }
