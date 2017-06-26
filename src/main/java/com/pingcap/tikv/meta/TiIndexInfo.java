@@ -49,7 +49,7 @@ public class TiIndexInfo {
                        @JsonProperty("comment")String                comment,
                        @JsonProperty("index_type")int                indexType,
                        // This is a fake property and added JsonProperty only to
-                       // to by pass Jackson frameworks's check
+                       // to bypass Jackson frameworks's check
                        @JsonProperty("___isFakePrimaryKey")boolean   isFakePrimaryKey) {
         this.id = id;
         this.name = requireNonNull(name, "index name is null").getL();

@@ -16,13 +16,15 @@
 package com.pingcap.tikv.predicates;
 
 
+import com.google.common.collect.ImmutableList;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.expression.TiFunctionExpression;
 import com.pingcap.tikv.expression.scalar.And;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 
@@ -35,19 +37,19 @@ public class PredicateUtils {
         return new And(exprs.get(0), mergeCNFExpressions(exprs.subList(1, exprs.size())));
     }
 
-    public static List<TiColumnRef> getColumnRefFromExpr(TiExpr expr) {
-        List<TiColumnRef> columnRefss = new ArrayList<>();
+    public static List<TiColumnRef> extractColumnRefFromExpr(TiExpr expr) {
+        Set<TiColumnRef> columnRefs = new HashSet<>();
         if (expr instanceof TiFunctionExpression) {
             TiFunctionExpression tiF = (TiFunctionExpression)expr;
             for (TiExpr arg : tiF.getArgs()) {
                 if (arg instanceof TiColumnRef) {
                     TiColumnRef tiCR = (TiColumnRef) arg;
-                    columnRefss.add(tiCR);
+                    columnRefs.add(tiCR);
                 }
             }
         } else if (expr instanceof TiColumnRef) {
-            columnRefss.add(((TiColumnRef)expr));
+            columnRefs.add(((TiColumnRef)expr));
         }
-        return columnRefss;
+        return ImmutableList.copyOf(columnRefs);
     }
 }

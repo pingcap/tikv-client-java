@@ -55,8 +55,8 @@ public class TiSelectRequest implements Serializable {
     private TiIndexInfo indexInfo;
     private final List<TiExpr> fields = new ArrayList<>();
     private final List<TiExpr> where = new ArrayList<>();
-    private final List<TiByItem> groupBys = new ArrayList<>();
-    private final List<TiByItem> orderBys = new ArrayList<>();
+    private final List<TiByItem> groupByItems = new ArrayList<>();
+    private final List<TiByItem> orderByItems = new ArrayList<>();
     private final List<TiExpr> aggregates = new ArrayList<>();
     private final List<KeyRange> keyRanges = new ArrayList<>();
 
@@ -124,8 +124,8 @@ public class TiSelectRequest implements Serializable {
         if (whereExpr != null) {
             builder.setWhere(whereExpr.toProto());
         }
-        groupBys.forEach(expr -> builder.addGroupBy(expr.toProto()));
-        orderBys.forEach(expr -> builder.addOrderBy(expr.toProto()));
+        groupByItems.forEach(expr -> builder.addGroupBy(expr.toProto()));
+        orderByItems.forEach(expr -> builder.addOrderBy(expr.toProto()));
         aggregates.forEach(expr -> builder.addAggregates(expr.toProto()));
         builder.setTableInfo(filteredTable.toProto());
         builder.setFlags(flags);
@@ -229,8 +229,8 @@ public class TiSelectRequest implements Serializable {
      * @param byItem is a TiByItem.
      * @return a SelectBuilder
      */
-    public TiSelectRequest addOrderBy(TiByItem byItem) {
-        orderBys.add(requireNonNull(byItem, "byItem is null"));
+    public TiSelectRequest addOrderByItem(TiByItem byItem) {
+        orderByItems.add(requireNonNull(byItem, "byItem is null"));
         return this;
     }
 
@@ -239,13 +239,13 @@ public class TiSelectRequest implements Serializable {
      * @param byItem is a TiByItem
      * @return a SelectBuilder
      */
-    public TiSelectRequest addGroupBy(TiByItem byItem) {
-        groupBys.add(requireNonNull(byItem, "byItem is null"));
+    public TiSelectRequest addGroupByItem(TiByItem byItem) {
+        groupByItems.add(requireNonNull(byItem, "byItem is null"));
         return this;
     }
 
-    public List<TiByItem> getGroupBys() {
-        return groupBys;
+    public List<TiByItem> getGroupByItems() {
+        return groupByItems;
     }
 
     /**

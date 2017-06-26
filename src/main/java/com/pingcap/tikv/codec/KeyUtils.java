@@ -32,10 +32,12 @@ public class KeyUtils {
     }
 
     /**
-     * returns the next prefix key.
+     * The next key for bytes domain
+     * It first plus one at LSB and if LSB
+     * overflows, a zero byte is appended at the end
      * Original bytes will be reused if possible
      * @param key key to encode
-     * @return
+     * @return encoded results
      */
     public static byte[] prefixNext(byte[] key) {
         int i;

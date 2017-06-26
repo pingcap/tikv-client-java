@@ -56,7 +56,7 @@ public class SchemaInfer {
      */
     private void extractFieldTypes(TiSelectRequest tiSelectRequest) {
         List<TiExpr> groupByExprs = new ArrayList<>();
-        tiSelectRequest.getGroupBys().forEach(
+        tiSelectRequest.getGroupByItems().forEach(
                groupBy -> {
                    groupByExprs.add(groupBy.getExpr());
                    types.add(groupBy.getExpr().getType());
@@ -66,7 +66,7 @@ public class SchemaInfer {
         if (tiSelectRequest.getAggregates().size() > 0) {
             // In some cases, aggregates come without group by clause, we need add a dummy
             // single group for it.
-            if(tiSelectRequest.getGroupBys().size() == 0) {
+            if(tiSelectRequest.getGroupByItems().size() == 0) {
                 types.add(DataTypeFactory.of(TYPE_VARCHAR));
             }
         }
@@ -77,7 +77,7 @@ public class SchemaInfer {
                     if (groupByExprs.size() > 0 ) {
                         // collect all TiExpr in groupByExpr who does not agree with expr.
                         groupByExprs.stream()
-                                .map(PredicateUtils::getColumnRefFromExpr)
+                                .map(PredicateUtils::extractColumnRefFromExpr)
                                 .flatMap(Collection::stream)
                                 .filter(x -> !x.equals(expr))
                                 .collect(Collectors.toList())

@@ -110,9 +110,14 @@ public class Snapshot {
         return new IndexScanIterator(this, selReq, iter);
     }
 
-    /*
-     * Below method is lower level interface for distributed environment
-     * which avoids calling PD on slave nodes
+    /**
+     * Below is lower level API for env like Spark which already did key range split
+     * Perform table scan
+     * @param req SelectRequest for coprocessor
+     * @param region Region of the coprocessor request to send
+     * @param store Store of the coprocessor request to send
+     * @param range Keyrange of the request
+     * @return Row iterator to iterate over resulting rows
      */
     public Iterator<Row> select(TiSelectRequest req,
                                 Region region,
@@ -125,9 +130,14 @@ public class Snapshot {
         return new SelectIterator(req, ImmutableList.of(regionToRangePair), getSession(), false);
     }
 
-    /*
-     * Below method is lower level interface for distributed environment
-     * which avoids calling PD on slave nodes
+    /**
+     * Below is lower level API for env like Spark which already did key range split
+     * Perform index double read
+     * @param req SelectRequest for coprocessor
+     * @param region Region of the coprocessor request to send
+     * @param store Store of the coprocessor request to send
+     * @param range KeyRange of the request
+     * @return Row iterator to iterate over resulting rows
      */
     public Iterator<Row> selectByIndex(TiSelectRequest req, Region region, Store store, TiRange<ByteString> range) {
         Pair<Region, Store> regionStorePair = Pair.create(region, store);

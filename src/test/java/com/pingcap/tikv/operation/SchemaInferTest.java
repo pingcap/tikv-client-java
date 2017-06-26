@@ -24,7 +24,6 @@ import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiConstant;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.expression.aggregate.Sum;
-import com.pingcap.tikv.expression.scalar.Like;
 import com.pingcap.tikv.expression.scalar.Plus;
 import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.meta.TiTableInfo;
@@ -78,7 +77,7 @@ public class SchemaInferTest {
         TiSelectRequest selectRequest = new TiSelectRequest();
         selectRequest.getFields().add(name);
         selectRequest.getAggregates().add(sum);
-        selectRequest.getGroupBys().add(complexGroupBy);
+        selectRequest.getGroupByItems().add(complexGroupBy);
         List<DataType> dataTypes = SchemaInfer.create(selectRequest).getTypes();
         Assert.assertSame(2, dataTypes.size());
         Assert.assertSame(DataTypeFactory.of(TYPE_VARCHAR), dataTypes.get(0));
@@ -91,7 +90,7 @@ public class SchemaInferTest {
         TiSelectRequest selectRequest = new TiSelectRequest();
         selectRequest.getFields().add(name);
         selectRequest.getAggregates().add(sum);
-        selectRequest.getGroupBys().add(complexGroupBy);
+        selectRequest.getGroupByItems().add(complexGroupBy);
         List<DataType> dataTypes = SchemaInfer.create(selectRequest).getTypes();
         Assert.assertSame(2, dataTypes.size());
         Assert.assertSame(DataTypeFactory.of(TYPE_VARCHAR), dataTypes.get(0));
