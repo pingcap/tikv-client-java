@@ -17,22 +17,20 @@ package com.pingcap.tikv.types;
 
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.meta.Collation;
-import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
+import com.pingcap.tikv.row.Row;
 
 import java.util.List;
-import java.util.Map;
 
 import static com.pingcap.tikv.types.Types.*;
 
 /**
  * Base Type for encoding and decoding TiDB row information.
  */
-public class DataType {
+public abstract class DataType {
     public enum EncodeType {
        KEY,
        VALUE
@@ -60,20 +58,6 @@ public class DataType {
     protected int           collation;
     protected int           length;
     private   List<String> elems;
-
-
-   static final Map<Integer, String> typeNameMap = ImmutableMap.<Integer, String>builder()
-            .put(NULL_FLAG, "NULL")
-            .put(BYTES_FLAG, "STRING")
-            .put(COMPACT_BYTES_FLAG, "STRING")
-            .put(INT_FLAG, "INT")
-            .put(UINT_FLAG, "UINT")
-            .put(FLOATING_FLAG, "FLOAT")
-            .put(DECIMAL_FLAG, "DECIMAL")
-            .put(DURATION_FLAG, "Duration")
-            .put(VARINT_FLAG, "VARINT")
-            .put(UVARINT_FLAG, "UVARINT")
-            .build();
 
    protected DataType(TiColumnInfo.InternalTypeHolder holder) {
        this.tp = holder.getTp();
@@ -113,13 +97,30 @@ public class DataType {
         return flag == NULL_FLAG;
     }
 
-   /**
+    protected void decodeValueNoNullToRow(Row row, int pos, Object value) {
+        row.set(pos, DataTypeFactory.of(this.tp), value);
+    }
+
+    public abstract Object decodeNotNull(int flag, CodecDataInput cdi);
+
+    /**
     * decode a null value from row which is nothing.
     * @param cdi source of data.
-    * @param row destination of data
-    * @param pos position of row.
     */
-   public void decode(CodecDataInput cdi, Row row, int pos) {
+   public Object decode(CodecDataInput cdi) {
+       int flag = cdi.readUnsignedByte();
+       if (isNullFlag(flag)) {
+           return null;
+       }
+       return decodeNotNull(flag, cdi);
+   }
+
+   public void decodeValueToRow(CodecDataInput cdi, Row row, int pos) {
+       int flag = cdi.readUnsignedByte();
+       if (isNullFlag(flag)) {
+           row.setNull(pos);
+       }
+       decodeValueNoNullToRow(row, pos, decodeNotNull(flag, cdi));
    }
 
     /**
@@ -145,8 +146,14 @@ public class DataType {
     * @param value need to be encoded.
     */
    public void encode(CodecDataOutput cdo, EncodeType encodeType, Object value) {
-        cdo.writeByte(NULL_FLAG);
-    }
+       if (value == null) {
+           cdo.writeByte(NULL_FLAG);
+       } else {
+           encodeNotNull(cdo, encodeType, value);
+       }
+   }
+
+   public abstract void encodeNotNull(CodecDataOutput cdo, EncodeType encodeType, Object value);
 
    public int getCollationCode() {
         return collation;

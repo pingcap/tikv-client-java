@@ -46,6 +46,10 @@ public abstract class TiFunctionExpression implements TiExpr {
         return args.size();
     }
 
+    public List<TiExpr> getArgs() {
+        return args;
+    }
+
     @Override
     public Expr toProto() {
         Expr.Builder builder = Expr.newBuilder();

@@ -40,19 +40,15 @@ public class DecimalType extends DataType {
     }
 
     /**
-     *  decode a decimal value to Row from Cdi.
+     *  decode a decimal value from Cdi and return it.
      * @param cdi source of data.
-     * @param row destination of data
-     * @param pos position of row.
      */
     @Override
-    public void decode(CodecDataInput cdi, Row row, int pos) {
-        int flag = cdi.readUnsignedByte();
+    public Object decodeNotNull(int flag, CodecDataInput cdi) {
         if (flag != DECIMAL_FLAG) {
             throw new InvalidCodecFormatException("Invalid Flag type for decimal type: " + flag);
         }
-        double val = readDecimalFully(cdi);
-        row.setDouble(pos, val);
+        return readDecimalFully(cdi);
     }
 
     /**
@@ -62,7 +58,7 @@ public class DecimalType extends DataType {
      * @param value need to be encoded.
      */
     @Override
-    public void encode(CodecDataOutput cdo, EncodeType encodeType, Object value) {
+    public void encodeNotNull(CodecDataOutput cdo, EncodeType encodeType, Object value) {
         double val;
         if (value instanceof Number) {
              val = ((Number)value).doubleValue();

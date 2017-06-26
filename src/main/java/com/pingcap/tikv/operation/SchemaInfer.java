@@ -15,19 +15,22 @@
 
 package com.pingcap.tikv.operation;
 
+import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.meta.TiSelectRequest;
+import com.pingcap.tikv.predicates.PredicateUtils;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.DataTypeFactory;
-import lombok.Getter;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.pingcap.tikv.types.Types.TYPE_VARCHAR;
 
 /**
  * SchemaInfer extract row's type after query is executed.
- * It is pretty rough version for. Optimization is on the way.
+ * It is pretty rough version. Optimization is on the way.
  * The problem we have right now is that TiDB promote Sum to Decimal which is
  * not compatible with column's type.
  * The solution we come up with right now is use record column's type ad finalFieldType
@@ -36,14 +39,12 @@ import static com.pingcap.tikv.types.Types.TYPE_VARCHAR;
  * the same type or not. If yes, no need for casting. If no, casting is needed here.
  */
 public class SchemaInfer {
-    @Getter
     private List<DataType> types;
-
     public static SchemaInfer create(TiSelectRequest tiSelectRequest) {
         return new SchemaInfer(tiSelectRequest);
     }
 
-    public SchemaInfer(TiSelectRequest tiSelectRequest) {
+    private SchemaInfer(TiSelectRequest tiSelectRequest) {
         types = new ArrayList<>();
         extractFieldTypes(tiSelectRequest);
     }
@@ -51,39 +52,53 @@ public class SchemaInfer {
     /**
      * TODO: order by
      * extract field types from tiSelectRequest for reading data to row.
-     *
      * @param tiSelectRequest is SelectRequest
      */
     private void extractFieldTypes(TiSelectRequest tiSelectRequest) {
+        List<TiExpr> groupByExprs = new ArrayList<>();
         tiSelectRequest.getGroupBys().forEach(
-                groupBy -> {
-                    types.add(DataTypeFactory.of(TYPE_VARCHAR));
-                }
+               groupBy -> {
+                   groupByExprs.add(groupBy.getExpr());
+                   types.add(groupBy.getExpr().getType());
+               }
         );
 
         if (tiSelectRequest.getAggregates().size() > 0) {
-            if (tiSelectRequest.getGroupBys().size() == 0) {
+            // In some cases, aggregates come without group by clause, we need add a dummy
+            // single group for it.
+            if(tiSelectRequest.getGroupBys().size() == 0) {
                 types.add(DataTypeFactory.of(TYPE_VARCHAR));
             }
         }
 
         // Extract all column type information from TiExpr
-        // Since fields are simple expression, intermediateFieldTypes shares the same
-        // FieldType information.
         tiSelectRequest.getFields().forEach(
                 expr -> {
-                    types.add(expr.getType());
+                    if (groupByExprs.size() > 0 ) {
+                        // collect all TiExpr in groupByExpr who does not agree with expr.
+                        groupByExprs.stream()
+                                .map(PredicateUtils::getColumnRefFromExpr)
+                                .flatMap(Collection::stream)
+                                .filter(x -> !x.equals(expr))
+                                .collect(Collectors.toList())
+                                .forEach(x -> types.add(x.getType()));
+                    } else {
+                        types.add(expr.getType());
+                    }
                 }
         );
 
         tiSelectRequest.getAggregates().forEach(
-                expr -> {
-                    types.add(expr.getType());
-                }
+                expr -> types.add(expr.getType())
         );
     }
 
     public DataType getType(int index) {
         return types.get(index);
     }
+
+    public List<DataType> getTypes() {
+        return types;
+    }
+
 }

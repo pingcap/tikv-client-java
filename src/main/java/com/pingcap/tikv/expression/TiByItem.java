@@ -16,12 +16,9 @@
 package com.pingcap.tikv.expression;
 
 import com.pingcap.tidb.tipb.ByItem;
-import lombok.Getter;
-
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class TiByItem {
-    @Getter
     private TiExpr expr;
     private boolean desc;
 
@@ -41,5 +38,9 @@ public class TiByItem {
         return builder.setExpr(expr.toProto())
                 .setDesc(desc)
                 .build();
+    }
+
+    public TiExpr getExpr() {
+        return expr;
     }
 }

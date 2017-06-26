@@ -21,7 +21,6 @@ import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.codec.InvalidCodecFormatException;
 import com.pingcap.tikv.meta.TiColumnInfo;
-import com.pingcap.tikv.row.Row;
 
 import java.util.Arrays;
 
@@ -33,23 +32,22 @@ public class BytesType extends DataType {
         return new BytesType(tp);
     }
 
-    BytesType(TiColumnInfo.InternalTypeHolder holder) {
-        super(holder);
-    }
-
     private BytesType(int tp) {
         super(tp);
     }
 
+    protected BytesType(TiColumnInfo.InternalTypeHolder holder) {
+        super(holder);
+    }
+
     @Override
-    public void decode(CodecDataInput cdi, Row row, int pos) {
-        int flag = cdi.readUnsignedByte();
+    public Object decodeNotNull(int flag, CodecDataInput cdi) {
         if (flag == COMPACT_BYTES_FLAG) {
-            row.setString(pos, new String(readCompactBytes(cdi)));
+            return new String(readCompactBytes(cdi));
         } else if (flag == BYTES_FLAG) {
-            row.setString(pos, new String(readBytes(cdi)));
+            return new String(readBytes(cdi));
         } else {
-            throw new InvalidCodecFormatException("Invalid Flag type for  ClassString: " + typeNameMap.get(flag));
+            throw new InvalidCodecFormatException("Invalid Flag type for : " + flag);
         }
     }
 
@@ -60,7 +58,7 @@ public class BytesType extends DataType {
      * @param value need to be encoded.
      */
     @Override
-    public void encode(CodecDataOutput cdo, EncodeType encodeType, Object value) {
+    public void encodeNotNull(CodecDataOutput cdo, EncodeType encodeType, Object value) {
         byte[] bytes;
         if (value instanceof String) {
              bytes = ((String)value).getBytes();
@@ -70,17 +68,7 @@ public class BytesType extends DataType {
         if (encodeType == EncodeType.KEY) {
             writeBytes(cdo, bytes);
         } else {
-            writeBytesDesc(cdo, bytes);
-        }
-    }
-
-    public String decodeNotNull(int flag, CodecDataInput cdi) {
-        if (flag == COMPACT_BYTES_FLAG) {
-            return new String(readCompactBytes(cdi));
-        } else if (flag == BYTES_FLAG) {
-            return new String(readBytes(cdi));
-        } else {
-            throw new InvalidCodecFormatException("Invalid Flag type for String type: " + typeNameMap.get(flag));
+            writeCompactBytes(cdo, bytes);
         }
     }
 
@@ -113,6 +101,17 @@ public class BytesType extends DataType {
             }
             cdo.write((byte) (MARKER - padCount));
         }
+    }
+
+    /**
+     * Write bytes in a compact form.
+     * @param cdo destination of data.
+     * @param data is value that will be written into cdo.
+     */
+    public static void writeCompactBytes(CodecDataOutput cdo, byte[] data) {
+        int length = data.length;
+        IntegerType.writeVarLong(cdo, length);
+        cdo.writeBytes(Arrays.toString(data));
     }
 
     // WriteBytesDesc first encodes bytes using EncodeBytes, then bitwise reverses

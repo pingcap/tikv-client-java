@@ -35,7 +35,7 @@ public class DefaultRowReader implements RowReader {
         int length = dataTypes.length;
         Row row = ObjectRowImpl.create(length);
         for(int i = 0; i < length; i++) {
-            dataTypes[i].decode(cdi, row, i);
+            dataTypes[i].decodeValueToRow(cdi, row, i);
         }
         return row;
     }

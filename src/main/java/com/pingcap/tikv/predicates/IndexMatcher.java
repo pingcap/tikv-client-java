@@ -83,7 +83,7 @@ public class IndexMatcher {
     private boolean matchColumn(TiColumnRef col) {
         if (indexColumn != null) {
             String indexColumnName = indexColumn.getName();
-            return col.getBindingColumn().matchName(indexColumnName);
+            return col.getColumnInfo().matchName(indexColumnName);
         }
         return false;
     }

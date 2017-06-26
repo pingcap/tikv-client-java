@@ -23,10 +23,12 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Date;
 
-// TODO: Mapping unsigned and other types
-// Even in case of mem-buffer-based row we can ignore field types
-// when en/decoding if we put some padding bits for fixed length
-// and use fixed length index for var-length
+/**
+ * Even in case of mem-buffer-based row we can ignore field types
+ * when en/decoding if we put some padding bits for fixed length
+ * and use fixed length index for var-length
+ */
+
 public interface Row {
     void        setNull(int pos);
     boolean     isNull(int pos);

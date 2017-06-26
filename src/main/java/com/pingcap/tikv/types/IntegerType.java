@@ -22,7 +22,6 @@ import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.codec.InvalidCodecFormatException;
 import com.pingcap.tikv.codec.TableCodec;
 import com.pingcap.tikv.exception.TiClientInternalException;
-import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
 
 import static com.pingcap.tikv.types.Types.*;
@@ -40,21 +39,20 @@ public class IntegerType extends DataType {
         super(tp);
     }
 
-    IntegerType(TiColumnInfo.InternalTypeHolder holder) {
-        super(holder);
-    }
-
-    /**
-     * decode a int value from cdi to row per tp.
-     * @param cdi source of data.
-     * @param row destination of data
-     * @param pos position of row.
-     */
     @Override
-    public void decode(CodecDataInput cdi, Row row, int pos) {
-        int flag = cdi.readUnsignedByte();
-        long val = decodeNotNullInternal(flag, cdi);
-        row.setLong(pos, val);
+    public Object decodeNotNull(int flag, CodecDataInput cdi) {
+        switch (flag) {
+            case UVARINT_FLAG:
+                return readUVarLong(cdi);
+            case UINT_FLAG:
+                return readULong(cdi);
+            case VARINT_FLAG:
+                return readVarLong(cdi);
+            case INT_FLAG:
+                return readLong(cdi);
+            default:
+                throw new TiClientInternalException("Invalid " + toString() + " flag: " + flag);
+        }
     }
 
     /**
@@ -64,7 +62,7 @@ public class IntegerType extends DataType {
      * @param value need to be encoded.
      */
     @Override
-    public void encode(CodecDataOutput cdo, EncodeType encodeType, Object value) {
+    public void encodeNotNull(CodecDataOutput cdo, EncodeType encodeType, Object value) {
         long val;
         if (value instanceof Number) {
             val = ((Number) value).longValue();
@@ -87,19 +85,8 @@ public class IntegerType extends DataType {
         }
     }
 
-    private long decodeNotNullInternal(int flag, CodecDataInput cdi) {
-        switch (flag) {
-            case UVARINT_FLAG:
-                return readUVarLong(cdi);
-            case UINT_FLAG:
-                return readULong(cdi);
-            case VARINT_FLAG:
-                return readVarLong(cdi);
-            case INT_FLAG:
-                return readLong(cdi);
-            default:
-                throw new TiClientInternalException("Invalid " + toString() + " flag: " + flag);
-        }
+    protected IntegerType(TiColumnInfo.InternalTypeHolder holder) {
+        super(holder);
     }
 
     @Override
@@ -168,7 +155,7 @@ public class IntegerType extends DataType {
      * @param cdo For outputting data in bytes array
      * @param value The data to encode
      */
-    private static void writeVarLong(CodecDataOutput cdo, long value) {
+    public static void writeVarLong(CodecDataOutput cdo, long value) {
         long ux = value << 1;
         if (value < 0) {
             ux = ~ux;
@@ -181,7 +168,7 @@ public class IntegerType extends DataType {
      * @param cdo For outputting data in bytes array
      * @param value The data to encode
      */
-    private static void writeUVarLong(CodecDataOutput cdo, long value) {
+    public static void writeUVarLong(CodecDataOutput cdo, long value) {
         while ((value - 0x80) >= 0) {
             cdo.writeByte((byte)value | 0x80);
             value >>>= 7;

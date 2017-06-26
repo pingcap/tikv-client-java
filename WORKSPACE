@@ -99,11 +99,6 @@ maven_jar(
 )
 
 maven_jar(
-   name = "org_projectlombok_lombok",
-   artifact = "org.projectlombok:lombok:1.16.16",
-)
-
-maven_jar(
    name = "net_sf_trove4j_trove4j",
    artifact = "net.sf.trove4j:trove4j:3.0.1",
 )

@@ -40,6 +40,10 @@ public class Case extends TiFunctionExpression {
 
     }
 
+    /**
+     * For Case
+     * @return a DataType that Case expression has.
+     */
     @Override
     public DataType getType() {
         throw new UnsupportedOperationException();

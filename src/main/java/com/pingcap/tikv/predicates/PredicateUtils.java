@@ -16,9 +16,12 @@
 package com.pingcap.tikv.predicates;
 
 
+import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiExpr;
+import com.pingcap.tikv.expression.TiFunctionExpression;
 import com.pingcap.tikv.expression.scalar.And;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
@@ -30,5 +33,21 @@ public class PredicateUtils {
         if (exprs.size() == 1) return exprs.get(0);
 
         return new And(exprs.get(0), mergeCNFExpressions(exprs.subList(1, exprs.size())));
+    }
+
+    public static List<TiColumnRef> getColumnRefFromExpr(TiExpr expr) {
+        List<TiColumnRef> columnRefss = new ArrayList<>();
+        if (expr instanceof TiFunctionExpression) {
+            TiFunctionExpression tiF = (TiFunctionExpression)expr;
+            for (TiExpr arg : tiF.getArgs()) {
+                if (arg instanceof TiColumnRef) {
+                    TiColumnRef tiCR = (TiColumnRef) arg;
+                    columnRefss.add(tiCR);
+                }
+            }
+        } else if (expr instanceof TiColumnRef) {
+            columnRefss.add(((TiColumnRef)expr));
+        }
+        return columnRefss;
     }
 }

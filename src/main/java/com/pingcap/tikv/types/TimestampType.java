@@ -41,13 +41,31 @@ public class TimestampType extends DataType {
         super(holder);
     }
 
+    @Override
+    public Object decodeNotNull(int flag, CodecDataInput cdi) {
+        // MysqlTime MysqlDate MysqlDatetime
+        if (flag == UVARINT_FLAG) {
+            // read packedUint
+            LocalDateTime localDateTime = fromPackedLong(IntegerType.readUVarLong(cdi));
+            return Timestamp.valueOf(localDateTime);
+        // row.setTimestamp(pos, timestamp);
+        } else if (flag == INT_FLAG){
+            long nanoSec = IntegerType.readLong(cdi);
+            Duration duration = Duration.ofNanos(nanoSec);
+            // Go and Java share the same behavior. Time is calculated from 1970 Jan 1 UTC.
+            // row.setTime(pos, time);
+            return new Time(duration.toMillis());
+        } else {
+            throw new InvalidCodecFormatException("Invalid Flag type for TimestampType: " + flag);
+        }
+    }
+
     /**
      * decode a value from cdi to row per tp.
      * @param cdi source of data.
      * @param row destination of data
      * @param pos position of row.
      */
-    @Override
     public void decode(CodecDataInput cdi, Row row, int pos) {
         int flag = cdi.readUnsignedByte();
         // MysqlTime MysqlDate MysqlDatetime
@@ -74,7 +92,7 @@ public class TimestampType extends DataType {
      * @param value need to be encoded.
      */
     @Override
-    public void encode(CodecDataOutput cdo, EncodeType encodeType, Object value) {
+    public void encodeNotNull(CodecDataOutput cdo, EncodeType encodeType, Object value) {
         LocalDateTime localDateTime;
         // TODO, is LocalDateTime enough here?
         if (value instanceof LocalDateTime) {

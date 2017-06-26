@@ -32,7 +32,7 @@ public class Types {
     public static final int TYPE_INT24 = 9;
     public static final int TYPE_DATE = 10;
     // Original name was TypeTime. But TiDB replace Time with
-    // Duration to aovid name conflict. We just adopt this.
+    // Duration to avoid name conflict. We just adopt this.
     public static final int TYPE_DURATION = 11;
     public static final int TYPE_DATETIME = 12;
     public static final int TYPE_YEAR = 13;

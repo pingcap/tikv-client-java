@@ -19,6 +19,8 @@ import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.expression.TiBinaryFunctionExpresson;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.types.DataType;
+import com.pingcap.tikv.types.DataTypeFactory;
+import com.pingcap.tikv.types.IntegerType;
 
 public class BitXor extends TiBinaryFunctionExpresson {
     public BitXor(TiExpr lhs, TiExpr rhs) {

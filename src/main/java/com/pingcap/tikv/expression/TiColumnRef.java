@@ -50,13 +50,16 @@ public class TiColumnRef implements TiExpr {
         if (columnInfo.getId() == 0) {
             throw new TiExpressionException("Zero Id is not a referable column id");
         }
-        return new TiColumnRef(columnInfo);
+        return new TiColumnRef(columnInfo, table);
     }
 
     private TiColumnInfo columnInfo;
 
-    private TiColumnRef(TiColumnInfo columnInfo) {
+    private TiTableInfo tableInfo;
+
+    private TiColumnRef(TiColumnInfo columnInfo, TiTableInfo tableInfo) {
         this.columnInfo = columnInfo;
+        this.tableInfo = tableInfo;
     }
 
     @Override
@@ -78,12 +81,33 @@ public class TiColumnRef implements TiExpr {
         return this.columnInfo.getName();
     }
 
-    public TiColumnInfo getBindingColumn() {
+    public TiColumnInfo getColumnInfo() {
         return columnInfo;
     }
 
     @Override
-    public String toString() {
-        return String.format("`%s`", columnInfo.getName());
+    public boolean equals(Object another) {
+        if (this == another) {
+            return  true;
+        }
+
+        if (another instanceof  TiColumnRef) {
+            TiColumnRef tiColumnRef = (TiColumnRef) another;
+            return tiColumnRef.columnInfo.getId() == this.columnInfo.getId() &&
+               tiColumnRef.getName().equalsIgnoreCase(this.columnInfo.getName()) &&
+               tiColumnRef.tableInfo.getId() == this.tableInfo.getId();
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = (int) (prime * result
+                        + ((columnInfo == null) ? 0 : columnInfo.getId())
+                        + ((tableInfo == null) ? 0 : tableInfo.getId()));
+        return result;
     }
 }
