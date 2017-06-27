@@ -41,7 +41,7 @@ import static com.pingcap.tikv.types.Types.TYPE_VARCHAR;
  */
 public class SchemaInfer {
     private List<DataType> types;
-    private List<Projection> transformOps;
+    private RowTransformer rt;
     public static SchemaInfer create(TiSelectRequest tiSelectRequest) {
         return new SchemaInfer(tiSelectRequest);
     }
@@ -49,6 +49,7 @@ public class SchemaInfer {
     private SchemaInfer(TiSelectRequest tiSelectRequest) {
         types = new ArrayList<>();
         extractFieldTypes(tiSelectRequest);
+        buildTransform(tiSelectRequest);
     }
 
     private void buildTransform(TiSelectRequest tiSelectRequest) {
@@ -81,6 +82,7 @@ public class SchemaInfer {
                 rowTrans.addProjection(new NoOp(field.getType()));
             }
         }
+        rt = rowTrans.build();
     }
 
     /**
@@ -123,6 +125,10 @@ public class SchemaInfer {
 
     public List<DataType> getTypes() {
         return types;
+    }
+
+    public RowTransformer getRowTransformer() {
+        return rt;
     }
 
 }
