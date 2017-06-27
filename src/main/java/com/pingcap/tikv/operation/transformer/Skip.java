@@ -27,7 +27,7 @@ public class Skip implements Projection {
     public static final Skip SKIP_OP = new Skip();
 
     @Override
-    public void append(Object value, Row row) {}
+    public void set(Object value, Row row, int pos) {}
 
     @Override
     public int size() {

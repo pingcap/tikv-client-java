@@ -29,7 +29,7 @@ public class Cast extends NoOp {
     }
 
     @Override
-    public void append(Object value, Row row) {
+    public void append(Object value, Row row, int pos) {
         Object casted;
         if (value == null) {
             row.set(row.fieldCount(), targetDataType, null);
@@ -43,7 +43,7 @@ public class Cast extends NoOp {
         } else {
             throw new UnsupportedOperationException("only support cast to Long, Double and String");
         }
-        row.set(row.fieldCount(), targetDataType, casted);
+        row.set(pos, targetDataType, casted);
     }
 
     public Double castToDouble(Object obj) {

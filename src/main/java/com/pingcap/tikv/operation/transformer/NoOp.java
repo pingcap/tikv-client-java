@@ -34,8 +34,8 @@ public class NoOp implements Projection {
     }
 
     @Override
-    public void append(Object value, Row row) {
-        row.set(row.fieldCount(), targetDataType, value);
+    public void set(Object value, Row row, int pos) {
+        row.set(pos, targetDataType, value);
     }
 
     @Override

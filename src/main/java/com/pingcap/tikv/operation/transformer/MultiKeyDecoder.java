@@ -34,12 +34,12 @@ public class MultiKeyDecoder implements Projection {
     private DataType[] resultTypes;
 
     @Override
-    public void append(Object value, Row row) {
+    public void set(Object value, Row row, int pos) {
         byte[] rowData = (byte[]) value;
         CodecDataInput cdi = new CodecDataInput(rowData);
-        int offset = row.fieldCount();
+
         for(int i = 0; i < resultTypes.length; i++) {
-            resultTypes[i].decodeValueToRow(cdi, row, i + offset);
+            resultTypes[i].decodeValueToRow(cdi, row, i + pos);
         }
     }
 
