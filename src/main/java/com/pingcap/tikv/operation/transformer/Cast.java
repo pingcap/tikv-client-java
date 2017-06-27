@@ -29,7 +29,7 @@ public class Cast extends NoOp {
     }
 
     @Override
-    public void append(Object value, Row row, int pos) {
+    public void set(Object value, Row row, int pos) {
         Object casted;
         if (value == null) {
             row.set(row.fieldCount(), targetDataType, null);
