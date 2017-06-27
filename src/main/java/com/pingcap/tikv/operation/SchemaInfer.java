@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.pingcap.tikv.types.Types.TYPE_BLOB;
 import static com.pingcap.tikv.types.Types.TYPE_VARCHAR;
 
 /**
@@ -92,32 +93,25 @@ public class SchemaInfer {
      * @param tiSelectRequest is SelectRequest
      */
     private void extractFieldTypes(TiSelectRequest tiSelectRequest) {
-        List<TiExpr> groupByExprs = new ArrayList<>();
-        tiSelectRequest.getGroupByItems().forEach(
-               groupBy -> {
-                   groupByExprs.add(groupBy.getExpr());
-                   types.add(groupBy.getExpr().getType());
-               }
-        );
-
-        if (tiSelectRequest.getAggregates().size() > 0) {
-            // In some cases, aggregates come without group by clause, we need add a dummy
-            // single group for it.
-            if(tiSelectRequest.getGroupByItems().size() == 0) {
-                types.add(DataTypeFactory.of(TYPE_VARCHAR));
-            }
+        if (!tiSelectRequest.getGroupByItems().isEmpty()) {
+            types.add(DataTypeFactory.of(TYPE_BLOB));
         }
 
-        if (tiSelectRequest.getAggregates().size() == 0) {
+        if (!tiSelectRequest.getAggregates().isEmpty()) {
+            // In some cases, aggregates come without group by clause, we need add a dummy
+            // single group for it.
+            if(tiSelectRequest.getGroupByItems().isEmpty()) {
+                types.add(DataTypeFactory.of(TYPE_VARCHAR));
+            }
+            tiSelectRequest.getAggregates().forEach(
+                    expr -> types.add(expr.getType())
+            );
+        } else {
             // Extract all column type information from TiExpr
             tiSelectRequest.getFields().forEach(
                     expr -> types.add(expr.getType())
             );
         }
-
-        tiSelectRequest.getAggregates().forEach(
-                expr -> types.add(expr.getType())
-        );
     }
 
     public DataType getType(int index) {
