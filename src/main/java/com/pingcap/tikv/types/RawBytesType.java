@@ -52,7 +52,7 @@ public class RawBytesType extends BytesType {
     @Override
     public void encodeNotNull(CodecDataOutput cdo, EncodeType encodeType, Object value) {
         byte[] bytes;
-        if (value instanceof String) {
+        if (value instanceof byte[]) {
              bytes = (byte[])value;
         } else {
             throw new UnsupportedOperationException("can not cast non bytes type to bytes array");
