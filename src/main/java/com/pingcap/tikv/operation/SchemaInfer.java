@@ -82,6 +82,7 @@ public class SchemaInfer {
                 rowTrans.addProjection(new NoOp(field.getType()));
             }
         }
+        rowTrans.addSourceFieldTypes(types);
         rt = rowTrans.build();
     }
 
