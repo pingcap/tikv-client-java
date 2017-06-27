@@ -101,11 +101,12 @@ public class RowTransformer {
         // we need calculate the new length.
         Row outRow = ObjectRowImpl.create(newRowLength());
 
-        for(int i = 0; i < inRow.fieldCount();) {
+        int offset = 0;
+        for(int i = 0; i < inRow.fieldCount(); i++) {
             Object inVal = inRow.get(i, sourceFieldTypes.get(i));
             Projection p = getProjection(i);
-            p.set(inVal, outRow, i);
-            i += p.size();
+            p.set(inVal, outRow, offset);
+            offset += p.size();
         }
         return outRow;
     }
