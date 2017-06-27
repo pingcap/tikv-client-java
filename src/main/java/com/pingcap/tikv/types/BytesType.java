@@ -32,7 +32,7 @@ public class BytesType extends DataType {
         return new BytesType(tp);
     }
 
-    private BytesType(int tp) {
+    protected BytesType(int tp) {
         super(tp);
     }
 
