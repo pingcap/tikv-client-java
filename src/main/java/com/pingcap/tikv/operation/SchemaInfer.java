@@ -17,14 +17,11 @@ package com.pingcap.tikv.operation;
 
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.meta.TiSelectRequest;
-import com.pingcap.tikv.predicates.PredicateUtils;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.DataTypeFactory;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.pingcap.tikv.types.Types.TYPE_VARCHAR;
 
@@ -71,22 +68,12 @@ public class SchemaInfer {
             }
         }
 
-        // Extract all column type information from TiExpr
-        tiSelectRequest.getFields().forEach(
-                expr -> {
-                    if (groupByExprs.size() > 0 ) {
-                        // collect all TiExpr in groupByExpr who does not agree with expr.
-                        groupByExprs.stream()
-                                .map(PredicateUtils::extractColumnRefFromExpr)
-                                .flatMap(Collection::stream)
-                                .filter(x -> !x.equals(expr))
-                                .collect(Collectors.toList())
-                                .forEach(x -> types.add(x.getType()));
-                    } else {
-                        types.add(expr.getType());
-                    }
-                }
-        );
+        if (tiSelectRequest.getAggregates().size() == 0) {
+            // Extract all column type information from TiExpr
+            tiSelectRequest.getFields().forEach(
+                    expr -> types.add(expr.getType())
+            );
+        }
 
         tiSelectRequest.getAggregates().forEach(
                 expr -> types.add(expr.getType())
