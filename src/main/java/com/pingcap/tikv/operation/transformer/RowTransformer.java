@@ -25,6 +25,7 @@ import com.pingcap.tikv.types.DataType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
@@ -118,5 +119,12 @@ public class RowTransformer {
     private int newRowLength() {
         return this.projections.stream().reduce(0,
                 (sum, p) -> sum += p.size(), (s1, s2) -> s1 + s2);
+    }
+
+    public List<DataType> getTypes() {
+        return projections
+                .stream()
+                .flatMap(proj -> proj.getType().stream())
+                .collect(Collectors.toList());
     }
 }
