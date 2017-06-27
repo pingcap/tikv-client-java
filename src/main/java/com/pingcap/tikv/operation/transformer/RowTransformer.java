@@ -124,7 +124,7 @@ public class RowTransformer {
     public List<DataType> getTypes() {
         return projections
                 .stream()
-                .flatMap(proj -> proj.getType().stream())
+                .flatMap(proj -> proj.getTypes().stream())
                 .collect(Collectors.toList());
     }
 }

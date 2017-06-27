@@ -25,5 +25,5 @@ import java.util.List;
 public interface Projection {
     void append(Object value, Row row);
     int size();
-    List<DataType> getType();
+    List<DataType> getTypes();
 }

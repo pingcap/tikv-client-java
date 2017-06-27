@@ -35,7 +35,7 @@ public class Skip implements Projection {
     }
 
     @Override
-    public List<DataType> getType() {
+    public List<DataType> getTypes() {
         return ImmutableList.of();
     }
 }

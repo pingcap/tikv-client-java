@@ -44,7 +44,7 @@ public class NoOp implements Projection {
     }
 
     @Override
-    public List<DataType> getType() {
+    public List<DataType> getTypes() {
         return ImmutableList.of(targetDataType);
     }
 }
