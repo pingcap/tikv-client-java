@@ -68,6 +68,14 @@ public class TiSelectRequest implements Serializable {
     private TiExpr having;
     private boolean distinct;
 
+    public void bind() {
+        fields.forEach(expr -> expr.bind(tableInfo));
+        where.forEach(expr -> expr.bind(tableInfo));
+        groupByItems.forEach(item -> item.getExpr().bind(tableInfo));
+        orderByItems.forEach(item -> item.getExpr().bind(tableInfo));
+        aggregates.forEach(expr -> expr.bind(tableInfo));
+    }
+
     public SelectRequest buildAsIndexScan() {
         checkArgument(startTs != 0, "timestamp is 0");
         SelectRequest.Builder builder = SelectRequest.newBuilder();
