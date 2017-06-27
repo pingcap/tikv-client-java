@@ -23,10 +23,8 @@ import com.pingcap.tikv.types.DataType;
 
 import java.util.List;
 
-public class Skip extends NoOp {
-    public Skip(DataType type) {
-        super(type);
-    }
+public class Skip implements Projection {
+    public static final Skip SKIP_OP = new Skip();
 
     @Override
     public void append(Object value, Row row) {}

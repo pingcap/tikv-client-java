@@ -31,6 +31,9 @@ public class Cast extends NoOp {
     @Override
     public void append(Object value, Row row) {
         Object casted;
+        if (value == null) {
+            row.set(row.fieldCount(), targetDataType, null);
+        }
         if (targetDataType instanceof IntegerType) {
             casted = castToLong(value);
         } else if (targetDataType instanceof BytesType) {

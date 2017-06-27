@@ -15,14 +15,17 @@
 
 package com.pingcap.tikv.operation;
 
+import com.pingcap.tikv.expression.TiByItem;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.meta.TiSelectRequest;
-import com.pingcap.tikv.operation.transformer.Projection;
+import com.pingcap.tikv.operation.transformer.*;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.DataTypeFactory;
+import com.pingcap.tikv.types.Types;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.pingcap.tikv.types.Types.TYPE_VARCHAR;
 
@@ -49,11 +52,35 @@ public class SchemaInfer {
     }
 
     private void buildTransform(TiSelectRequest tiSelectRequest) {
-        // 1. if group by is empty, first column should be "singlegroup"
+        RowTransformer.Builder rowTrans = RowTransformer.newBuilder();
+        // 1. if group by is empty, first column should be "single group"
         // which is a string
         // 2. if multiple group by items present, it is wrapped inside
         // a byte array. we make a multiple decoding
-        // 3.
+        // 3. for no aggregation case, make only projected columns
+        if (tiSelectRequest.getGroupByItems().size() == 0) {
+            rowTrans.addProjection(Skip.SKIP_OP);
+        } else {
+            List<DataType> types = tiSelectRequest.getGroupByItems()
+                    .stream()
+                    .map(TiByItem::getExpr)
+                    .map(TiExpr::getType)
+                    .collect(Collectors.toList());
+
+            rowTrans.addProjection(new MultiKeyDecoder(types));
+        }
+
+        // append aggregates if present
+        // TODO: consume target type from outside
+        if (tiSelectRequest.getAggregates().size() != 0) {
+            for (TiExpr agg : tiSelectRequest.getAggregates()) {
+                rowTrans.addProjection(new Cast(DataTypeFactory.of(Types.TYPE_LONG)));
+            }
+        } else {
+            for (TiExpr field : tiSelectRequest.getFields()) {
+                rowTrans.addProjection(new NoOp(field.getType()));
+            }
+        }
     }
 
     /**
