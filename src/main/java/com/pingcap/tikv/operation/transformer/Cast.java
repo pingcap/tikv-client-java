@@ -17,27 +17,30 @@
 
 package com.pingcap.tikv.operation.transformer;
 
+import com.pingcap.tikv.row.Row;
+import com.pingcap.tikv.types.BytesType;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.DecimalType;
 import com.pingcap.tikv.types.IntegerType;
-import com.pingcap.tikv.types.BytesType;
 
 public class Cast extends NoOp {
-    public Cast(DataType dataType) {
-        super(dataType);
+    public Cast(DataType type) {
+        super(type);
     }
 
     @Override
-    public Object apply(Object obj) {
+    public void append(Object value, Row row) {
+        Object casted;
         if (targetDataType instanceof IntegerType) {
-            return castToLong(obj);
+            casted = castToLong(value);
         } else if (targetDataType instanceof BytesType) {
-            return castToString(obj);
+            casted = castToString(value);
         } else if (targetDataType instanceof DecimalType) {
-            return castToDouble(obj);
+            casted = castToDouble(value);
         } else {
             throw new UnsupportedOperationException("only support cast to Long, Double and String");
         }
+        row.set(row.fieldCount(), targetDataType, casted);
     }
 
     public Double castToDouble(Object obj) {

@@ -17,6 +17,7 @@
 
 package com.pingcap.tikv.operation.transformer;
 
+import com.google.common.collect.ImmutableList;
 import com.pingcap.tikv.row.ObjectRowImpl;
 import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.types.DataType;
@@ -24,6 +25,8 @@ import com.pingcap.tikv.types.DataType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * RowTransformer is used along with SchemaInfer and row and provide some operation.
@@ -77,21 +80,13 @@ public class RowTransformer {
         }
     }
 
-    public void setProjections(List<Projection> projections) {
-        this.projections = projections;
-    }
+    private final List<Projection> projections;
 
-    private List<Projection> projections;
-
-    public void setSourceFieldTypes(List<DataType> sourceFieldTypes) {
-        this.sourceFieldTypes = sourceFieldTypes;
-    }
-
-    private List<DataType> sourceFieldTypes;
+    private final List<DataType> sourceFieldTypes;
 
     private RowTransformer(List<DataType> sourceTypes, List<Projection> projections) {
-        this.sourceFieldTypes = sourceTypes;
-        this.projections = projections;
+        this.sourceFieldTypes = ImmutableList.copyOf(requireNonNull(sourceTypes));
+        this.projections = ImmutableList.copyOf(requireNonNull(projections));
     }
 
     /**
@@ -104,13 +99,10 @@ public class RowTransformer {
         // After transform the length of row is probably not same as the input row.
         // we need calculate the new length.
         Row outRow = ObjectRowImpl.create(newRowLength());
-        int counter = 0;
+
         for(int i = 0; i < inRow.fieldCount(); i++) {
             Object inVal = inRow.get(i, this.sourceFieldTypes.get(i));
-            Object outVal = getProjection(i).apply(inVal);
-            if (outVal != null) {
-                outRow.set(counter++, getProjection(i).getType(), outVal);
-            }
+            getProjection(i).append(inVal, outRow);
         }
         return outRow;
     }
@@ -125,6 +117,6 @@ public class RowTransformer {
      */
     private int newRowLength() {
         return this.projections.stream().reduce(0,
-                (sum, p) -> sum += p.size(), (s1, s2) -> s1+s2);
+                (sum, p) -> sum += p.size(), (s1, s2) -> s1 + s2);
     }
 }

@@ -74,7 +74,9 @@ public class TiSelectRequest implements Serializable {
         groupByItems.forEach(item -> item.getExpr().bind(tableInfo));
         orderByItems.forEach(item -> item.getExpr().bind(tableInfo));
         aggregates.forEach(expr -> expr.bind(tableInfo));
-        having.bind(tableInfo);
+        if (having != null) {
+            having.bind(tableInfo);
+        }
     }
 
     public SelectRequest buildAsIndexScan() {

@@ -17,6 +17,7 @@ package com.pingcap.tikv.operation;
 
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.meta.TiSelectRequest;
+import com.pingcap.tikv.operation.transformer.Projection;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.DataTypeFactory;
 
@@ -37,6 +38,7 @@ import static com.pingcap.tikv.types.Types.TYPE_VARCHAR;
  */
 public class SchemaInfer {
     private List<DataType> types;
+    private List<Projection> transformOps;
     public static SchemaInfer create(TiSelectRequest tiSelectRequest) {
         return new SchemaInfer(tiSelectRequest);
     }
@@ -44,6 +46,14 @@ public class SchemaInfer {
     private SchemaInfer(TiSelectRequest tiSelectRequest) {
         types = new ArrayList<>();
         extractFieldTypes(tiSelectRequest);
+    }
+
+    private void buildTransform(TiSelectRequest tiSelectRequest) {
+        // 1. if group by is empty, first column should be "singlegroup"
+        // which is a string
+        // 2. if multiple group by items present, it is wrapped inside
+        // a byte array. we make a multiple decoding
+        // 3.
     }
 
     /**

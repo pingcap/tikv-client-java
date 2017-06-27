@@ -17,7 +17,11 @@
 
 package com.pingcap.tikv.operation.transformer;
 
+import com.google.common.collect.ImmutableList;
+import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.types.DataType;
+
+import java.util.List;
 
 public class Skip extends NoOp {
     public Skip(DataType type) {
@@ -25,12 +29,15 @@ public class Skip extends NoOp {
     }
 
     @Override
-    public Object apply(Object obj) {
-        return null;
-    }
+    public void append(Object value, Row row) {}
 
     @Override
     public int size() {
         return 0;
+    }
+
+    @Override
+    public List<DataType> getType() {
+        return ImmutableList.of();
     }
 }

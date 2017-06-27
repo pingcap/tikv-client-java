@@ -18,33 +18,38 @@
 package com.pingcap.tikv.operation.transformer;
 
 import com.google.common.collect.ImmutableList;
+import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.types.DataType;
 
 import java.util.List;
 
-/**
- * Noop is a base type projection, it basically do nothing.
- */
-public class NoOp implements Projection {
-    protected DataType targetDataType;
+import static java.util.Objects.requireNonNull;
 
-    public NoOp(DataType dataType) {
-        this.targetDataType = dataType;
+public class MultiKeyDecoder implements Projection {
+    public MultiKeyDecoder(List<DataType> dataTypes) {
+        this.resultTypes = requireNonNull(dataTypes).toArray(new DataType[0]);
     }
+
+    private DataType[] resultTypes;
 
     @Override
     public void append(Object value, Row row) {
-        row.set(row.fieldCount(), targetDataType, value);
+        byte[] rowData = (byte[]) value;
+        CodecDataInput cdi = new CodecDataInput(rowData);
+        int offset = row.fieldCount();
+        for(int i = 0; i < resultTypes.length; i++) {
+            resultTypes[i].decodeValueToRow(cdi, row, i + offset);
+        }
     }
 
     @Override
     public int size() {
-        return 1;
+        return resultTypes.length;
     }
 
     @Override
     public List<DataType> getType() {
-        return ImmutableList.of(targetDataType);
+        return ImmutableList.copyOf(resultTypes);
     }
 }

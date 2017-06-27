@@ -132,6 +132,16 @@ public class ObjectRowImpl implements Row {
     }
 
     @Override
+    public void setBytes(int pos, byte[] v) {
+        values[pos] = v;
+    }
+
+    @Override
+    public byte[] getBytes(int pos) {
+        return (byte[])values[pos];
+    }
+
+    @Override
     public void set(int pos, DataType type, Object v) {
         // Ignore type for this implementation since no serialization happens
         values[pos] = v;
