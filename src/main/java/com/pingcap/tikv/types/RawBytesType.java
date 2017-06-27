@@ -30,7 +30,7 @@ import com.pingcap.tikv.meta.TiColumnInfo;
  * changed underlying data
  */
 public class RawBytesType extends BytesType {
-    static RawBytesType of(int tp) {
+    static RawBytesType ofRaw(int tp) {
         return new RawBytesType(tp);
     }
 
