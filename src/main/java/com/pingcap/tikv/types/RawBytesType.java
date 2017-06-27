@@ -25,6 +25,9 @@ import com.pingcap.tikv.meta.TiColumnInfo;
 /**
  * TODO: if we need to unify string type and binary types?
  * Indeed they are encoded as the same
+ * However, decode to string actually going through encoding/decoding
+ * by whatever charset.encoding format we set, and essentially
+ * changed underlying data
  */
 public class RawBytesType extends BytesType {
 
