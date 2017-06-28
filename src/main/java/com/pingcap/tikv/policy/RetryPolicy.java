@@ -23,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 
 
 import java.util.concurrent.Callable;
+import java.util.function.Function;
 
 public abstract class RetryPolicy {
     private static final Logger logger = LogManager.getFormatterLogger(RetryPolicy.class);
@@ -43,13 +44,40 @@ public abstract class RetryPolicy {
 
     protected abstract boolean shouldRetry(Exception e);
 
-    protected boolean checkNotLeaderException(Status status) {
-        // TODO: need a way to check this, for now all unknown exception
+    protected boolean checkNotLeaderException(Exception e) {
         return true;
     }
 
     protected boolean checkNotRecoverableException(Status status) {
         return unrecoverableStatus.contains(status);
+    }
+
+    public <T> T callWithRetry(Callable<T> proc, Function<T, Exception> errorHandler, String methodName) {
+        while (true) {
+            try {
+                T result = proc.call();
+                Exception e =  errorHandler.apply(result);
+                if (e != null) {
+                   throw e;
+                }
+                return result;
+            } catch (Exception e) {
+                Status status = Status.fromThrowable(e);
+                if (checkNotRecoverableException(status) || !shouldRetry(e)) {
+                    logger.error("Failed to recover from last grpc error calling %s.", methodName);
+                    throw new GrpcException(e);
+                }
+                try {
+                    if (recoverMethod != null && checkNotLeaderException(e)) {
+                        logger.info("Leader switched, recovering...");
+                        recoverMethod.call();
+                    }
+                } catch (Exception e1) {
+                    // Ignore exception further spreading
+                    logger.error("Error during grpc leader update.", e1);
+                }
+            }
+        }
     }
 
     public <T> T callWithRetry(Callable<T> proc, String methodName) {
@@ -64,7 +92,7 @@ public abstract class RetryPolicy {
                     throw new GrpcException(e);
                 }
                 try {
-                    if (recoverMethod != null && checkNotLeaderException(status)) {
+                    if (recoverMethod != null && checkNotLeaderException(e)) {
                         logger.info("Leader switched, recovering...");
                         recoverMethod.call();
                     }

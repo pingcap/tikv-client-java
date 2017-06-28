@@ -16,16 +16,16 @@
 package com.pingcap.tikv;
 
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.net.HostAndPort;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.pingcap.tidb.tipb.SelectRequest;
 import com.pingcap.tidb.tipb.SelectResponse;
-import com.pingcap.tikv.exception.KeyException;
-import com.pingcap.tikv.exception.RegionException;
-import com.pingcap.tikv.exception.SelectException;
-import com.pingcap.tikv.exception.TiClientInternalException;
+import com.pingcap.tikv.exception.*;
 import com.pingcap.tikv.grpc.Coprocessor;
+import com.pingcap.tikv.grpc.Errorpb;
 import com.pingcap.tikv.grpc.Kvrpcpb.*;
 import com.pingcap.tikv.grpc.Metapb.Region;
 import com.pingcap.tikv.grpc.Metapb.Store;
@@ -39,6 +39,7 @@ import io.grpc.ManagedChannelBuilder;
 
 import java.util.List;
 import java.util.concurrent.Future;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -61,6 +62,75 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .build();
         GetResponse resp = callWithRetry(TikvGrpc.METHOD_KV_GET, request);
         return getHelper(resp);
+    }
+
+    public void rawPut(ByteString key, ByteString value,Context context){
+        RawPutRequest rawPutRequest = RawPutRequest.newBuilder()
+                .setContext(context)
+                .setKey(key)
+                .setValue(value)
+                .build();
+
+        // handle NotLeader
+        Function<RawPutResponse, Exception> errorHandler = x -> {
+            Errorpb.Error error = x.getRegionError();
+            if (error.hasNotLeader()) {
+                // update Leader here
+            }
+            if (error.hasKeyNotInRegion()) {
+                // reset key range regionCache
+            }
+            if (error.hasRegionNotFound()) {
+                // throw RegionNotFound exception
+            }
+
+            if (error.hasServerIsBusy()) {
+               // do not handle it in this level. this can be retryed.
+            }
+            return null;
+        };
+        RawPutResponse resp = callWithRetry(TikvGrpc.METHOD_RAW_PUT, errorHandler, rawPutRequest);
+        if (resp.hasRegionError()){
+            throw new RegionException(resp.getRegionError());
+        }
+    }
+
+    public ByteString rawGet(ByteString key,Context context){
+        RawGetRequest rawGetRequest = RawGetRequest.newBuilder()
+                .setContext(context)
+                .setKey(key)
+                .build();
+        Function<RawGetResponse, Exception> errorHandler = x -> {
+            if (x.getRegionError() != null) {
+                return new RegionException(x.getRegionError());
+            }
+            return null;
+        };
+        RawGetResponse resp = callWithRetry(TikvGrpc.METHOD_RAW_GET, errorHandler, rawGetRequest);
+
+        if (resp.hasRegionError()) {
+            throw new RegionException(resp.getRegionError());
+        }
+        return resp.getValue();
+
+    }
+
+    public void rawDelete(ByteString key,Context context){
+        RawDeleteRequest rawDeleteRequest = RawDeleteRequest.newBuilder()
+                .setContext(context)
+                .setKey(key)
+                .build();
+
+        Function<RawDeleteResponse, Exception> errorHandler = x -> {
+            if (x.getRegionError() != null) {
+                return new RegionException(x.getRegionError());
+            }
+            return null;
+        };
+        RawDeleteResponse resp = callWithRetry(TikvGrpc.METHOD_RAW_DELETE, errorHandler, rawDeleteRequest);
+        if (resp.hasRegionError()) {
+            throw new RegionException(resp.getRegionError());
+        }
     }
 
     public Future<ByteString> getAsync(ByteString key, long version) {
@@ -98,7 +168,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
 
     public Future<List<KvPair>> batchGetAsync(Iterable<ByteString> keys, long version) {
         FutureObserver<List<KvPair>, BatchGetResponse> responseObserver =
-                new FutureObserver<>(this::batchGetHelper);
+                new FutureObserver<>((BatchGetResponse resp) -> batchGetHelper(resp));
 
         BatchGetRequest request = BatchGetRequest.newBuilder()
                 .setContext(context)
@@ -210,23 +280,35 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
         channel.shutdown();
     }
 
+    public static final int MAX_CACHE_CAPACITY = 64;
+    private static final Cache<String, ManagedChannel> connPool = CacheBuilder
+            .newBuilder()
+            .maximumSize(MAX_CACHE_CAPACITY)
+            .build();
+
     public static RegionStoreClient create(Region region, Store store, TiSession session) {
         RegionStoreClient client = null;
+        String addressStr = store.getAddress();
         try {
-            HostAndPort address = HostAndPort.fromString(store.getAddress());
-            ManagedChannel channel = ManagedChannelBuilder
-                    .forAddress(address.getHostText(), address.getPort())
-                    .usePlaintext(true)
-                    .build();
+            ManagedChannel channel;
+            channel = connPool.getIfPresent(addressStr);
+            if (channel == null || channel.isShutdown()) {
+                HostAndPort address = HostAndPort.fromString(addressStr);
+                channel = ManagedChannelBuilder
+                        .forAddress(address.getHostText(), address.getPort())
+                        .usePlaintext(true)
+                        .build();
+                connPool.put(addressStr, channel);
+            }
             TikvBlockingStub blockingStub = TikvGrpc.newBlockingStub(channel);
             TikvStub asyncStub = TikvGrpc.newStub(channel);
             client = new RegionStoreClient(region, session, channel, blockingStub, asyncStub);
         } catch (Exception e) {
             if (client != null) {
                 try {
+                    connPool.invalidate(addressStr);
                     client.close();
-                } catch (Exception ignore) {
-                }
+                } catch (Exception ignore) {}
             }
             throw e;
         }
@@ -261,4 +343,5 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
         return asyncStub.withDeadlineAfter(getConf().getTimeout(),
                 getConf().getTimeoutUnit());
     }
+
 }

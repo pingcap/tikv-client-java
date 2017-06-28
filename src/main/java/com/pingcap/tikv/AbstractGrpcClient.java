@@ -15,6 +15,7 @@
 
 package com.pingcap.tikv;
 
+import com.pingcap.tidb.tipb.SelectResponse;
 import io.grpc.MethodDescriptor;
 import io.grpc.stub.AbstractStub;
 import io.grpc.stub.ClientCalls;
@@ -23,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.Callable;
+import java.util.function.Function;
 
 import static io.grpc.stub.ClientCalls.asyncBidiStreamingCall;
 
@@ -43,6 +45,24 @@ public abstract class AbstractGrpcClient<BlockingStubT extends AbstractStub<Bloc
 
     public TiConfiguration getConf() {
         return conf;
+    }
+
+    protected <ReqT, ResT> ResT callWithRetry(MethodDescriptor<ReqT, ResT> method,
+                                              Function<ResT, Exception> errorHandler,
+                                              ReqT request) {
+        logger.debug("Calling %s...", method.getFullMethodName());
+        ResT resp = getSession()
+                    .getRetryPolicyBuilder()
+                    .create(getRecoveryMethod()).callWithRetry(
+                            () -> {
+                                BlockingStubT stub = getBlockingStub();
+                                return ClientCalls.blockingUnaryCall(
+                                        stub.getChannel(), method, stub.getCallOptions(), request);
+                            },
+                            errorHandler,
+                            method.getFullMethodName());
+        logger.debug("leaving %s...", method.getFullMethodName());
+        return resp;
     }
 
     // TODO: Seems a little bit messy for lambda part
@@ -100,7 +120,6 @@ public abstract class AbstractGrpcClient<BlockingStubT extends AbstractStub<Bloc
     protected abstract BlockingStubT getBlockingStub();
     protected abstract StubT getAsyncStub();
 
-    // TODO: A little bit odd to put here, should be inside policy
     protected Callable<Void> getRecoveryMethod() {
         return null;
     }
