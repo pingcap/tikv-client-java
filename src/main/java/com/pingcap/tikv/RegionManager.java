@@ -61,7 +61,8 @@ public class RegionManager {
         storeCache = CacheBuilder.newBuilder()
                 .maximumSize(MAX_CACHE_CAPACITY)
                 .build(new CacheLoader<Long, Future<Store>>() {
-                    public Future load(Long id) {
+                    @ParametersAreNonnullByDefault
+                    public Future<Store> load(Long id) {
                         return pdClient.getStoreAsync(id);
                     }
                 });
