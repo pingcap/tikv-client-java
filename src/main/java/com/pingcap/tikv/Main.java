@@ -8,7 +8,7 @@ import com.pingcap.tikv.codec.TableCodec;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiConstant;
 import com.pingcap.tikv.expression.TiExpr;
-import com.pingcap.tikv.expression.scalar.Equal;
+import com.pingcap.tikv.expression.scalar.NotEqual;
 import com.pingcap.tikv.grpc.Coprocessor;
 import com.pingcap.tikv.meta.TiDBInfo;
 import com.pingcap.tikv.meta.TiIndexInfo;
@@ -42,8 +42,8 @@ public class Main {
         TiIndexInfo index = table.getIndices().get(0);
 
         List<TiExpr> exprs = ImmutableList.of(
-                new Equal(TiColumnRef.create("c1", table),
-                             TiConstant.create(2L))
+                new NotEqual(TiColumnRef.create("c1", table),
+                             TiConstant.create(9L))
         );
 
         ScanBuilder scanBuilder = new ScanBuilder();

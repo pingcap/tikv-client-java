@@ -22,13 +22,14 @@ import com.pingcap.tikv.RegionManager;
 import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
 import com.pingcap.tikv.grpc.Metapb;
 
+import java.io.Serializable;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 public class RangeSplitter {
-    public static class RegionTask {
+    public static class RegionTask implements Serializable {
         private final Metapb.Region region;
         private final Metapb.Store store;
         private final List<KeyRange> ranges;
