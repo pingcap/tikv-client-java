@@ -38,13 +38,13 @@ public class RegionManagerTest {
     public void setup() throws IOException {
         server = new PDMockServer();
         server.start(CLUSTER_ID);
-        //TODO: zhexuany not sure why test failed when we try to use RegionMager.getInstance
-        mgr = new RegionManager(createClient());
+        mgr = RegionManager.getInstance(createClient());
     }
 
     @After
     public void tearDown() {
         server.stop();
+        RegionManager.reset();
     }
 
     private PDClient createClient() {

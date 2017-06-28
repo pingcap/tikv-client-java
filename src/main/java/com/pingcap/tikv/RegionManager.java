@@ -15,6 +15,7 @@
 
 package com.pingcap.tikv;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -47,15 +48,14 @@ public class RegionManager {
     private final RangeMap<ByteBuffer, Long> keyToRegionIdCache;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private static RegionManager instance;
-    private static Set<ReadOnlyPDClient> pdClientSet = new HashSet<>();
 
     public static final int MAX_CACHE_CAPACITY = 4096;
 
     // To avoid double retrieval, we used the async version of grpc
     // When rpc not returned, instead of call again, it wait for previous one done
-    public RegionManager(ReadOnlyPDClient pdClient) {
+    //TODO: zhexuany not sure why test failed when we try to use RegionMager.getInstance
+    private RegionManager(ReadOnlyPDClient pdClient) {
         this.pdClient = pdClient;
-        this.pdClientSet.add(pdClient);
         regionCache = CacheBuilder.newBuilder()
                 .maximumSize(MAX_CACHE_CAPACITY)
                 .build(new CacheLoader<Long, Future<Region>>() {
@@ -77,7 +77,7 @@ public class RegionManager {
     }
 
     public static RegionManager getInstance(ReadOnlyPDClient client) {
-       if (instance == null || !pdClientSet.contains(client) ) {
+       if (instance == null) {
            synchronized (RegionManager.class) {
                if (instance == null) {
                    instance = new RegionManager(client);
@@ -85,6 +85,11 @@ public class RegionManager {
            }
        }
        return instance;
+    }
+
+    @VisibleForTesting
+    static void reset() {
+        instance = null;
     }
 
     public TiSession getSession() {
