@@ -23,11 +23,12 @@ import com.pingcap.tidb.tipb.ColumnInfo;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.DataTypeFactory;
 
+import java.io.Serializable;
 import java.util.List;
 
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TiColumnInfo {
+public class TiColumnInfo implements Serializable {
     private final long        id;
     private final String      name;
     private final int         offset;

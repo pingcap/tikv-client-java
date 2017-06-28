@@ -15,17 +15,19 @@
 
 package com.pingcap.tikv.operation;
 
+import com.pingcap.tikv.expression.TiByItem;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.meta.TiSelectRequest;
-import com.pingcap.tikv.predicates.PredicateUtils;
+import com.pingcap.tikv.operation.transformer.*;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.DataTypeFactory;
+import com.pingcap.tikv.types.Types;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.pingcap.tikv.types.Types.TYPE_BLOB;
 import static com.pingcap.tikv.types.Types.TYPE_VARCHAR;
 
 /**
@@ -40,6 +42,7 @@ import static com.pingcap.tikv.types.Types.TYPE_VARCHAR;
  */
 public class SchemaInfer {
     private List<DataType> types;
+    private RowTransformer rt;
     public static SchemaInfer create(TiSelectRequest tiSelectRequest) {
         return new SchemaInfer(tiSelectRequest);
     }
@@ -47,6 +50,41 @@ public class SchemaInfer {
     private SchemaInfer(TiSelectRequest tiSelectRequest) {
         types = new ArrayList<>();
         extractFieldTypes(tiSelectRequest);
+        buildTransform(tiSelectRequest);
+    }
+
+    private void buildTransform(TiSelectRequest tiSelectRequest) {
+        RowTransformer.Builder rowTrans = RowTransformer.newBuilder();
+        // 1. if group by is empty, first column should be "single group"
+        // which is a string
+        // 2. if multiple group by items present, it is wrapped inside
+        // a byte array. we make a multiple decoding
+        // 3. for no aggregation case, make only projected columns
+        if (tiSelectRequest.getGroupByItems().size() == 0) {
+            rowTrans.addProjection(Skip.SKIP_OP);
+        } else {
+            List<DataType> types = tiSelectRequest.getGroupByItems()
+                    .stream()
+                    .map(TiByItem::getExpr)
+                    .map(TiExpr::getType)
+                    .collect(Collectors.toList());
+
+            rowTrans.addProjection(new MultiKeyDecoder(types));
+        }
+
+        // append aggregates if present
+        // TODO: consume target type from outside
+        if (tiSelectRequest.getAggregates().size() != 0) {
+            for (TiExpr agg : tiSelectRequest.getAggregates()) {
+                rowTrans.addProjection(new Cast(DataTypeFactory.of(Types.TYPE_LONG)));
+            }
+        } else {
+            for (TiExpr field : tiSelectRequest.getFields()) {
+                rowTrans.addProjection(new NoOp(field.getType()));
+            }
+        }
+        rowTrans.addSourceFieldTypes(types);
+        rt = rowTrans.build();
     }
 
     /**
@@ -55,42 +93,25 @@ public class SchemaInfer {
      * @param tiSelectRequest is SelectRequest
      */
     private void extractFieldTypes(TiSelectRequest tiSelectRequest) {
-        List<TiExpr> groupByExprs = new ArrayList<>();
-        tiSelectRequest.getGroupByItems().forEach(
-               groupBy -> {
-                   groupByExprs.add(groupBy.getExpr());
-                   types.add(groupBy.getExpr().getType());
-               }
-        );
-
-        if (tiSelectRequest.getAggregates().size() > 0) {
-            // In some cases, aggregates come without group by clause, we need add a dummy
-            // single group for it.
-            if(tiSelectRequest.getGroupByItems().size() == 0) {
-                types.add(DataTypeFactory.of(TYPE_VARCHAR));
-            }
+        if (!tiSelectRequest.getGroupByItems().isEmpty()) {
+            types.add(DataTypeFactory.of(TYPE_BLOB));
         }
 
-        // Extract all column type information from TiExpr
-        tiSelectRequest.getFields().forEach(
-                expr -> {
-                    if (groupByExprs.size() > 0 ) {
-                        // collect all TiExpr in groupByExpr who does not agree with expr.
-                        groupByExprs.stream()
-                                .map(PredicateUtils::extractColumnRefFromExpr)
-                                .flatMap(Collection::stream)
-                                .filter(x -> !x.equals(expr))
-                                .collect(Collectors.toList())
-                                .forEach(x -> types.add(x.getType()));
-                    } else {
-                        types.add(expr.getType());
-                    }
-                }
-        );
-
-        tiSelectRequest.getAggregates().forEach(
-                expr -> types.add(expr.getType())
-        );
+        if (!tiSelectRequest.getAggregates().isEmpty()) {
+            // In some cases, aggregates come without group by clause, we need add a dummy
+            // single group for it.
+            if(tiSelectRequest.getGroupByItems().isEmpty()) {
+                types.add(DataTypeFactory.of(TYPE_VARCHAR));
+            }
+            tiSelectRequest.getAggregates().forEach(
+                    expr -> types.add(expr.getType())
+            );
+        } else {
+            // Extract all column type information from TiExpr
+            tiSelectRequest.getFields().forEach(
+                    expr -> types.add(expr.getType())
+            );
+        }
     }
 
     public DataType getType(int index) {
@@ -99,6 +120,10 @@ public class SchemaInfer {
 
     public List<DataType> getTypes() {
         return types;
+    }
+
+    public RowTransformer getRowTransformer() {
+        return rt;
     }
 
 }

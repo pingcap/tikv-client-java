@@ -17,10 +17,13 @@
 
 package com.pingcap.tikv.operation.transformer;
 
+import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.types.DataType;
 
+import java.util.List;
+
 public interface Projection {
-    Object apply(Object obj);
+    void set(Object value, Row row, int pos);
     int size();
-    DataType getType();
+    List<DataType> getTypes();
 }

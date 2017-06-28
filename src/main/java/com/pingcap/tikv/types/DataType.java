@@ -23,6 +23,7 @@ import com.pingcap.tikv.meta.Collation;
 import com.pingcap.tikv.meta.TiColumnInfo;
 import com.pingcap.tikv.row.Row;
 
+import java.io.Serializable;
 import java.util.List;
 
 import static com.pingcap.tikv.types.Types.*;
@@ -30,7 +31,7 @@ import static com.pingcap.tikv.types.Types.*;
 /**
  * Base Type for encoding and decoding TiDB row information.
  */
-public abstract class DataType {
+public abstract class DataType implements Serializable {
     public enum EncodeType {
        KEY,
        VALUE

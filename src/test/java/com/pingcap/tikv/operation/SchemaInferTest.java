@@ -34,6 +34,7 @@ import org.junit.Test;
 
 import java.util.List;
 
+import static com.pingcap.tikv.types.Types.TYPE_BLOB;
 import static com.pingcap.tikv.types.Types.TYPE_NEW_DECIMAL;
 import static com.pingcap.tikv.types.Types.TYPE_VARCHAR;
 
@@ -80,7 +81,7 @@ public class SchemaInferTest {
         selectRequest.getGroupByItems().add(complexGroupBy);
         List<DataType> dataTypes = SchemaInfer.create(selectRequest).getTypes();
         Assert.assertSame(2, dataTypes.size());
-        Assert.assertSame(DataTypeFactory.of(TYPE_VARCHAR), dataTypes.get(0));
+        Assert.assertSame(DataTypeFactory.of(TYPE_BLOB), dataTypes.get(0));
         Assert.assertSame(DataTypeFactory.of(TYPE_NEW_DECIMAL), dataTypes.get(1));
     }
 
@@ -93,7 +94,7 @@ public class SchemaInferTest {
         selectRequest.getGroupByItems().add(complexGroupBy);
         List<DataType> dataTypes = SchemaInfer.create(selectRequest).getTypes();
         Assert.assertSame(2, dataTypes.size());
-        Assert.assertSame(DataTypeFactory.of(TYPE_VARCHAR), dataTypes.get(0));
+        Assert.assertSame(DataTypeFactory.of(TYPE_BLOB), dataTypes.get(0));
         Assert.assertSame(DataTypeFactory.of(TYPE_NEW_DECIMAL), dataTypes.get(1));
     }
 }

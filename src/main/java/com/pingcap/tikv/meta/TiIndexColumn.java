@@ -19,8 +19,10 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.pingcap.tikv.types.DataType;
 
+import java.io.Serializable;
 
-public class TiIndexColumn {
+
+public class TiIndexColumn implements Serializable {
     private String name;
     private int    offset;
     private int    length;

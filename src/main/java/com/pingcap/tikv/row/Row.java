@@ -57,6 +57,9 @@ public interface Row {
     void        setTimestamp(int pos, Timestamp v);
     Timestamp   getTimestamp(int pos);
 
+    void        setBytes(int pos, byte[] v);
+    byte[]      getBytes(int pos);
+
     void        set(int pos, DataType type, Object v);
     Object      get(int pos, DataType type);
 

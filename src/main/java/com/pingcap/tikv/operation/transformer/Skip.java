@@ -17,20 +17,25 @@
 
 package com.pingcap.tikv.operation.transformer;
 
+import com.google.common.collect.ImmutableList;
+import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.types.DataType;
 
-public class Skip extends NoOp {
-    public Skip(DataType type) {
-        super(type);
-    }
+import java.util.List;
+
+public class Skip implements Projection {
+    public static final Skip SKIP_OP = new Skip();
 
     @Override
-    public Object apply(Object obj) {
-        return null;
-    }
+    public void set(Object value, Row row, int pos) {}
 
     @Override
     public int size() {
         return 0;
+    }
+
+    @Override
+    public List<DataType> getTypes() {
+        return ImmutableList.of();
     }
 }
