@@ -5,7 +5,9 @@ os:
   - linux
 
 env:
-  - V=0.4.5
+  - V=0.5.1
+git:
+  submodules: false
 
 before_install:
   - OS=linux

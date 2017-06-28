@@ -32,8 +32,9 @@ import com.pingcap.tikv.util.Pair;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.nio.ByteBuffer;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -46,6 +47,7 @@ public class RegionManager {
     private final RangeMap<ByteBuffer, Long> keyToRegionIdCache;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private static RegionManager instance;
+    private static Set<ReadOnlyPDClient> pdClientSet = new HashSet<>();
 
     public static final int MAX_CACHE_CAPACITY = 4096;
 
@@ -53,6 +55,7 @@ public class RegionManager {
     // When rpc not returned, instead of call again, it wait for previous one done
     public RegionManager(ReadOnlyPDClient pdClient) {
         this.pdClient = pdClient;
+        this.pdClientSet.add(pdClient);
         regionCache = CacheBuilder.newBuilder()
                 .maximumSize(MAX_CACHE_CAPACITY)
                 .build(new CacheLoader<Long, Future<Region>>() {
@@ -74,7 +77,7 @@ public class RegionManager {
     }
 
     public static RegionManager getInstance(ReadOnlyPDClient client) {
-       if (instance == null)  {
+       if (instance == null || !pdClientSet.contains(client) ) {
            synchronized (RegionManager.class) {
                if (instance == null) {
                    instance = new RegionManager(client);
