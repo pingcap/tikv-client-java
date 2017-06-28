@@ -17,10 +17,10 @@ package com.pingcap.tikv.operation;
 
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
-import com.pingcap.tidb.tipb.KeyRange;
 import com.pingcap.tikv.Snapshot;
 import com.pingcap.tikv.codec.KeyUtils;
 import com.pingcap.tikv.codec.TableCodec;
+import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
 import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.row.Row;
 
@@ -50,7 +50,7 @@ public class IndexScanIterator  implements Iterator<Row> {
         long handle = r.getLong(0);
         ByteString startKey = TableCodec.encodeRowKeyWithHandle(selReq.getTableInfo().getId(), handle);
         ByteString endKey = ByteString.copyFrom(KeyUtils.prefixNext(startKey.toByteArray()));
-        selReq.resetRanges(ImmutableList.of(KeyRange.newBuilder().setLow(startKey).setHigh(endKey).build()));
+        selReq.resetRanges(ImmutableList.of(KeyRange.newBuilder().setStart(startKey).setEnd(endKey).build()));
         Iterator<Row> it = snapshot.select(selReq);
         return it.next();
     }

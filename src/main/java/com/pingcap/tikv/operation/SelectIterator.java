@@ -16,7 +16,6 @@
 package com.pingcap.tikv.operation;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import com.pingcap.tidb.tipb.Chunk;
 import com.pingcap.tidb.tipb.SelectResponse;
@@ -25,9 +24,9 @@ import com.pingcap.tikv.RegionStoreClient;
 import com.pingcap.tikv.TiSession;
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.exception.TiClientInternalException;
+import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
 import com.pingcap.tikv.grpc.Metapb.Region;
 import com.pingcap.tikv.grpc.Metapb.Store;
-import com.pingcap.tikv.meta.TiRange;
 import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.row.RowReader;
@@ -35,26 +34,23 @@ import com.pingcap.tikv.row.RowReaderFactory;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.DataTypeFactory;
 import com.pingcap.tikv.types.Types;
-import com.pingcap.tikv.util.Pair;
 import com.pingcap.tikv.util.RangeSplitter;
+import com.pingcap.tikv.util.RangeSplitter.RegionTask;
 
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class SelectIterator implements Iterator<Row> {
     protected final TiSession session;
-    private final List<Pair<Pair<Region, Store>,
-            TiRange<ByteString>>> rangeToRegions;
+    private final List<RegionTask> rangeToRegions;
 
 
     private ChunkIterator chunkIterator;
     protected int index = 0;
     private boolean eof = false;
-    private Function<List<Pair<Pair<Region, Store>,
-            TiRange<ByteString>>>, Boolean> readNextRegionFn;
+    private Function<List<RegionTask>, Boolean> readNextRegionFn;
     private SchemaInfer schemaInfer;
     private final boolean indexScan;
     private static final DataType[] handleTypes = new DataType[]{DataTypeFactory.of(Types.TYPE_LONG)};
@@ -72,8 +68,7 @@ public class SelectIterator implements Iterator<Row> {
     }
 
     public SelectIterator(TiSelectRequest req,
-                          List<Pair<Pair<Region, Store>,
-                                  TiRange<ByteString>>> rangeToRegionsIn,
+                          List<RegionTask> rangeToRegionsIn,
                           TiSession session,
                           boolean indexScan) {
         this.rangeToRegions = rangeToRegionsIn;
@@ -85,16 +80,15 @@ public class SelectIterator implements Iterator<Row> {
                 return false;
             }
 
-            Pair<Pair<Region, Store>, TiRange<ByteString>> reqPair =
-                    rangeToRegions.get(index++);
-            Pair<Region, Store> pair = reqPair.first;
-            TiRange<ByteString> range = reqPair.second;
-            Region region = pair.first;
-            Store store = pair.second;
+            RegionTask regionTask = rangeToRegions.get(index++);
+
+            List<KeyRange> ranges = regionTask.getRanges();
+            Region region = regionTask.getRegion();
+            Store store = regionTask.getStore();
+
             try (RegionStoreClient client = RegionStoreClient.create(region, store, session)) {
                 SelectResponse resp =
-                        client.coprocess(indexScan ? req.buildAsIndexScan() : req.build(),
-                                         ImmutableList.of(range));
+                        client.coprocess(indexScan ? req.buildAsIndexScan() : req.build(), ranges);
                 if (resp == null) {
                     eof = true;
                     return false;
@@ -112,12 +106,10 @@ public class SelectIterator implements Iterator<Row> {
                           TiSession session,
                           RegionManager rm,
                           boolean indexScan) {
-        // TODO: Unify TiRange with Range in predicates
-        this(req, RangeSplitter.newSplitter(rm).splitRangeByRegion(
-                req.getRanges().stream()
-                        .map(r -> TiRange.createByteStringRange(r.getLow(), r.getHigh()))
-                        .collect(Collectors.toList())
-        ), session, indexScan);
+        this(req, RangeSplitter.newSplitter(rm).splitRangeByRegion(req.getRanges()),
+                                                                   session,
+                                                                   indexScan
+        );
     }
 
     private boolean readNextRegion() {

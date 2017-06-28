@@ -16,24 +16,25 @@
 package com.pingcap.tikv.operation;
 
 
+import com.google.common.collect.Range;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.RegionManager;
 import com.pingcap.tikv.RegionStoreClient;
 import com.pingcap.tikv.TiSession;
 import com.pingcap.tikv.codec.KeyUtils;
 import com.pingcap.tikv.exception.TiClientInternalException;
+import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
 import com.pingcap.tikv.grpc.Kvrpcpb;
 import com.pingcap.tikv.grpc.Metapb;
-import com.pingcap.tikv.meta.TiRange;
+import com.pingcap.tikv.predicates.Comparables;
 import com.pingcap.tikv.util.Pair;
 
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 
 public class ScanIterator implements Iterator<Kvrpcpb.KvPair> {
-    private final TiRange<ByteString> keyRange;
+    private final Range                         keyRange;
     private final int                           batchSize;
     protected final TiSession                     session;
     private final RegionManager                 regionCache;
@@ -46,16 +47,32 @@ public class ScanIterator implements Iterator<Kvrpcpb.KvPair> {
 
     public ScanIterator(ByteString startKey,
                         int batchSize,
-                        TiRange<ByteString> range,
+                        KeyRange range,
                         TiSession session,
                         RegionManager rm,
                         long version) {
         this.startKey = startKey;
         this.batchSize = batchSize;
-        this.keyRange = range;
+        this.keyRange = toRange(range);
         this.session = session;
         this.regionCache = rm;
         this.version = version;
+    }
+
+    private static Range toRange(KeyRange range) {
+        if (range == null ||
+            (range.getStart().isEmpty() &&
+             range.getEnd().isEmpty())) {
+            return Range.all();
+        }
+        if (range.getStart().isEmpty()) {
+            return Range.lessThan(Comparables.wrap(range.getEnd()));
+        }
+        if (range.getEnd().isEmpty()) {
+            return Range.atLeast(Comparables.wrap(range.getStart()));
+        }
+        return Range.closedOpen(Comparables.wrap(range.getStart()),
+                                Comparables.wrap(range.getEnd()));
     }
 
     private boolean loadCache() {
@@ -110,9 +127,7 @@ public class ScanIterator implements Iterator<Kvrpcpb.KvPair> {
     }
 
     private boolean contains(ByteString key) {
-        Optional<TiRange<ByteString>> opt = Optional.ofNullable(this.keyRange);
-        return !(opt.isPresent() &&
-                !opt.get().contains(key));
+        return keyRange.contains(Comparables.wrap(key));
     }
 
     private Kvrpcpb.KvPair getCurrent() {

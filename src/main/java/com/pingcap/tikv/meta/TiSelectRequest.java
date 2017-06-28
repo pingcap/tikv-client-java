@@ -16,12 +16,12 @@
 package com.pingcap.tikv.meta;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.pingcap.tidb.tipb.KeyRange;
 import com.pingcap.tidb.tipb.SelectRequest;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.expression.TiByItem;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiExpr;
+import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
 
 import java.io.Serializable;
 import java.util.ArrayList;
