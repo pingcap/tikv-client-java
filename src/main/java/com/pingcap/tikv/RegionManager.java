@@ -42,12 +42,13 @@ public class RegionManager {
     private final LoadingCache<Long, Future<Store>> storeCache;
     private final RangeMap<ByteBuffer, Long> keyToRegionIdCache;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private static RegionManager instance;
 
     public static final int MAX_CACHE_CAPACITY = 4096;
 
     // To avoid double retrieval, we used the async version of grpc
     // When rpc not returned, instead of call again, it wait for previous one done
-    public RegionManager(ReadOnlyPDClient pdClient) {
+    private RegionManager(ReadOnlyPDClient pdClient) {
         this.pdClient = pdClient;
         regionCache = CacheBuilder.newBuilder()
                 .maximumSize(MAX_CACHE_CAPACITY)
@@ -67,6 +68,17 @@ public class RegionManager {
                     }
                 });
         keyToRegionIdCache =  TreeRangeMap.create();
+    }
+
+    public static RegionManager getInstance(PDClient pdClient) {
+       if (instance == null)  {
+           synchronized (RegionManager.class) {
+               if (instance == null) {
+                  instance = new RegionManager(pdClient);
+               }
+           }
+       }
+       return instance;
     }
 
     public TiSession getSession() {
@@ -154,7 +166,7 @@ public class RegionManager {
             keyToRegionIdCache.put(makeRange(region.getStartKey(), region.getEndKey()),
                                              region.getId());
         } finally {
-            lock.writeLock().lock();
+            lock.writeLock().unlock();
         }
         return true;
     }

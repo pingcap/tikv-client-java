@@ -22,7 +22,7 @@ public class TikvClient {
         TiConfiguration conf = TiConfiguration.createDefault(ImmutableList.of(host));
         session = TiSession.create(conf);
         PDClient client = PDClient.createRaw(session);
-        regionManager = new RegionManager(client);
+        regionManager = RegionManager.getInstance(client);
     }
 
     public void set(String key, byte[] value) {
