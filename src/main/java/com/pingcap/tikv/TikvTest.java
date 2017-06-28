@@ -1,18 +1,11 @@
 package com.pingcap.tikv;
 
-import com.google.common.primitives.Longs;
-
 import java.util.Random;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * Created by zhaoziming on 2017/6/23.
- */
 public class TikvTest implements Runnable{
     static  AtomicInteger count = new AtomicInteger();
     TikvClient client = new TikvClient("localhost:2379");
@@ -38,12 +31,11 @@ public class TikvTest implements Runnable{
         }
         try {
             latch.await();
-            //System.out.println("=-------------------------------------=");
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
         long end = System.currentTimeMillis();
-        System.out.println("========================" + (tcount * loopCount) / ((end - start) / 1000.0)+ "tps");
+        System.out.println("========================\n" + (tcount * loopCount) / ((end - start) / 1000.0)+ "tps");
     }
 
 
@@ -54,7 +46,6 @@ public class TikvTest implements Runnable{
             client.set(Long.toString(v), Long.toString(v + 1).getBytes());
             count.incrementAndGet();
         }
-//        System.out.println(count.get());
         latch.countDown();
     }
 }
