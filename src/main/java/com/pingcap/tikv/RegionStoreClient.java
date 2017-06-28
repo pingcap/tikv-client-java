@@ -72,12 +72,13 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .build();
 
         // handle NotLeader
-        Function<RawPutResponse, Exception> errorHandler = x -> {
+        Function<RawPutResponse, Exception> onRegionError = x -> {
             Errorpb.Error error = x.getRegionError();
             if (x.hasRegionError()) {
                 if (error.hasNotLeader()) {
                     // update Leader here
-                    regionManager.updateLeader(context.getRegionId(), error.getNotLeader().getLeader().getStoreId());
+                    // no need update here. just let retry take control of this.
+                    // regionManager.updateLeader(context.getRegionId(), error.getNotLeader().getLeader().getStoreId());
                     throw new RegionException(error);
                 }
                 if (error.hasRegionNotFound()) {
@@ -95,7 +96,6 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 }
 
                 if (error.hasServerIsBusy()) {
-
                 }
                 // do not handle it in this level. this can be retryed.
                 if (error.hasStaleCommand()) {
@@ -110,7 +110,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
             }
             return null;
         };
-        RawPutResponse resp = callWithRetry(TikvGrpc.METHOD_RAW_PUT, errorHandler, rawPutRequest);
+        RawPutResponse resp = callWithRetry(TikvGrpc.METHOD_RAW_PUT, onRegionError, rawPutRequest);
         if (resp.hasRegionError()) {
             throw new RegionException(resp.getRegionError());
         }

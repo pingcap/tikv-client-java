@@ -57,7 +57,7 @@ public class RegionManagerTest {
 
     @Test
     public void getRegionByKey() throws Exception {
-        RegionManager mgr = RegionManager.getInstance(createClient().getSession());
+        RegionManager mgr = RegionManager.getInstance(createClient());
         ByteString startKey = ByteString.copyFrom(new byte[]{1});
         ByteString endKey = ByteString.copyFrom(new byte[]{10});
         ByteString searchKey = ByteString.copyFrom(new byte[]{5});
@@ -92,7 +92,7 @@ public class RegionManagerTest {
 
     @Test
     public void getStoreByKey() throws Exception {
-        RegionManager mgr = RegionManager.getInstance(createClient().getSession());
+        RegionManager mgr = RegionManager.getInstance(createClient());
         ByteString startKey = ByteString.copyFrom(new byte[]{1});
         ByteString endKey = ByteString.copyFrom(new byte[]{10});
         ByteString searchKey = ByteString.copyFrom(new byte[]{5});
@@ -126,7 +126,7 @@ public class RegionManagerTest {
 
     @Test
     public void getRegionById() throws Exception {
-        RegionManager mgr = RegionManager.getInstance(createClient().getSession());
+        RegionManager mgr = RegionManager.getInstance(createClient());
         ByteString startKey = ByteString.copyFrom(new byte[]{1});
         ByteString endKey = ByteString.copyFrom(new byte[]{10});
 
@@ -162,7 +162,7 @@ public class RegionManagerTest {
 
     @Test
     public void getStoreById() throws Exception {
-        RegionManager mgr = RegionManager.getInstance(createClient().getSession());
+        RegionManager mgr = RegionManager.getInstance(createClient());
         long storeId = 233;
         String testAddress = "testAddress";
         server.addGetStoreResp(GrpcUtils.makeGetStoreResponse(

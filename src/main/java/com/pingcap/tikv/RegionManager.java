@@ -33,6 +33,7 @@ import com.pingcap.tikv.util.Pair;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -45,6 +46,7 @@ public class RegionManager {
     private final RangeMap<ByteBuffer, Long> keyToRegionIdCache;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private static RegionManager instance;
+//    private static Map<TiSession, PDClient> pdClientMap;
 
     public static final int MAX_CACHE_CAPACITY = 4096;
 
@@ -72,12 +74,11 @@ public class RegionManager {
         keyToRegionIdCache =  TreeRangeMap.create();
     }
 
-    public static RegionManager getInstance(TiSession session) {
+    public static RegionManager getInstance(ReadOnlyPDClient client) {
        if (instance == null)  {
            synchronized (RegionManager.class) {
                if (instance == null) {
-                   PDClient pdClient = PDClient.createRaw(session);
-                  instance = new RegionManager(pdClient);
+                   instance = new RegionManager(client);
                }
            }
        }
@@ -106,7 +107,6 @@ public class RegionManager {
         }
         return getRegionById(regionId);
     }
-
 
     public void invalidateRegion(long regionId) {
         lock.writeLock().lock();

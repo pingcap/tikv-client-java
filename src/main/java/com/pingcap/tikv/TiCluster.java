@@ -27,7 +27,7 @@ public class TiCluster implements AutoCloseable {
     private TiCluster(TiConfiguration conf) {
         this.session = TiSession.create(conf);
         this.client = PDClient.createRaw(session);
-        this.regionManager = RegionManager.getInstance(this.session);
+        this.regionManager = RegionManager.getInstance(this.client);
     }
 
     public static TiCluster getCluster(TiConfiguration conf) {
