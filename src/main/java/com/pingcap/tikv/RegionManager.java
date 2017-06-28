@@ -32,6 +32,8 @@ import com.pingcap.tikv.util.Pair;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.nio.ByteBuffer;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -70,10 +72,11 @@ public class RegionManager {
         keyToRegionIdCache =  TreeRangeMap.create();
     }
 
-    public static RegionManager getInstance(PDClient pdClient) {
+    public static RegionManager getInstance(TiSession session) {
        if (instance == null)  {
            synchronized (RegionManager.class) {
                if (instance == null) {
+                   PDClient pdClient = PDClient.createRaw(session);
                   instance = new RegionManager(pdClient);
                }
            }
@@ -169,6 +172,27 @@ public class RegionManager {
             lock.writeLock().unlock();
         }
         return true;
+    }
+    public void onRegionStale(long regionID, List<Region> regions) {
+        invalidateRegion(regionID);
+        regions.forEach(this::putRegion);
+    }
+
+    private boolean isRegionLeaderSwitched(Region region, long storeID) {
+        return region.getPeersList().stream().anyMatch(
+                p -> p.getStoreId() == storeID
+        );
+    }
+
+    public void updateLeader(long regionID, long storeID) {
+        try {
+            Region region = regionCache.getUnchecked(regionID).get();
+            if(isRegionLeaderSwitched(region, storeID)) {
+                invalidateRegion(regionID);
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            //            e.printStackTrace();
+        }
     }
 
     private static Range<ByteBuffer> makeRange(ByteString startKey, ByteString endKey) {
