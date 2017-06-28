@@ -28,7 +28,7 @@ import java.util.concurrent.Callable;
 import static io.grpc.stub.ClientCalls.asyncBidiStreamingCall;
 
 public abstract class AbstractGrpcClient<BlockingStubT extends AbstractStub<BlockingStubT>,
-                                         StubT extends AbstractStub<StubT>> implements AutoCloseable {
+        StubT extends AbstractStub<StubT>> implements AutoCloseable {
     protected final Logger             logger = LogManager.getFormatterLogger(getClass());
     private         TiSession          session;
     private         TiConfiguration    conf;
@@ -52,21 +52,21 @@ public abstract class AbstractGrpcClient<BlockingStubT extends AbstractStub<Bloc
                                               ErrorHandler<ResT> handler) {
         logger.debug("Calling %s...", method.getFullMethodName());
         ResT resp = getSession()
-                    .getRetryPolicyBuilder()
-                    .create(handler).callWithRetry(() -> {
-                                BlockingStubT stub = getBlockingStub();
-                                return ClientCalls.blockingUnaryCall(
-                                        stub.getChannel(), method, stub.getCallOptions(), request);
-                            },
-                            method.getFullMethodName());
+                .getRetryPolicyBuilder()
+                .create(handler).callWithRetry(() -> {
+                            BlockingStubT stub = getBlockingStub();
+                            return ClientCalls.blockingUnaryCall(
+                                    stub.getChannel(), method, stub.getCallOptions(), request);
+                        },
+                        method.getFullMethodName());
         logger.debug("leaving %s...", method.getFullMethodName());
         return resp;
     }
 
     protected <ReqT, ResT> void callAsyncWithRetry(MethodDescriptor<ReqT, ResT> method,
-                                                 ReqT request,
-                                                 StreamObserver<ResT> responseObserver,
-                                                 ErrorHandler<ResT> handler) {
+                                                   ReqT request,
+                                                   StreamObserver<ResT> responseObserver,
+                                                   ErrorHandler<ResT> handler) {
         logger.debug("Calling %s...", method.getFullMethodName());
         getSession()
                 .getRetryPolicyBuilder()
@@ -89,14 +89,14 @@ public abstract class AbstractGrpcClient<BlockingStubT extends AbstractStub<Bloc
         logger.debug("Calling %s...", method.getFullMethodName());
         StreamObserver<ReqT> observer =
                 getSession()
-                .getRetryPolicyBuilder()
-                .create(handler)
-                .callWithRetry(() -> {
-                            StubT stub = getAsyncStub();
-                            return asyncBidiStreamingCall(
-                                        stub.getChannel().newCall(method, stub.getCallOptions()), responseObserver);
-                        },
-                        method.getFullMethodName());
+                        .getRetryPolicyBuilder()
+                        .create(handler)
+                        .callWithRetry(() -> {
+                                    StubT stub = getAsyncStub();
+                                    return asyncBidiStreamingCall(
+                                            stub.getChannel().newCall(method, stub.getCallOptions()), responseObserver);
+                                },
+                                method.getFullMethodName());
         logger.debug("leaving %s...", method.getFullMethodName());
         return observer;
     }
