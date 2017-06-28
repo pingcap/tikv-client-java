@@ -167,7 +167,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
 
     public Future<List<KvPair>> batchGetAsync(Iterable<ByteString> keys, long version) {
         FutureObserver<List<KvPair>, BatchGetResponse> responseObserver =
-                new FutureObserver<>((BatchGetResponse resp) -> batchGetHelper(resp));
+                new FutureObserver<>(this::batchGetHelper);
 
         BatchGetRequest request = BatchGetRequest.newBuilder()
                 .setContext(context)
