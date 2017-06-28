@@ -67,6 +67,10 @@ public class ScanBuilder {
         requireNonNull(index, "Index cannot be null to encoding keyRange");
         requireNonNull(conditions, "conditions cannot be null to encoding keyRange");
 
+        for (TiExpr expr : conditions) {
+            expr.bind(table);
+        }
+
         IndexMatchingResult result = extractConditions(conditions, table, index);
         List<IndexRange> irs = RangeBuilder.exprsToIndexRanges(result.accessPoints, result.accessPointsTypes,
                                                                result.accessConditions, result.rangeType);
