@@ -32,11 +32,14 @@ public class RegionManagerTest {
     private PDMockServer server;
     private static final long CLUSTER_ID = 1024;
     private static final String LOCAL_ADDR = "127.0.0.1";
+    private RegionManager mgr;
 
     @Before
     public void setup() throws IOException {
         server = new PDMockServer();
         server.start(CLUSTER_ID);
+        //TODO: zhexuany not sure why test failed when we try to use RegionMager.getInstance
+        mgr = new RegionManager(createClient());
     }
 
     @After
@@ -57,7 +60,6 @@ public class RegionManagerTest {
 
     @Test
     public void getRegionByKey() throws Exception {
-        RegionManager mgr = RegionManager.getInstance(createClient());
         ByteString startKey = ByteString.copyFrom(new byte[]{1});
         ByteString endKey = ByteString.copyFrom(new byte[]{10});
         ByteString searchKey = ByteString.copyFrom(new byte[]{5});
@@ -92,7 +94,6 @@ public class RegionManagerTest {
 
     @Test
     public void getStoreByKey() throws Exception {
-        RegionManager mgr = RegionManager.getInstance(createClient());
         ByteString startKey = ByteString.copyFrom(new byte[]{1});
         ByteString endKey = ByteString.copyFrom(new byte[]{10});
         ByteString searchKey = ByteString.copyFrom(new byte[]{5});
@@ -126,7 +127,6 @@ public class RegionManagerTest {
 
     @Test
     public void getRegionById() throws Exception {
-        RegionManager mgr = RegionManager.getInstance(createClient());
         ByteString startKey = ByteString.copyFrom(new byte[]{1});
         ByteString endKey = ByteString.copyFrom(new byte[]{10});
 
@@ -162,8 +162,7 @@ public class RegionManagerTest {
 
     @Test
     public void getStoreById() throws Exception {
-        RegionManager mgr = RegionManager.getInstance(createClient());
-        long storeId = 233;
+        long storeId = 234;
         String testAddress = "testAddress";
         server.addGetStoreResp(GrpcUtils.makeGetStoreResponse(
                 server.getClusterId(),
