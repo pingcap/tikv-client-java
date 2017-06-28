@@ -50,6 +50,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
     private final TikvBlockingStub          blockingStub;
     private final TikvStub                  asyncStub;
     private final ManagedChannel            channel;
+    private RegionManager regionManager;
 
     private final int ReqTypeSelect = 101;
     private final int ReqTypeIndex = 102;
@@ -64,7 +65,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
         return getHelper(resp);
     }
 
-    public void rawPut(ByteString key, ByteString value,Context context){
+    public void rawPut(ByteString key, ByteString value,Context context) {
         RawPutRequest rawPutRequest = RawPutRequest.newBuilder()
                 .setContext(context)
                 .setKey(key)
@@ -74,23 +75,44 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
         // handle NotLeader
         Function<RawPutResponse, Exception> errorHandler = x -> {
             Errorpb.Error error = x.getRegionError();
-            if (error.hasNotLeader()) {
-                // update Leader here
-            }
-            if (error.hasKeyNotInRegion()) {
-                // reset key range regionCache
-            }
-            if (error.hasRegionNotFound()) {
-                // throw RegionNotFound exception
-            }
+            if (x.hasRegionError()) {
+                if (error.hasNotLeader()) {
+                    // update Leader here
+                    regionManager.updateLeader(context.getRegionId(), error.getNotLeader().getLeader().getStoreId());
+                    throw new RegionException(error);
+                }
+                if (error.hasRegionNotFound()) {
+                    // throw RegionNotFound exception
+                    throw new RegionException(error);
+                }
+                // no need retry
+                if (error.hasStaleEpoch()) {
+                    regionManager.onRegionStale(context.getRegionId(), error.getStaleEpoch().getNewRegionsList());
+                    throw new IllegalStateException("StaleEpoch is not need to retry");
+                }
 
-            if (error.hasServerIsBusy()) {
-               // do not handle it in this level. this can be retryed.
+                if (error.hasServerIsBusy()) {
+                    throw new RegionException(error);
+                }
+
+                if (error.hasServerIsBusy()) {
+
+                }
+                // do not handle it in this level. this can be retryed.
+                if (error.hasStaleCommand()) {
+                    throw new RegionException(error);
+                }
+
+                if (error.hasRaftEntryTooLarge()) {
+                    throw new RegionException(error);
+                }
+                // for other errors, we only drop cache here.
+                regionManager.invalidateRegion(context.getRegionId());
             }
             return null;
         };
         RawPutResponse resp = callWithRetry(TikvGrpc.METHOD_RAW_PUT, errorHandler, rawPutRequest);
-        if (resp.hasRegionError()){
+        if (resp.hasRegionError()) {
             throw new RegionException(resp.getRegionError());
         }
     }
@@ -112,7 +134,6 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
             throw new RegionException(resp.getRegionError());
         }
         return resp.getValue();
-
     }
 
     public void rawDelete(ByteString key,Context context){
@@ -330,6 +351,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setRegionEpoch(region.getRegionEpoch())
                 .setPeer(region.getPeers(0))
                 .build();
+//        this.regionManager = RegionManager.getInstance(PDClient.createRaw(session));
     }
 
     @Override
