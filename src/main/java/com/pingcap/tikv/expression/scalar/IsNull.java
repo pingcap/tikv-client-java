@@ -21,8 +21,6 @@ import com.pingcap.tikv.expression.TiUnaryFunctionExpression;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.IntegerType;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 public class IsNull extends TiUnaryFunctionExpression {
     public IsNull(TiExpr arg) {
         super(arg);
@@ -41,10 +39,5 @@ public class IsNull extends TiUnaryFunctionExpression {
     @Override
     public DataType getType() {
         return IntegerType.DEF_BOOLEAN_TYPE;
-    }
-
-    @Override
-    protected void validateArguments(TiExpr... args) throws RuntimeException {
-        super.validateArguments();
     }
 }
