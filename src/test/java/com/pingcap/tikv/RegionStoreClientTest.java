@@ -19,12 +19,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.protobuf.ByteString;
-import com.pingcap.tidb.tipb.KeyRange;
 import com.pingcap.tidb.tipb.SelectRequest;
 import com.pingcap.tidb.tipb.SelectResponse;
+import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
 import com.pingcap.tikv.grpc.Kvrpcpb;
 import com.pingcap.tikv.grpc.Metapb;
-import com.pingcap.tikv.meta.TiRange;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -230,6 +229,10 @@ public class RegionStoreClientTest {
         client.close();
     }
 
+    private static KeyRange createByteStringRange(ByteString sKey, ByteString eKey) {
+        return KeyRange.newBuilder().setStart(sKey).setEnd(eKey).build();
+    }
+
     @Test
     public void coprocess() throws Exception {
         RegionStoreClient client = createClient();
@@ -242,20 +245,12 @@ public class RegionStoreClientTest {
         server.put("key7", "value7");
         SelectRequest.Builder builder = SelectRequest.newBuilder();
         builder.setStartTs(1);
-        List<TiRange<ByteString>> tiRanges = ImmutableList.of(
-                TiRange.createByteStringRange(ByteString.copyFromUtf8("key1"), ByteString.copyFromUtf8("key4")),
-                TiRange.createByteStringRange(ByteString.copyFromUtf8("key6"), ByteString.copyFromUtf8("key7")));
+        List<KeyRange> keyRanges = ImmutableList.of(
+                createByteStringRange(ByteString.copyFromUtf8("key1"), ByteString.copyFromUtf8("key4")),
+                createByteStringRange(ByteString.copyFromUtf8("key6"), ByteString.copyFromUtf8("key7")));
 
-        Iterable<KeyRange> keyRanges = tiRanges.stream().map(range -> KeyRange
-                .newBuilder()
-                .setLow(range.getLowValue())
-                .setHigh(range.getHighValue())
-                .build()).collect(Collectors.toList());
-
-
-        builder.addAllRanges(keyRanges);
         SelectResponse resp =
-                client.coprocess(builder.build(), tiRanges);
+                client.coprocess(builder.build(), keyRanges);
         assertEquals(5, resp.getChunksCount());
         Set<String> results = ImmutableSet.copyOf(
                 resp.getChunksList().stream().map(c -> c.getRowsData().toStringUtf8()).collect(Collectors.toList())
@@ -265,19 +260,12 @@ public class RegionStoreClientTest {
 
         builder = SelectRequest.newBuilder();
         builder.setStartTs(1);
-        tiRanges = ImmutableList.of(
-                TiRange.createByteStringRange(ByteString.copyFromUtf8("error1"), ByteString.copyFromUtf8("error2")));
-
-        keyRanges = tiRanges.stream().map(range -> KeyRange
-                .newBuilder()
-                .setLow(range.getLowValue())
-                .setHigh(range.getHighValue())
-                .build()).collect(Collectors.toList());
-        builder.addAllRanges(keyRanges);
+        keyRanges = ImmutableList.of(
+                createByteStringRange(ByteString.copyFromUtf8("error1"), ByteString.copyFromUtf8("error2")));
 
         server.putError("error1", KVMockServer.ABORT);
         try {
-            client.coprocess(builder.build(), tiRanges);
+            client.coprocess(builder.build(), keyRanges);
             fail();
         } catch (Exception e) {
             assertTrue(true);
@@ -298,20 +286,12 @@ public class RegionStoreClientTest {
         server.put("key7", "value7");
         SelectRequest.Builder builder = SelectRequest.newBuilder();
         builder.setStartTs(1);
-        List<TiRange<ByteString>> tiRanges = ImmutableList.of(
-                TiRange.createByteStringRange(ByteString.copyFromUtf8("key1"), ByteString.copyFromUtf8("key4")),
-                TiRange.createByteStringRange(ByteString.copyFromUtf8("key6"), ByteString.copyFromUtf8("key7")));
+        List<KeyRange> keyRanges = ImmutableList.of(
+                createByteStringRange(ByteString.copyFromUtf8("key1"), ByteString.copyFromUtf8("key4")),
+                createByteStringRange(ByteString.copyFromUtf8("key6"), ByteString.copyFromUtf8("key7")));
 
-        Iterable<KeyRange> keyRanges = tiRanges.stream().map(range -> KeyRange
-                .newBuilder()
-                .setLow(range.getLowValue())
-                .setHigh(range.getHighValue())
-                .build()).collect(Collectors.toList());
-
-
-        builder.addAllRanges(keyRanges);
         Future<SelectResponse> respFuture =
-                client.coprocessAsync(builder.build(), tiRanges);
+                client.coprocessAsync(builder.build(), keyRanges);
         SelectResponse resp = respFuture.get();
         assertEquals(5, resp.getChunksCount());
         Set<String> results = ImmutableSet.copyOf(
@@ -323,20 +303,13 @@ public class RegionStoreClientTest {
 
         builder = SelectRequest.newBuilder();
         builder.setStartTs(1);
-        tiRanges = ImmutableList.of(
-                TiRange.createByteStringRange(ByteString.copyFromUtf8("error1"), ByteString.copyFromUtf8("error2")));
-
-        keyRanges = tiRanges.stream().map(range -> KeyRange
-                .newBuilder()
-                .setLow(range.getLowValue())
-                .setHigh(range.getHighValue())
-                .build()).collect(Collectors.toList());
-        builder.addAllRanges(keyRanges);
+        keyRanges = ImmutableList.of(
+                createByteStringRange(ByteString.copyFromUtf8("error1"), ByteString.copyFromUtf8("error2")));
 
         server.putError("error1", KVMockServer.ABORT);
         boolean futureSet = false;
         try {
-            Future<SelectResponse> future = client.coprocessAsync(builder.build(), tiRanges);
+            Future<SelectResponse> future = client.coprocessAsync(builder.build(), keyRanges);
             futureSet = true;
             future.get();
             fail();

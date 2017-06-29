@@ -17,7 +17,6 @@ package com.pingcap.tikv.meta;
 
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
-import com.pingcap.tidb.tipb.KeyRange;
 import com.pingcap.tikv.expression.TiByItem;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiConstant;
@@ -28,6 +27,7 @@ import com.pingcap.tikv.expression.scalar.Divide;
 import com.pingcap.tikv.expression.scalar.LessEqual;
 import com.pingcap.tikv.expression.scalar.Minus;
 import com.pingcap.tikv.expression.scalar.Plus;
+import com.pingcap.tikv.grpc.Coprocessor;
 import com.pingcap.tikv.types.DataTypeFactory;
 import com.pingcap.tikv.types.Types;
 import org.junit.Test;
@@ -72,10 +72,10 @@ public class TiSelectRequestTest {
                 .setHaving(new LessEqual(TiColumnRef.create("c3", table), TiConstant.create(2L)))
                 .setLimit(100)
                 .addRanges(ImmutableList.of(
-                        KeyRange
+                        Coprocessor.KeyRange
                                 .newBuilder()
-                                .setLow(ByteString.copyFromUtf8("startkey"))
-                                .setHigh(ByteString.copyFromUtf8("endkey"))
+                                .setStart(ByteString.copyFromUtf8("startkey"))
+                                .setEnd(ByteString.copyFromUtf8("endkey"))
                         .build()
                 ));
 
@@ -120,8 +120,8 @@ public class TiSelectRequestTest {
 
         assertEquals(lhs.getRanges().size(), rhs.getRanges().size());
         for (int i = 0; i < lhs.getRanges().size(); i++) {
-            KeyRange lhsItem = lhs.getRanges().get(i);
-            KeyRange rhsItem = rhs.getRanges().get(i);
+            Coprocessor.KeyRange lhsItem = lhs.getRanges().get(i);
+            Coprocessor.KeyRange rhsItem = rhs.getRanges().get(i);
             if (!lhsItem.equals(rhsItem)) return false;
         }
 

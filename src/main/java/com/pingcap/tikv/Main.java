@@ -2,15 +2,14 @@ package com.pingcap.tikv;
 
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
-import com.pingcap.tidb.tipb.KeyRange;
 import com.pingcap.tikv.catalog.Catalog;
 import com.pingcap.tikv.codec.KeyUtils;
 import com.pingcap.tikv.codec.TableCodec;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiConstant;
 import com.pingcap.tikv.expression.TiExpr;
-import com.pingcap.tikv.expression.scalar.GreaterThan;
 import com.pingcap.tikv.expression.scalar.NotEqual;
+import com.pingcap.tikv.grpc.Coprocessor;
 import com.pingcap.tikv.meta.TiDBInfo;
 import com.pingcap.tikv.meta.TiIndexInfo;
 import com.pingcap.tikv.meta.TiSelectRequest;
@@ -18,6 +17,7 @@ import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.operation.SchemaInfer;
 import com.pingcap.tikv.predicates.ScanBuilder;
 import com.pingcap.tikv.row.Row;
+import com.pingcap.tikv.util.RangeSplitter;
 
 import java.util.Iterator;
 import java.util.List;
@@ -40,14 +40,12 @@ public class Main {
         TiDBInfo db = cat.getDatabase("test");
         TiTableInfo table = cat.getTable(db, "test");
 
-        TiIndexInfo index = table.getIndices().get(0);
+        TiIndexInfo index = TiIndexInfo.generateFakePrimaryKeyIndex(table);
 
-        List<TiExpr> exprs = ImmutableList.of(
-                new NotEqual(TiColumnRef.create("c1", table),
-                             TiConstant.create(4L)),
-                new GreaterThan(TiColumnRef.create("c4", table),
-                        TiConstant.create(100L))
-        );
+        List<TiExpr> exprs = ImmutableList.of();
+
+        new NotEqual(TiColumnRef.create("c1", table),
+                TiConstant.create(9L));
 
         ScanBuilder scanBuilder = new ScanBuilder();
         ScanBuilder.ScanPlan scanPlan = scanBuilder.buildScan(exprs, index, table);
@@ -62,7 +60,6 @@ public class Main {
                 .addField(TiColumnRef.create("c4", table))
                 .setStartTs(snapshot.getVersion());
 
-        // scanPlan.getFilters().stream().forEach(sb::addWhere);
         if (conf.isIgnoreTruncate()) {
             selReq.setTruncateMode(TiSelectRequest.TruncateMode.IgnoreTruncation);
         } else if (conf.isTruncateAsWarning()) {
@@ -70,18 +67,23 @@ public class Main {
         }
 
         System.out.println(exprs);
-        Iterator<Row> it = snapshot.selectByIndex(selReq);
+        List<RangeSplitter.RegionTask> keyWithRegionTasks =
+                RangeSplitter.newSplitter(cluster.getRegionManager())
+                .splitRangeByRegion(selReq.getRanges());
+        for (RangeSplitter.RegionTask task : keyWithRegionTasks) {
+            Iterator<Row> it = snapshot.select(selReq, task);
 
-        while (it.hasNext()) {
-            Row r = it.next();
-            SchemaInfer schemaInfer = SchemaInfer.create(selReq);
-            for (int i = 0; i < r.fieldCount(); i++) {
-                Object val = r.get(i, schemaInfer.getType(i));
-                //printByHandle(table, (long)val, scanPlan.getFilters());
-                System.out.print(val);
-                System.out.print(" ");
+            while (it.hasNext()) {
+                Row r = it.next();
+                SchemaInfer schemaInfer = SchemaInfer.create(selReq);
+                for (int i = 0; i < r.fieldCount(); i++) {
+                    Object val = r.get(i, schemaInfer.getType(i));
+                    //printByHandle(table, (long)val, scanPlan.getFilters());
+                    System.out.print(val);
+                    System.out.print(" ");
+                }
+                System.out.print("\n");
             }
-            System.out.print("\n");
         }
     }
 
@@ -90,7 +92,7 @@ public class Main {
         ByteString endKey = ByteString.copyFrom(KeyUtils.prefixNext(startKey.toByteArray()));
 
         TiSelectRequest selReq = new TiSelectRequest();
-        selReq.addRanges(ImmutableList.of(KeyRange.newBuilder().setLow(startKey).setHigh(endKey).build()));
+        selReq.addRanges(ImmutableList.of(Coprocessor.KeyRange.newBuilder().setStart(startKey).setEnd(endKey).build()));
         selReq.addField(TiColumnRef.create("c1", table));
         selReq.addField(TiColumnRef.create("c2", table));
         selReq.addField(TiColumnRef.create("c3", table));

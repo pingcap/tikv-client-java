@@ -26,20 +26,19 @@ import com.pingcap.tikv.exception.RegionException;
 import com.pingcap.tikv.exception.SelectException;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.grpc.Coprocessor;
+import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
 import com.pingcap.tikv.grpc.Kvrpcpb.*;
 import com.pingcap.tikv.grpc.Metapb.Region;
 import com.pingcap.tikv.grpc.Metapb.Store;
 import com.pingcap.tikv.grpc.TikvGrpc;
 import com.pingcap.tikv.grpc.TikvGrpc.TikvBlockingStub;
 import com.pingcap.tikv.grpc.TikvGrpc.TikvStub;
-import com.pingcap.tikv.meta.TiRange;
 import com.pingcap.tikv.util.FutureObserver;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
 import java.util.List;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -159,32 +158,25 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
         return resp.getPairsList();
     }
 
-    private static Coprocessor.KeyRange rangeToProto(TiRange<ByteString> range) {
-        return Coprocessor.KeyRange.newBuilder()
-                .setStart(range.getLowValue())
-                .setEnd(range.getHighValue())
-                .build();
-    }
-
-    public SelectResponse coprocess(SelectRequest req, List<TiRange<ByteString>> ranges) {
+    public SelectResponse coprocess(SelectRequest req, List<KeyRange> ranges) {
         Coprocessor.Request reqToSend = Coprocessor.Request.newBuilder()
                 .setContext(context)
                 .setTp(req.hasIndexInfo() ? ReqTypeIndex : ReqTypeSelect)
                 .setData(req.toByteString())
-                .addAllRanges(ranges.stream().map(RegionStoreClient::rangeToProto).collect(Collectors.toList()))
+                .addAllRanges(ranges)
                 .build();
         Coprocessor.Response resp = callWithRetry(TikvGrpc.METHOD_COPROCESSOR, reqToSend);
         return coprocessorHelper(resp);
     }
 
-    public Future<SelectResponse> coprocessAsync(SelectRequest req, List<TiRange<ByteString>> ranges) {
+    public Future<SelectResponse> coprocessAsync(SelectRequest req, List<KeyRange> ranges) {
         FutureObserver<SelectResponse, Coprocessor.Response> responseObserver =
                 new FutureObserver<>(this::coprocessorHelper);
         Coprocessor.Request reqToSend = Coprocessor.Request.newBuilder()
                 .setContext(context)
                 .setTp(req.hasIndexInfo() ? ReqTypeIndex : ReqTypeSelect)
                 .setData(req.toByteString())
-                .addAllRanges(ranges.stream().map(RegionStoreClient::rangeToProto).collect(Collectors.toList()))
+                .addAllRanges(ranges)
                 .build();
         callAsyncWithRetry(TikvGrpc.METHOD_COPROCESSOR, reqToSend, responseObserver);
         return responseObserver.getFuture();

@@ -20,12 +20,12 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.BoundType;
 import com.google.common.collect.Range;
 import com.google.protobuf.ByteString;
-import com.pingcap.tidb.tipb.KeyRange;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.codec.KeyUtils;
 import com.pingcap.tikv.codec.TableCodec;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.expression.TiExpr;
+import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
 import com.pingcap.tikv.meta.TiColumnInfo;
 import com.pingcap.tikv.meta.TiIndexColumn;
 import com.pingcap.tikv.meta.TiIndexInfo;
@@ -62,10 +62,20 @@ public class ScanBuilder {
         }
     }
 
+    private static final KeyRange INDEX_FULL_RANGE =
+                                        KeyRange.newBuilder()
+                                                .setStart(DataType.indexMinValue())
+                                                .setEnd(DataType.indexMaxValue())
+                                                .build();
+
     public ScanPlan buildScan(List<TiExpr> conditions, TiIndexInfo index, TiTableInfo table) {
         requireNonNull(table, "Table cannot be null to encoding keyRange");
         requireNonNull(index, "Index cannot be null to encoding keyRange");
         requireNonNull(conditions, "conditions cannot be null to encoding keyRange");
+
+        for (TiExpr expr : conditions) {
+            expr.bind(table);
+        }
 
         IndexMatchingResult result = extractConditions(conditions, table, index);
         List<IndexRange> irs = RangeBuilder.exprsToIndexRanges(result.accessPoints, result.accessPointsTypes,
@@ -147,8 +157,18 @@ public class ScanBuilder {
 
             ranges.add(
                     KeyRange.newBuilder()
-                            .setLow(startKey)
-                            .setHigh(endKey)
+                            .setStart(startKey)
+                            .setEnd(endKey)
+                            .build()
+            );
+        }
+
+        if (ranges.isEmpty()) {
+            ByteString startKey = TableCodec.encodeRowKeyWithHandle(table.getId(), Long.MIN_VALUE);
+            ByteString endKey = TableCodec.encodeRowKeyWithHandle(table.getId(), Long.MAX_VALUE);
+            ranges.add(KeyRange.newBuilder()
+                            .setStart(startKey)
+                            .setEnd(endKey)
                             .build()
             );
         }
@@ -179,55 +199,73 @@ public class ScanBuilder {
 
             cdo.reset();
             Range r = ir.getRange();
-            DataType type = ir.getRangeType();
+            byte[] lPointKey;
+            byte[] uPointKey;
+
             byte[] lKey;
-            if (!r.hasLowerBound()) {
-                // -INF
-                type.encodeMinValue(cdo);
-                lKey = cdo.toBytes();
-            } else {
-                Object lb = r.lowerEndpoint();
-                type.encode(cdo, DataType.EncodeType.KEY, lb);
-                lKey = cdo.toBytes();
-                if (r.lowerBoundType().equals(BoundType.OPEN)) {
-                    lKey = KeyUtils.prefixNext(lKey);
-                }
-            }
-
             byte[] uKey;
-            cdo.reset();
-            if (!r.hasUpperBound()) {
-                // INF
-                type.encodeMaxValue(cdo);
-                uKey = cdo.toBytes();
-            } else {
-                Object ub = r.upperEndpoint();
-                type.encode(cdo, DataType.EncodeType.KEY, ub);
-                uKey = cdo.toBytes();
-                if (r.upperBoundType().equals(BoundType.CLOSED)) {
-                    uKey = KeyUtils.prefixNext(lKey);
-                }
-            }
+            if (r == null) {
+                lPointKey = pointsData;
+                uPointKey = KeyUtils.prefixNext(lPointKey.clone());
 
-            cdo.reset();
-            TableCodec.writeIndexSeekKey(cdo, table.getId(), index.getId(), pointsData, lKey);
+                lKey = new byte[0];
+                uKey = new byte[0];
+            } else {
+                lPointKey = pointsData;
+                uPointKey = pointsData;
+
+                DataType type = ir.getRangeType();
+                if (!r.hasLowerBound()) {
+                    // -INF
+                    type.encodeMinValue(cdo);
+                    lKey = cdo.toBytes();
+                } else {
+                    Object lb = r.lowerEndpoint();
+                    type.encode(cdo, DataType.EncodeType.KEY, lb);
+                    lKey = cdo.toBytes();
+                    if (r.lowerBoundType().equals(BoundType.OPEN)) {
+                        lKey = KeyUtils.prefixNext(lKey);
+                    }
+                }
+
+                cdo.reset();
+                if (!r.hasUpperBound()) {
+                    // INF
+                    type.encodeMaxValue(cdo);
+                    uKey = cdo.toBytes();
+                } else {
+                    Object ub = r.upperEndpoint();
+                    type.encode(cdo, DataType.EncodeType.KEY, ub);
+                    uKey = cdo.toBytes();
+                    if (r.upperBoundType().equals(BoundType.CLOSED)) {
+                        uKey = KeyUtils.prefixNext(lKey);
+                    }
+                }
+
+                cdo.reset();
+            }
+            TableCodec.writeIndexSeekKey(cdo, table.getId(), index.getId(), lPointKey, lKey);
 
             ByteString lbsKey = ByteString
                                     .copyFrom(cdo.toBytes());
 
             cdo.reset();
-            TableCodec.writeIndexSeekKey(cdo, table.getId(), index.getId(), pointsData, uKey);
+            TableCodec.writeIndexSeekKey(cdo, table.getId(), index.getId(), uPointKey, uKey);
             ByteString ubsKey = ByteString
                                     .copyFrom(cdo.toBytes());
 
+
             ranges.add(
                     KeyRange.newBuilder()
-                    .setLow(lbsKey)
-                    .setHigh(ubsKey)
+                    .setStart(lbsKey)
+                    .setEnd(ubsKey)
                     .build()
             );
         }
 
+        if (ranges.isEmpty()) {
+            ranges.add(INDEX_FULL_RANGE);
+        }
         return ranges;
     }
 

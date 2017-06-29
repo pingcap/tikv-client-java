@@ -16,6 +16,8 @@
 package com.pingcap.tikv.predicates;
 
 import com.google.common.collect.ImmutableList;
+import com.google.protobuf.ByteString;
+import com.pingcap.tikv.codec.TableCodec;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiConstant;
 import com.pingcap.tikv.expression.TiExpr;
@@ -30,6 +32,7 @@ import com.pingcap.tikv.types.DataTypeFactory;
 import com.pingcap.tikv.types.Types;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -147,6 +150,21 @@ public class ScanBuilderTest {
         assertEquals(eq1, result.accessPoints.get(0));
 
         assertEquals(0, result.accessConditions.size());
+    }
+
+    @Test
+    public void testKeyRangeGenWithNoFilter() throws Exception {
+        TiTableInfo table = createTableWithPrefix();
+        TiIndexInfo index = TiIndexInfo.generateFakePrimaryKeyIndex(table);
+        ScanBuilder scanBuilder = new ScanBuilder();
+        ScanBuilder.ScanPlan scanPlan = scanBuilder.buildScan(new ArrayList<>(), index, table);
+
+        ByteString startKey = TableCodec.encodeRowKeyWithHandle(table.getId(), Long.MIN_VALUE);
+        ByteString endKey = TableCodec.encodeRowKeyWithHandle(table.getId(), Long.MAX_VALUE);
+
+        assertEquals(1, scanPlan.getKeyRanges().size());
+        assertEquals(startKey, scanPlan.getKeyRanges().get(0).getStart());
+        assertEquals(endKey, scanPlan.getKeyRanges().get(0).getEnd());
     }
 
 }

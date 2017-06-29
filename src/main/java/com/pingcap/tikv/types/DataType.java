@@ -17,6 +17,7 @@ package com.pingcap.tikv.types;
 
 
 import com.google.common.collect.ImmutableList;
+import com.google.protobuf.ByteString;
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.meta.Collation;
@@ -58,7 +59,7 @@ public abstract class DataType implements Serializable {
     protected int           flag;
     protected int           collation;
     protected int           length;
-    private   List<String> elems;
+    private   List<String>  elems;
 
    protected DataType(TiColumnInfo.InternalTypeHolder holder) {
        this.tp = holder.getTp();
@@ -124,12 +125,32 @@ public abstract class DataType implements Serializable {
        decodeValueNoNullToRow(row, pos, decodeNotNull(flag, cdi));
    }
 
+   public static void indexMaxValue(CodecDataOutput cdo) {
+       cdo.writeByte(MAX_FLAG);
+   }
+
+    public static void indexMinValue(CodecDataOutput cdo) {
+        cdo.writeByte(BYTES_FLAG);
+    }
+
+    public static ByteString indexMaxValue() {
+        CodecDataOutput cdo = new CodecDataOutput();
+        indexMaxValue(cdo);
+        return cdo.toByteString();
+    }
+
+    public static ByteString indexMinValue() {
+        CodecDataOutput cdo = new CodecDataOutput();
+        indexMinValue(cdo);
+        return cdo.toByteString();
+    }
+
     /**
      * encode max value.
      * @param cdo destination of data.
      */
    public void encodeMaxValue(CodecDataOutput cdo) {
-       cdo.writeByte(MAX_FLAG);
+       indexMaxValue(cdo);
    }
 
     /**
@@ -137,7 +158,7 @@ public abstract class DataType implements Serializable {
      * @param cdo destination of data.
      */
     public void encodeMinValue(CodecDataOutput cdo) {
-        cdo.writeByte(BYTES_FLAG);
+        indexMinValue(cdo);
     }
 
    /**

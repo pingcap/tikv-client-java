@@ -45,7 +45,7 @@ public class Not extends TiUnaryFunctionExpression {
 
     @Override
     protected void validateArguments(TiExpr... args) throws RuntimeException {
-        super.validateArguments();
+        super.validateArguments(args);
         checkArgument(this.args.get(0).getType() instanceof IntegerType);
     }
 }

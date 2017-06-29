@@ -176,23 +176,15 @@ public class KVMockServer extends TikvGrpc.TikvImplBase {
             if (request.getStartTs() == 0) {
                 throw new Exception();
             }
-            List<Coprocessor.KeyRange> wrapRanges = requestWrap.getRangesList();
-            List<KeyRange> keyRanges = request.getRangesList();
 
-            for (Coprocessor.KeyRange range : wrapRanges) {
-                if (!Iterables.any(keyRanges,
-                        innerRange -> innerRange.getLow().equals(range.getStart()) &&
-                                      innerRange.getHigh().equals(range.getEnd()))) {
-                    throw new Exception();
-                }
-            }
+            List<Coprocessor.KeyRange> keyRanges = requestWrap.getRangesList();
 
             Coprocessor.Response.Builder builderWrap = Coprocessor.Response.newBuilder();
             SelectResponse.Builder builder = SelectResponse.newBuilder();
             com.pingcap.tidb.tipb.Error.Builder errBuilder = com.pingcap.tidb.tipb.Error.newBuilder();
 
-            for (KeyRange keyRange : keyRanges) {
-                Integer errorCode = errorMap.get(keyRange.getLow());
+            for (Coprocessor.KeyRange keyRange : keyRanges) {
+                Integer errorCode = errorMap.get(keyRange.getStart());
                 if (errorCode != null) {
                     if (errorCode == ABORT) {
                         errBuilder.setCode(errorCode);
@@ -201,10 +193,10 @@ public class KVMockServer extends TikvGrpc.TikvImplBase {
                     builder.setError(errBuilder.build());
                     break;
                 } else {
-                    ByteString startKey = keyRange.getLow();
+                    ByteString startKey = keyRange.getStart();
                     SortedMap<String, String> kvs = dataMap.tailMap(startKey.toStringUtf8());
                     builder.addAllChunks(TiFluentIterable.from(kvs.entrySet())
-                            .stopWhen(kv -> kv.getKey().compareTo(keyRange.getHigh().toStringUtf8()) > 0)
+                            .stopWhen(kv -> kv.getKey().compareTo(keyRange.getEnd().toStringUtf8()) > 0)
                             .transform(kv -> Chunk.newBuilder()
                                     .setRowsData(ByteString.copyFromUtf8(kv.getValue()))
                                     .build()));

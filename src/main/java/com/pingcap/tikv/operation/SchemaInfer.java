@@ -60,8 +60,10 @@ public class SchemaInfer {
         // 2. if multiple group by items present, it is wrapped inside
         // a byte array. we make a multiple decoding
         // 3. for no aggregation case, make only projected columns
-        if (tiSelectRequest.getGroupByItems().size() == 0) {
-            rowTrans.addProjection(Skip.SKIP_OP);
+        if (tiSelectRequest.getGroupByItems().isEmpty()) {
+            if (!tiSelectRequest.getAggregates().isEmpty()) {
+                rowTrans.addProjection(Skip.SKIP_OP);
+            }
         } else {
             List<DataType> types = tiSelectRequest.getGroupByItems()
                     .stream()

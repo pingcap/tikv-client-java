@@ -16,12 +16,13 @@
 package com.pingcap.tikv.meta;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.pingcap.tidb.tipb.KeyRange;
+import com.google.protobuf.ByteString;
 import com.pingcap.tidb.tipb.SelectRequest;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.expression.TiByItem;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiExpr;
+import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -51,6 +52,12 @@ public class TiSelectRequest implements Serializable {
             return flags | mask;
         }
     }
+
+    private static final KeyRange FULL_RANGE = KeyRange
+                                                    .newBuilder()
+                                                    .setStart(ByteString.EMPTY)
+                                                    .setEnd(ByteString.EMPTY)
+                                                    .build();
 
     private TiTableInfo tableInfo;
     private TiIndexInfo indexInfo;

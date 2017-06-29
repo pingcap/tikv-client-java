@@ -18,19 +18,17 @@ package com.pingcap.tikv;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
 import com.google.protobuf.ByteString;
-import com.pingcap.tikv.codec.TableCodec;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.grpc.Kvrpcpb.KvPair;
 import com.pingcap.tikv.grpc.Metapb.Region;
 import com.pingcap.tikv.grpc.Metapb.Store;
-import com.pingcap.tikv.operation.IndexScanIterator;
-import com.pingcap.tikv.row.Row;
-import com.pingcap.tikv.meta.TiRange;
 import com.pingcap.tikv.meta.TiSelectRequest;
-import com.pingcap.tikv.meta.TiTableInfo;
+import com.pingcap.tikv.operation.IndexScanIterator;
 import com.pingcap.tikv.operation.ScanIterator;
 import com.pingcap.tikv.operation.SelectIterator;
+import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.util.Pair;
+import com.pingcap.tikv.util.RangeSplitter.RegionTask;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -76,19 +74,6 @@ public class Snapshot {
         return client.get(key, version.getVersion());
     }
 
-    //TODO remove this
-    static public List<TiRange<ByteString>> convertHandleRangeToKeyRange(TiTableInfo table,
-                                                                         List<TiRange<Long>> ranges) {
-        ImmutableList.Builder<TiRange<ByteString>> builder = ImmutableList.builder();
-        for (TiRange<Long> r : ranges) {
-            ByteString startKey = TableCodec.encodeRowKeyWithHandle(table.getId(), r.getLowValue());
-            ByteString endKey = TableCodec.encodeRowKeyWithHandle(table.getId(),
-                    Math.max(r.getHighValue() + 1, Long.MAX_VALUE));
-            builder.add(TiRange.createByteStringRange(startKey, endKey));
-        }
-        return builder.build();
-    }
-
     /**
      * Issue a select request to TiKV and PD.
      *
@@ -114,37 +99,22 @@ public class Snapshot {
      * Below is lower level API for env like Spark which already did key range split
      * Perform table scan
      * @param req SelectRequest for coprocessor
-     * @param region Region of the coprocessor request to send
-     * @param store Store of the coprocessor request to send
-     * @param range Keyrange of the request
+     * @param task RegionTask of the coprocessor request to send
      * @return Row iterator to iterate over resulting rows
      */
-    public Iterator<Row> select(TiSelectRequest req,
-                                Region region,
-                                Store store,
-                                TiRange<ByteString> range) {
-        Pair<Region, Store> regionStorePair = Pair.create(region, store);
-        Pair<Pair<Region, Store>,
-                TiRange<ByteString>> regionToRangePair = Pair.create(regionStorePair, range);
-
-        return new SelectIterator(req, ImmutableList.of(regionToRangePair), getSession(), false);
+    public Iterator<Row> select(TiSelectRequest req, RegionTask task) {
+        return new SelectIterator(req, ImmutableList.of(task), getSession(), false);
     }
 
     /**
      * Below is lower level API for env like Spark which already did key range split
      * Perform index double read
      * @param req SelectRequest for coprocessor
-     * @param region Region of the coprocessor request to send
-     * @param store Store of the coprocessor request to send
-     * @param range KeyRange of the request
+     * @param task RegionTask of the coprocessor request to send
      * @return Row iterator to iterate over resulting rows
      */
-    public Iterator<Row> selectByIndex(TiSelectRequest req, Region region, Store store, TiRange<ByteString> range) {
-        Pair<Region, Store> regionStorePair = Pair.create(region, store);
-        Pair<Pair<Region, Store>,
-                TiRange<ByteString>> regionToRangePair = Pair.create(regionStorePair, range);
-
-        Iterator<Row> iter = new SelectIterator(req, ImmutableList.of(regionToRangePair), getSession(), true);
+    public Iterator<Row> selectByIndex(TiSelectRequest req, RegionTask task) {
+        Iterator<Row> iter = new SelectIterator(req, ImmutableList.of(task), getSession(), true);
         return new IndexScanIterator(this, req, iter);
     }
 
