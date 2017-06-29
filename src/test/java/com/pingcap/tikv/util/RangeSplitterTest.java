@@ -106,5 +106,4 @@ public class RangeSplitterTest {
         assertEquals(tasks.get(2).getRanges().size(), 1);
         assertEquals(tasks.get(2).getRanges().get(0), keyRange(70L, 1000L));
     }
-
 }

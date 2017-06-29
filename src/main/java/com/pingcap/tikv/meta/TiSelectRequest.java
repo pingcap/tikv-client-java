@@ -16,7 +16,6 @@
 package com.pingcap.tikv.meta;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import com.pingcap.tidb.tipb.SelectRequest;
 import com.pingcap.tikv.exception.TiClientInternalException;
@@ -339,9 +338,6 @@ public class TiSelectRequest implements Serializable {
     }
 
     public List<KeyRange> getRanges() {
-        if (keyRanges.isEmpty()) {
-            return ImmutableList.of(FULL_RANGE);
-        }
         return keyRanges;
     }
 

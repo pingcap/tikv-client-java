@@ -62,6 +62,12 @@ public class ScanBuilder {
         }
     }
 
+    private static final KeyRange INDEX_FULL_RANGE =
+                                        KeyRange.newBuilder()
+                                                .setStart(DataType.indexMinValue())
+                                                .setEnd(DataType.indexMaxValue())
+                                                .build();
+
     public ScanPlan buildScan(List<TiExpr> conditions, TiIndexInfo index, TiTableInfo table) {
         requireNonNull(table, "Table cannot be null to encoding keyRange");
         requireNonNull(index, "Index cannot be null to encoding keyRange");
@@ -151,6 +157,16 @@ public class ScanBuilder {
 
             ranges.add(
                     KeyRange.newBuilder()
+                            .setStart(startKey)
+                            .setEnd(endKey)
+                            .build()
+            );
+        }
+
+        if (ranges.isEmpty()) {
+            ByteString startKey = TableCodec.encodeRowKeyWithHandle(table.getId(), Long.MIN_VALUE);
+            ByteString endKey = TableCodec.encodeRowKeyWithHandle(table.getId(), Long.MAX_VALUE);
+            ranges.add(KeyRange.newBuilder()
                             .setStart(startKey)
                             .setEnd(endKey)
                             .build()
@@ -247,6 +263,9 @@ public class ScanBuilder {
             );
         }
 
+        if (ranges.isEmpty()) {
+            ranges.add(INDEX_FULL_RANGE);
+        }
         return ranges;
     }
 

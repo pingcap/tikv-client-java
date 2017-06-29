@@ -17,6 +17,7 @@ import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.operation.SchemaInfer;
 import com.pingcap.tikv.predicates.ScanBuilder;
 import com.pingcap.tikv.row.Row;
+import com.pingcap.tikv.util.RangeSplitter;
 
 import java.util.Iterator;
 import java.util.List;
@@ -39,12 +40,12 @@ public class Main {
         TiDBInfo db = cat.getDatabase("test");
         TiTableInfo table = cat.getTable(db, "test");
 
-        TiIndexInfo index = table.getIndices().get(0);
+        TiIndexInfo index = TiIndexInfo.generateFakePrimaryKeyIndex(table);
 
-        List<TiExpr> exprs = ImmutableList.of(
-                new NotEqual(TiColumnRef.create("c1", table),
-                             TiConstant.create(9L))
-        );
+        List<TiExpr> exprs = ImmutableList.of();
+
+        new NotEqual(TiColumnRef.create("c1", table),
+                TiConstant.create(9L));
 
         ScanBuilder scanBuilder = new ScanBuilder();
         ScanBuilder.ScanPlan scanPlan = scanBuilder.buildScan(exprs, index, table);
@@ -59,7 +60,6 @@ public class Main {
                 .addField(TiColumnRef.create("c4", table))
                 .setStartTs(snapshot.getVersion());
 
-        // scanPlan.getFilters().stream().forEach(sb::addWhere);
         if (conf.isIgnoreTruncate()) {
             selReq.setTruncateMode(TiSelectRequest.TruncateMode.IgnoreTruncation);
         } else if (conf.isTruncateAsWarning()) {
@@ -67,18 +67,23 @@ public class Main {
         }
 
         System.out.println(exprs);
-        Iterator<Row> it = snapshot.selectByIndex(selReq);
+        List<RangeSplitter.RegionTask> keyWithRegionTasks =
+                RangeSplitter.newSplitter(cluster.getRegionManager())
+                .splitRangeByRegion(selReq.getRanges());
+        for (RangeSplitter.RegionTask task : keyWithRegionTasks) {
+            Iterator<Row> it = snapshot.select(selReq, task);
 
-        while (it.hasNext()) {
-            Row r = it.next();
-            SchemaInfer schemaInfer = SchemaInfer.create(selReq);
-            for (int i = 0; i < r.fieldCount(); i++) {
-                Object val = r.get(i, schemaInfer.getType(i));
-                //printByHandle(table, (long)val, scanPlan.getFilters());
-                System.out.print(val);
-                System.out.print(" ");
+            while (it.hasNext()) {
+                Row r = it.next();
+                SchemaInfer schemaInfer = SchemaInfer.create(selReq);
+                for (int i = 0; i < r.fieldCount(); i++) {
+                    Object val = r.get(i, schemaInfer.getType(i));
+                    //printByHandle(table, (long)val, scanPlan.getFilters());
+                    System.out.print(val);
+                    System.out.print(" ");
+                }
+                System.out.print("\n");
             }
-            System.out.print("\n");
         }
     }
 
