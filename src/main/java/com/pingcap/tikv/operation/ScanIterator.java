@@ -27,6 +27,7 @@ import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
 import com.pingcap.tikv.grpc.Kvrpcpb;
 import com.pingcap.tikv.grpc.Metapb;
 import com.pingcap.tikv.predicates.Comparables;
+import com.pingcap.tikv.util.KeyRangeUtils;
 import com.pingcap.tikv.util.Pair;
 
 import java.util.Iterator;
@@ -53,27 +54,13 @@ public class ScanIterator implements Iterator<Kvrpcpb.KvPair> {
                         long version) {
         this.startKey = startKey;
         this.batchSize = batchSize;
-        this.keyRange = toRange(range);
+        this.keyRange = KeyRangeUtils.toRange(range);
         this.session = session;
         this.regionCache = rm;
         this.version = version;
     }
 
-    private static Range toRange(KeyRange range) {
-        if (range == null ||
-            (range.getStart().isEmpty() &&
-             range.getEnd().isEmpty())) {
-            return Range.all();
-        }
-        if (range.getStart().isEmpty()) {
-            return Range.lessThan(Comparables.wrap(range.getEnd()));
-        }
-        if (range.getEnd().isEmpty()) {
-            return Range.atLeast(Comparables.wrap(range.getStart()));
-        }
-        return Range.closedOpen(Comparables.wrap(range.getStart()),
-                                Comparables.wrap(range.getEnd()));
-    }
+
 
     private boolean loadCache() {
         if (eof) return false;

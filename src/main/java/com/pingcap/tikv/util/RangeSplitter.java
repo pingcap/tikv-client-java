@@ -23,7 +23,10 @@ import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
 import com.pingcap.tikv.grpc.Metapb;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
@@ -84,16 +87,17 @@ public class RangeSplitter {
         checkArgument(keyRanges != null && keyRanges.size() != 0);
         int i = 0;
         KeyRange range = keyRanges.get(i++);
-
-        ImmutableList.Builder<RegionTask> resultBuilder = ImmutableList.builder();
-
-        ImmutableList.Builder<KeyRange> rangeBuilder = ImmutableList.builder();
-
-        Pair<Metapb.Region, Metapb.Store> regionStorePair = regionManager.getRegionStorePairByKey(range.getStart());
-        requireNonNull(regionStorePair, "fail to get region/store pair by key" + range.getStart());
-        Metapb.Region region = regionStorePair.first;
+        Map<Long, List<KeyRange>> idToRange = new HashMap<>(); // region id to keyRange list
+        Map<Long, Pair<Metapb.Region, Metapb.Store>> idToRegion = new HashMap<>();
 
         while (true) {
+            Pair<Metapb.Region, Metapb.Store> regionStorePair =
+                    regionManager.getRegionStorePairByKey(range.getStart());
+
+            requireNonNull(regionStorePair, "fail to get region/store pair by key" + range.getStart());
+            Metapb.Region region = regionStorePair.first;
+            idToRegion.putIfAbsent(region.getId(), regionStorePair);
+
             // both key range is close-opened
             // initial range inside pd is guaranteed to be -INF to +INF
             if (rightCompareTo(range.getEnd(), region.getEndKey()) > 0) {
@@ -103,34 +107,33 @@ public class RangeSplitter {
                                                .setEnd(region.getEndKey())
                                                .build();
 
-                resultBuilder.add(new RegionTask(regionStorePair.first,
-                                                 regionStorePair.second,
-                                                 rangeBuilder
-                                                         .add(cutRange)
-                                                         .build()));
-
-                rangeBuilder = ImmutableList.builder();
+                List<KeyRange> ranges = idToRange.computeIfAbsent(region.getId(), k -> new ArrayList());
+                ranges.add(cutRange);
 
                 // cut new remaining for current range
                 range = KeyRange.newBuilder()
                                 .setStart(region.getEndKey())
                                 .setEnd(range.getEnd())
                                 .build();
-
-                regionStorePair = regionManager.getRegionStorePairByKey(range.getStart());
-                requireNonNull(regionStorePair, "fail to get region/store pair by key" + range.getStart());
-                region = regionStorePair.first;
             } else {
                 // current range covered by region
-                rangeBuilder.add(range);
+                List<KeyRange> ranges = idToRange.computeIfAbsent(region.getId(), k -> new ArrayList());
+                ranges.add(range);
                 if (i >= keyRanges.size()) {
-                    resultBuilder.add(new RegionTask(regionStorePair.first,
-                                                     regionStorePair.second,
-                                                     rangeBuilder.build()));
                     break;
                 }
                 range = keyRanges.get(i++);
             }
+        }
+
+        ImmutableList.Builder<RegionTask> resultBuilder = ImmutableList.builder();
+        for (Map.Entry<Long, List<KeyRange>> entry : idToRange.entrySet()) {
+            Pair<Metapb.Region, Metapb.Store> regionStorePair = idToRegion.get(entry.getKey());
+            resultBuilder.add(new RegionTask(
+                    regionStorePair.first,
+                    regionStorePair.second,
+                    entry.getValue()
+            ));
         }
         return resultBuilder.build();
     }
