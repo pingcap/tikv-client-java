@@ -16,14 +16,12 @@
 package com.pingcap.tikv.policy;
 
 import com.google.common.base.Preconditions;
-import com.pingcap.tikv.policy.RetryPolicy;
-
-import java.util.concurrent.Callable;
+import com.pingcap.tikv.operation.ErrorHandler;
 
 public class RetryNTimes extends RetryPolicy {
     private int n;
-    private RetryNTimes(int n, Callable<Void> recoverMethod) {
-        super(recoverMethod);
+    private RetryNTimes(int n, ErrorHandler handler) {
+        super(handler);
         Preconditions.checkArgument(n >= 1, "Retry count cannot be less than 1.");
         this.n = n;
     }
@@ -46,8 +44,8 @@ public class RetryNTimes extends RetryPolicy {
             this.n = n;
         }
         @Override
-        public RetryPolicy create(Callable<Void> recoverMethod) {
-            return new RetryNTimes(n, recoverMethod);
+        public RetryPolicy create(ErrorHandler handler) {
+            return new RetryNTimes(n, handler);
         }
     }
 }

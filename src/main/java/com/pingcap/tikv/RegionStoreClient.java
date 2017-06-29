@@ -58,7 +58,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setKey(key)
                 .setVersion(version)
                 .build();
-        GetResponse resp = callWithRetry(TikvGrpc.METHOD_KV_GET, request);
+        GetResponse resp = callWithRetry(TikvGrpc.METHOD_KV_GET, request, r -> r.getRegionError());
         return getHelper(resp);
     }
 
@@ -71,7 +71,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setVersion(version)
                 .build();
 
-        callAsyncWithRetry(TikvGrpc.METHOD_KV_GET, request, responseObserver);
+        callAsyncWithRetry(TikvGrpc.METHOD_KV_GET, request, responseObserver, r -> r.getRegionError());
         return responseObserver.getFuture();
     }
 
@@ -91,7 +91,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .addAllKeys(keys)
                 .setVersion(version)
                 .build();
-        BatchGetResponse resp = callWithRetry(TikvGrpc.METHOD_KV_BATCH_GET, request);
+        BatchGetResponse resp = callWithRetry(TikvGrpc.METHOD_KV_BATCH_GET, request, r -> r.getRegionError());
         return batchGetHelper(resp);
     }
 
@@ -105,7 +105,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setVersion(version)
                 .build();
 
-        callAsyncWithRetry(TikvGrpc.METHOD_KV_BATCH_GET, request, responseObserver);
+        callAsyncWithRetry(TikvGrpc.METHOD_KV_BATCH_GET, request, responseObserver, r -> r.getRegionError());
         return responseObserver.getFuture();
     }
 
@@ -132,7 +132,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setKeyOnly(keyOnly)
                 .setLimit(getConf().getScanBatchSize())
                 .build();
-        ScanResponse resp = callWithRetry(TikvGrpc.METHOD_KV_SCAN, request);
+        ScanResponse resp = callWithRetry(TikvGrpc.METHOD_KV_SCAN, request, r -> r.getRegionError());
         return scanHelper(resp);
     }
 
@@ -147,7 +147,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setKeyOnly(keyOnly)
                 .build();
 
-        callAsyncWithRetry(TikvGrpc.METHOD_KV_SCAN, request, responseObserver);
+        callAsyncWithRetry(TikvGrpc.METHOD_KV_SCAN, request, responseObserver, r -> r.getRegionError());
         return responseObserver.getFuture();
     }
 
@@ -165,7 +165,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setData(req.toByteString())
                 .addAllRanges(ranges)
                 .build();
-        Coprocessor.Response resp = callWithRetry(TikvGrpc.METHOD_COPROCESSOR, reqToSend);
+        Coprocessor.Response resp = callWithRetry(TikvGrpc.METHOD_COPROCESSOR, reqToSend, r -> r.getRegionError());
         return coprocessorHelper(resp);
     }
 
@@ -178,7 +178,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setData(req.toByteString())
                 .addAllRanges(ranges)
                 .build();
-        callAsyncWithRetry(TikvGrpc.METHOD_COPROCESSOR, reqToSend, responseObserver);
+        callAsyncWithRetry(TikvGrpc.METHOD_COPROCESSOR, reqToSend, responseObserver, r -> r.getRegionError());
         return responseObserver.getFuture();
     }
 
