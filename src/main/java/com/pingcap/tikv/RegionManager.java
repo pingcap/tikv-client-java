@@ -54,7 +54,7 @@ public class RegionManager {
     // To avoid double retrieval, we used the async version of grpc
     // When rpc not returned, instead of call again, it wait for previous one done
     //TODO: zhexuany not sure why test failed when we try to use RegionMager.getInstance
-    private RegionManager(ReadOnlyPDClient pdClient) {
+    public RegionManager(ReadOnlyPDClient pdClient) {
         this.pdClient = pdClient;
         regionCache = CacheBuilder.newBuilder()
                 .maximumSize(MAX_CACHE_CAPACITY)
