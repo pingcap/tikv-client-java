@@ -19,12 +19,20 @@ package com.pingcap.tikv.operation;
 
 import com.pingcap.tikv.grpc.Pdpb;
 
-public interface PdrpcErrorHandler<RespT> {
-    Pdpb.Error getError(RespT resp);
+import java.util.function.Function;
 
-    // TODO finish it later.
-    default void handle(RespT resp) {
-        Pdpb.Error error = getError(resp);
+public class PDErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
+    private Function<RespT, Pdpb.Error> getRegionError;
 
+    public void bind(Function<RespT, Pdpb.Error> getRegionError) {
+       this.getRegionError = getRegionError;
+    }
+
+    public void handle(RespT resp) {
+        if(resp == null) {
+//            throw new IllegalArgumentException("resp can not be null");
+            return;
+        }
+        Pdpb.Error error = getRegionError.apply(resp);
     }
 }

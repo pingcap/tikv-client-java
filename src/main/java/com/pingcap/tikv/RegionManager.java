@@ -198,7 +198,6 @@ public class RegionManager {
                 invalidateRegion(regionID);
             }
         } catch (InterruptedException | ExecutionException e) {
-            //            e.printStackTrace();
         }
     }
 
