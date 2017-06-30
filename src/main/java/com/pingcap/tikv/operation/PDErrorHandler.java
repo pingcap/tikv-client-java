@@ -22,10 +22,10 @@ import com.pingcap.tikv.grpc.Pdpb;
 import java.util.function.Function;
 
 public class PDErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
-    private Function<RespT, Pdpb.Error> getRegionError;
+    private final Function<RespT, Pdpb.Error> getRegionError;
 
-    public void bind(Function<RespT, Pdpb.Error> getRegionError) {
-       this.getRegionError = getRegionError;
+    public PDErrorHandler(Function<RespT, Pdpb.Error> errorExtractor) {
+       this.getRegionError = errorExtractor;
     }
 
     public void handle(RespT resp) {
