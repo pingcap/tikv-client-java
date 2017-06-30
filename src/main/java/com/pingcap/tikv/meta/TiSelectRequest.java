@@ -128,10 +128,10 @@ public class TiSelectRequest implements Serializable {
             builder.addAggregates(agg.toProto());
         }
 
-        List<TiColumnInfo> columns = usedColumnRef
-                                    .stream()
-                                    .map(colRef -> colRef.getColumnInfo())
-                                    .collect(Collectors.toList());
+        List<TiColumnInfo> columns = tableInfo.getColumns()
+                .stream()
+                .filter(col -> usedColumnRef.contains(TiColumnRef.create(col, tableInfo)))
+                .collect(Collectors.toList());
 
         TiTableInfo filteredTable = new TiTableInfo(
                 tableInfo.getId(),
