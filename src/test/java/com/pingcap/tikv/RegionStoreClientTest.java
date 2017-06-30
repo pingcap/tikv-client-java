@@ -69,7 +69,7 @@ public class RegionStoreClientTest {
                 .setState(Metapb.StoreState.Up)
                 .build();
 
-        return RegionStoreClient.create(region, store, session);
+        return RegionStoreClient.create(region, store, session, null);
     }
 
     @After

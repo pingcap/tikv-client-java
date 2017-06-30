@@ -51,7 +51,7 @@ public class TikvClient {
         Pair<Metapb.Region, Metapb.Store> pair = regionManager.getRegionStorePairByKey(ByteString.copyFrom(key.getBytes()));
 
         //System.out.println("create client");
-        RegionStoreClient storeClient = RegionStoreClient.create(pair.first, pair.second, session);
+        RegionStoreClient storeClient = RegionStoreClient.create(pair.first, pair.second, session, regionManager);
 
         Metapb.Region region = pair.first;
         Kvrpcpb.Context context = Kvrpcpb.Context.newBuilder()

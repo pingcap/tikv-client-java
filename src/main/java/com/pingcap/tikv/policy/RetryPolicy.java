@@ -56,7 +56,9 @@ public abstract class RetryPolicy {
         while (true) {
             try {
                 T result = proc.call();
-                handler.handle(result);
+                if(handler != null) {
+                    handler.handle(result);
+                }
                 return result;
             } catch (Exception e) {
                 Status status = Status.fromThrowable(e);

@@ -49,18 +49,22 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub> impleme
 
     @Override
     public TiTimestamp getTimestamp() {
-        TsoRequest request = TsoRequest.newBuilder()
-                .setHeader(header)
-                .build();
-//        FutureObserver<Timestamp, TsoResponse> responseObserver =
-//                new FutureObserver<>(TsoResponse::getTimestamp);
-        //TODO check with xiaoyu. Is there any problem if we adopt callWithRetry here
-        PDErrorHandler<TsoResponse> handler = new PDErrorHandler<>();
-        handler.bind(r -> r.getHeader().getError());
+        // Bidirectional streaming RPCs where both sides send a sequence of messages using a read-write stream.
+        FutureObserver<Timestamp, TsoResponse> responseObserver =
+                new FutureObserver<>(TsoResponse::getTimestamp);
+        StreamObserver<TsoRequest> requestObserver = callBidiStreamingWithRetry(PDGrpc.METHOD_TSO, responseObserver, null);
 
-        TsoResponse resp = callWithRetry(PDGrpc.METHOD_TSO, request, handler);
-        Timestamp respTso = resp.getTimestamp();
-        return new TiTimestamp(respTso.getPhysical(), respTso.getLogical());
+        requestObserver.onNext(tsoReq);
+        requestObserver.onCompleted();
+        try {
+            Timestamp resp = responseObserver.getFuture().get();
+            return new TiTimestamp(resp.getPhysical(), resp.getLogical());
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            throw new GrpcException(e);
+        }
+        return null;
     }
 
     @Override

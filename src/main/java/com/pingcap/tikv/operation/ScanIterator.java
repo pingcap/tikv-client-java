@@ -69,7 +69,7 @@ public class ScanIterator implements Iterator<Kvrpcpb.KvPair> {
         Metapb.Region region = pair.first;
         Metapb.Store store = pair.second;
         try (RegionStoreClient client =
-                     RegionStoreClient.create(region, store, session)) {
+                     RegionStoreClient.create(region, store, session, regionCache)) {
             currentCache = client.scan(startKey, version);
             if (currentCache == null || currentCache.size() == 0) {
                 return false;

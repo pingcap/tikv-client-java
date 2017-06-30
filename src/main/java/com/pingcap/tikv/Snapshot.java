@@ -69,7 +69,7 @@ public class Snapshot {
 
     public ByteString get(ByteString key) {
         Pair<Region, Store> pair = regionCache.getRegionStorePairByKey(key);
-        RegionStoreClient client = RegionStoreClient.create(pair.first, pair.second, getSession());
+        RegionStoreClient client = RegionStoreClient.create(pair.first, pair.second, getSession(), regionCache);
         // TODO: Need to deal with lock error after grpc stable
         return client.get(key, version.getVersion());
     }
@@ -103,7 +103,7 @@ public class Snapshot {
      * @return Row iterator to iterate over resulting rows
      */
     public Iterator<Row> select(TiSelectRequest req, RegionTask task) {
-        return new SelectIterator(req, ImmutableList.of(task), getSession(), false);
+        return new SelectIterator(req, ImmutableList.of(task), getSession(), regionCache,false);
     }
 
     /**
@@ -114,7 +114,7 @@ public class Snapshot {
      * @return Row iterator to iterate over resulting rows
      */
     public Iterator<Row> selectByIndex(TiSelectRequest req, RegionTask task) {
-        Iterator<Row> iter = new SelectIterator(req, ImmutableList.of(task), getSession(), true);
+        Iterator<Row> iter = new SelectIterator(req, ImmutableList.of(task), getSession(), regionCache,true);
         return new IndexScanIterator(this, req, iter);
     }
 
@@ -139,7 +139,7 @@ public class Snapshot {
                 curKeyRange = Range.closedOpen(
                         curRegion.getStartKey().asReadOnlyByteBuffer(),
                         curRegion.getEndKey().asReadOnlyByteBuffer());
-                try (RegionStoreClient client = RegionStoreClient.create(lastPair.first, lastPair.second, getSession())) {
+                try (RegionStoreClient client = RegionStoreClient.create(lastPair.first, lastPair.second, getSession(), regionCache)) {
                     List<KvPair> partialResult = client.batchGet(keyBuffer, version.getVersion());
                     // TODO: Add lock check
                     result.addAll(partialResult);

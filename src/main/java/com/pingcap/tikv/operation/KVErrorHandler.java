@@ -17,27 +17,34 @@
 
 package com.pingcap.tikv.operation;
 
+import com.pingcap.tikv.RegionManager;
 import com.pingcap.tikv.exception.RegionException;
 import com.pingcap.tikv.grpc.Errorpb;
+import com.pingcap.tikv.grpc.Kvrpcpb;
 import com.pingcap.tikv.grpc.Pdpb;
 
 import java.util.function.Function;
 
 public class KVErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
     private Function<RespT, Errorpb.Error> getRegionError;
+    private RegionManager regionManager;
+    private long regionID;
 
-    public void bind(Function<RespT, Errorpb.Error> getRegionError) {
+    public KVErrorHandler(RegionManager regionManager, long regionID, Function<RespT, Errorpb.Error> getRegionError) {
+       this.regionID = regionID;
+       this.regionManager = regionManager;
        this.getRegionError = getRegionError;
     }
 
     public void handle(RespT resp) {
+        // this is for test. In reality, resp is never null.
         if (resp == null) return;
         Errorpb.Error error = getRegionError.apply(resp);
         if (error != null) {
             if (error.hasNotLeader()) {
                 // update Leader here
                 // no need update here. just let retry take control of this.
-                // regionManager.updateLeader(context.getRegionId(), error.getNotLeader().getLeader().getStoreId());
+//                regionManager.updateLeader(context.getRegionId(), error.getNotLeader().getLeader().getStoreId());
                 throw new RegionException(error);
             }
             if (error.hasRegionNotFound()) {
@@ -46,7 +53,7 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
             }
             // no need retry
             if (error.hasStaleEpoch()) {
-                // regionManager.onRegionStale(context.getRegionId(), error.getStaleEpoch().getNewRegionsList());
+//                 regionManager.onRegionStale(context.getRegionId(), error.getStaleEpoch().getNewRegionsList());
                 throw new IllegalStateException("StaleEpoch is not need to retry");
             }
 
@@ -63,7 +70,7 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
                 throw new RegionException(error);
             }
             // for other errors, we only drop cache here.
-            // regionManager.invalidateRegion(context.getRegionId());
+//            regionManager.invalidateRegion(context.getRegionId());
         }
     }
 }

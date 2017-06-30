@@ -70,6 +70,7 @@ public class SelectIterator implements Iterator<Row> {
     public SelectIterator(TiSelectRequest req,
                           List<RegionTask> rangeToRegionsIn,
                           TiSession session,
+                          RegionManager regionManager,
                           boolean indexScan) {
         this.rangeToRegions = rangeToRegionsIn;
         this.session = session;
@@ -86,7 +87,7 @@ public class SelectIterator implements Iterator<Row> {
             Region region = regionTask.getRegion();
             Store store = regionTask.getStore();
 
-            try (RegionStoreClient client = RegionStoreClient.create(region, store, session)) {
+            try (RegionStoreClient client = RegionStoreClient.create(region, store, session, regionManager)) {
                 SelectResponse resp =
                         client.coprocess(indexScan ? req.buildAsIndexScan() : req.build(), ranges);
                 if (resp == null) {
@@ -108,6 +109,7 @@ public class SelectIterator implements Iterator<Row> {
                           boolean indexScan) {
         this(req, RangeSplitter.newSplitter(rm).splitRangeByRegion(req.getRanges()),
                                                                    session,
+                                                                   rm,
                                                                    indexScan
         );
     }
