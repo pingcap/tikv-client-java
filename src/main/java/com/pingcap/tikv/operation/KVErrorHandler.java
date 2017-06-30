@@ -31,6 +31,7 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
     }
 
     public void handle(RespT resp) {
+        if (resp == null) return;
         Errorpb.Error error = getRegionError.apply(resp);
         if (error != null) {
             if (error.hasNotLeader()) {
