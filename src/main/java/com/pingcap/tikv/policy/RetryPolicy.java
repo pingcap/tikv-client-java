@@ -17,7 +17,8 @@ package com.pingcap.tikv.policy;
 
 import com.google.common.collect.ImmutableSet;
 import com.pingcap.tikv.exception.GrpcException;
-import com.pingcap.tikv.operation.ErrorHandler;
+import com.pingcap.tikv.operation.KvrpcErrorHandler;
+import com.pingcap.tikv.operation.PdrpcErrorHandler;
 import io.grpc.Status;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,7 +29,8 @@ public abstract class RetryPolicy {
     private static final Logger logger = LogManager.getFormatterLogger(RetryPolicy.class);
 
     // Basically a leader recheck method
-    private ErrorHandler handler;
+    private KvrpcErrorHandler kvhandler;
+    private PdrpcErrorHandler pdHandler;
 
     private ImmutableSet<Status.Code> unrecoverableStatus = ImmutableSet.of(
             Status.Code.ALREADY_EXISTS, Status.Code.PERMISSION_DENIED,
@@ -37,8 +39,8 @@ public abstract class RetryPolicy {
             Status.Code.UNAUTHENTICATED
     );
 
-    public RetryPolicy(ErrorHandler handler) {
-        this.handler = handler;
+    public RetryPolicy(KvrpcErrorHandler kvhandler) {
+        this.kvhandler = kvhandler;
     }
 
     protected abstract boolean shouldRetry(Exception e);
@@ -52,11 +54,18 @@ public abstract class RetryPolicy {
         return unrecoverableStatus.contains(status.getCode());
     }
 
+    private <T> void handleErrorFromResp (T result) {
+       if(pdHandler != null) {
+           pdHandler.handle(result);
+       } else if (kvhandler != null) {
+           kvhandler.handle(result);
+       }
+    }
     public <T> T callWithRetry(Callable<T> proc, String methodName) {
         while (true) {
             try {
                 T result = proc.call();
-                handler.handle(result);
+                handleErrorFromResp(result);
                 return result;
             } catch (Exception e) {
                 Status status = Status.fromThrowable(e);
@@ -64,16 +73,12 @@ public abstract class RetryPolicy {
                     logger.error("Failed to recover from last grpc error calling %s.", methodName);
                     throw new GrpcException(e);
                 }
-                try {
-                } catch (Exception e1) {
-                    // Ignore exception further spreading
-                    logger.error("Error during grpc leader update.", e1);
-                }
             }
         }
     }
 
     public interface Builder {
-        RetryPolicy create(ErrorHandler handler);
+        RetryPolicy create(KvrpcErrorHandler handler);
+        RetryPolicy create(PdrpcErrorHandler handler);
     }
 }

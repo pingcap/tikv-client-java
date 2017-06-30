@@ -15,7 +15,8 @@
 
 package com.pingcap.tikv;
 
-import com.pingcap.tikv.operation.ErrorHandler;
+import com.pingcap.tikv.operation.KvrpcErrorHandler;
+import com.pingcap.tikv.operation.PdrpcErrorHandler;
 import io.grpc.MethodDescriptor;
 import io.grpc.stub.AbstractStub;
 import io.grpc.stub.ClientCalls;
@@ -49,7 +50,7 @@ public abstract class AbstractGrpcClient<BlockingStubT extends AbstractStub<Bloc
     // TODO: Seems a little bit messy for lambda part
     protected <ReqT, ResT> ResT callWithRetry(MethodDescriptor<ReqT, ResT> method,
                                               ReqT request,
-                                              ErrorHandler<ResT> handler) {
+                                              KvrpcErrorHandler<ResT> handler) {
         logger.debug("Calling %s...", method.getFullMethodName());
         ResT resp = getSession()
                 .getRetryPolicyBuilder()
@@ -66,7 +67,7 @@ public abstract class AbstractGrpcClient<BlockingStubT extends AbstractStub<Bloc
     protected <ReqT, ResT> void callAsyncWithRetry(MethodDescriptor<ReqT, ResT> method,
                                                    ReqT request,
                                                    StreamObserver<ResT> responseObserver,
-                                                   ErrorHandler<ResT> handler) {
+                                                   KvrpcErrorHandler<ResT> handler) {
         logger.debug("Calling %s...", method.getFullMethodName());
         getSession()
                 .getRetryPolicyBuilder()
@@ -85,7 +86,7 @@ public abstract class AbstractGrpcClient<BlockingStubT extends AbstractStub<Bloc
     protected <ReqT, ResT> StreamObserver<ReqT>
     callBidiStreamingWithRetry(MethodDescriptor<ReqT, ResT> method,
                                StreamObserver<ResT> responseObserver,
-                               ErrorHandler<ResT> handler) {
+                               KvrpcErrorHandler<ResT> handler) {
         logger.debug("Calling %s...", method.getFullMethodName());
         StreamObserver<ReqT> observer =
                 getSession()

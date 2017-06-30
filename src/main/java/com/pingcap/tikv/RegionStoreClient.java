@@ -26,7 +26,6 @@ import com.pingcap.tidb.tipb.SelectResponse;
 import com.pingcap.tikv.exception.*;
 import com.pingcap.tikv.grpc.Coprocessor;
 import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
-import com.pingcap.tikv.grpc.Errorpb;
 import com.pingcap.tikv.grpc.Kvrpcpb.*;
 import com.pingcap.tikv.grpc.Metapb.Region;
 import com.pingcap.tikv.grpc.Metapb.Store;
@@ -39,7 +38,6 @@ import io.grpc.ManagedChannelBuilder;
 
 import java.util.List;
 import java.util.concurrent.Future;
-import java.util.function.Function;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -60,7 +58,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setKey(key)
                 .setVersion(version)
                 .build();
-        GetResponse resp = callWithRetry(TikvGrpc.METHOD_KV_GET, request, r -> r.getRegionError());
+        GetResponse resp = callWithRetry(TikvGrpc.METHOD_KV_GET, request, GetResponse::getRegionError);
         return getHelper(resp);
     }
 
@@ -71,46 +69,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setValue(value)
                 .build();
 
-        // handle NotLeader
-        Function<RawPutResponse, Exception> onRegionError = x -> {
-            Errorpb.Error error = x.getRegionError();
-            if (x.hasRegionError()) {
-                if (error.hasNotLeader()) {
-                    // update Leader here
-                    // no need update here. just let retry take control of this.
-                    // regionManager.updateLeader(context.getRegionId(), error.getNotLeader().getLeader().getStoreId());
-                    throw new RegionException(error);
-                }
-                if (error.hasRegionNotFound()) {
-                    // throw RegionNotFound exception
-                    throw new RegionException(error);
-                }
-                // no need retry
-                if (error.hasStaleEpoch()) {
-                    regionManager.onRegionStale(context.getRegionId(), error.getStaleEpoch().getNewRegionsList());
-                    throw new IllegalStateException("StaleEpoch is not need to retry");
-                }
-
-                if (error.hasServerIsBusy()) {
-                    throw new RegionException(error);
-                }
-
-                if (error.hasServerIsBusy()) {
-                }
-                // do not handle it in this level. this can be retryed.
-                if (error.hasStaleCommand()) {
-                    throw new RegionException(error);
-                }
-
-                if (error.hasRaftEntryTooLarge()) {
-                    throw new RegionException(error);
-                }
-                // for other errors, we only drop cache here.
-                regionManager.invalidateRegion(context.getRegionId());
-            }
-            return null;
-        };
-        RawPutResponse resp = callWithRetry(TikvGrpc.METHOD_RAW_PUT, onRegionError, rawPutRequest);
+        RawPutResponse resp = callWithRetry(TikvGrpc.METHOD_RAW_PUT, rawPutRequest, RawPutResponse::getRegionError);
         if (resp.hasRegionError()) {
             throw new RegionException(resp.getRegionError());
         }
@@ -121,13 +80,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setContext(context)
                 .setKey(key)
                 .build();
-        Function<RawGetResponse, Exception> errorHandler = x -> {
-            if (x.getRegionError() != null) {
-                return new RegionException(x.getRegionError());
-            }
-            return null;
-        };
-        RawGetResponse resp = callWithRetry(TikvGrpc.METHOD_RAW_GET, errorHandler, rawGetRequest);
+        RawGetResponse resp = callWithRetry(TikvGrpc.METHOD_RAW_GET, rawGetRequest, RawGetResponse::getRegionError);
 
         if (resp.hasRegionError()) {
             throw new RegionException(resp.getRegionError());
@@ -141,13 +94,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setKey(key)
                 .build();
 
-        Function<RawDeleteResponse, Exception> errorHandler = x -> {
-            if (x.getRegionError() != null) {
-                return new RegionException(x.getRegionError());
-            }
-            return null;
-        };
-        RawDeleteResponse resp = callWithRetry(TikvGrpc.METHOD_RAW_DELETE, errorHandler, rawDeleteRequest);
+        RawDeleteResponse resp = callWithRetry(TikvGrpc.METHOD_RAW_DELETE, rawDeleteRequest,  RawDeleteResponse::getRegionError);
         if (resp.hasRegionError()) {
             throw new RegionException(resp.getRegionError());
         }
@@ -162,7 +109,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setVersion(version)
                 .build();
 
-        callAsyncWithRetry(TikvGrpc.METHOD_KV_GET, request, responseObserver, r -> r.getRegionError());
+        callAsyncWithRetry(TikvGrpc.METHOD_KV_GET, request, responseObserver, GetResponse::getRegionError);
         return responseObserver.getFuture();
     }
 
@@ -182,7 +129,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .addAllKeys(keys)
                 .setVersion(version)
                 .build();
-        BatchGetResponse resp = callWithRetry(TikvGrpc.METHOD_KV_BATCH_GET, request, r -> r.getRegionError());
+        BatchGetResponse resp = callWithRetry(TikvGrpc.METHOD_KV_BATCH_GET, request, BatchGetResponse::getRegionError);
         return batchGetHelper(resp);
     }
 
@@ -196,7 +143,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setVersion(version)
                 .build();
 
-        callAsyncWithRetry(TikvGrpc.METHOD_KV_BATCH_GET, request, responseObserver, r -> r.getRegionError());
+        callAsyncWithRetry(TikvGrpc.METHOD_KV_BATCH_GET, request, responseObserver, BatchGetResponse::getRegionError);
         return responseObserver.getFuture();
     }
 
@@ -223,7 +170,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setKeyOnly(keyOnly)
                 .setLimit(getConf().getScanBatchSize())
                 .build();
-        ScanResponse resp = callWithRetry(TikvGrpc.METHOD_KV_SCAN, request, r -> r.getRegionError());
+        ScanResponse resp = callWithRetry(TikvGrpc.METHOD_KV_SCAN, request, ScanResponse::getRegionError);
         return scanHelper(resp);
     }
 
@@ -238,7 +185,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setKeyOnly(keyOnly)
                 .build();
 
-        callAsyncWithRetry(TikvGrpc.METHOD_KV_SCAN, request, responseObserver, r -> r.getRegionError());
+        callAsyncWithRetry(TikvGrpc.METHOD_KV_SCAN, request, responseObserver, ScanResponse::getRegionError);
         return responseObserver.getFuture();
     }
 
@@ -256,7 +203,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setData(req.toByteString())
                 .addAllRanges(ranges)
                 .build();
-        Coprocessor.Response resp = callWithRetry(TikvGrpc.METHOD_COPROCESSOR, reqToSend, r -> r.getRegionError());
+        Coprocessor.Response resp = callWithRetry(TikvGrpc.METHOD_COPROCESSOR, reqToSend, Coprocessor.Response::getRegionError);
         return coprocessorHelper(resp);
     }
 
@@ -269,7 +216,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setData(req.toByteString())
                 .addAllRanges(ranges)
                 .build();
-        callAsyncWithRetry(TikvGrpc.METHOD_COPROCESSOR, reqToSend, responseObserver, r -> r.getRegionError());
+        callAsyncWithRetry(TikvGrpc.METHOD_COPROCESSOR, reqToSend, responseObserver, Coprocessor.Response::getRegionError);
         return responseObserver.getFuture();
     }
 
@@ -343,7 +290,6 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setRegionEpoch(region.getRegionEpoch())
                 .setPeer(region.getPeers(0))
                 .build();
-//        this.regionManager = RegionManager.getInstance(PDClient.createRaw(session));
     }
 
     @Override

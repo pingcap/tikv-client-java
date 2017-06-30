@@ -46,11 +46,13 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub> impleme
     private volatile LeaderWrapper      leaderWrapper;
     private ScheduledExecutorService    service;
 
+    //TODO figure how to deal with pb error
+    // null for KvrpcErrorHandler for now.
     @Override
     public TiTimestamp getTimestamp() {
         FutureObserver<Timestamp, TsoResponse> responseObserver =
                 new FutureObserver<>(TsoResponse::getTimestamp);
-        StreamObserver<TsoRequest> requestObserver = callBidiStreamingWithRetry(PDGrpc.METHOD_TSO, responseObserver);
+        StreamObserver<TsoRequest> requestObserver = callBidiStreamingWithRetry(PDGrpc.METHOD_TSO, responseObserver, null);
 
         requestObserver.onNext(tsoReq);
         requestObserver.onCompleted();
@@ -72,7 +74,7 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub> impleme
                 .setRegionKey(key)
                 .build();
 
-        GetRegionResponse resp = callWithRetry(PDGrpc.METHOD_GET_REGION, request);
+        GetRegionResponse resp = callWithRetry(PDGrpc.METHOD_GET_REGION, request, null);
         return resp.getRegion();
     }
 
@@ -85,7 +87,7 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub> impleme
                 .setRegionKey(key)
                 .build();
 
-        callAsyncWithRetry(PDGrpc.METHOD_GET_REGION, request, responseObserver);
+        callAsyncWithRetry(PDGrpc.METHOD_GET_REGION, request, responseObserver, null);
         return responseObserver.getFuture();
     }
 
@@ -96,7 +98,7 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub> impleme
                 .setRegionId(id)
                 .build();
 
-        GetRegionResponse resp = callWithRetry(PDGrpc.METHOD_GET_REGION_BY_ID, request);
+        GetRegionResponse resp = callWithRetry(PDGrpc.METHOD_GET_REGION_BY_ID, request, null);
         // Instead of using default leader instance, explicitly set no leader to null
         return resp.getRegion();
     }
@@ -111,7 +113,7 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub> impleme
                 .setRegionId(id)
                 .build();
 
-        callAsyncWithRetry(PDGrpc.METHOD_GET_REGION_BY_ID, request, responseObserver);
+        callAsyncWithRetry(PDGrpc.METHOD_GET_REGION_BY_ID, request, responseObserver, null);
         return responseObserver.getFuture();
     }
 
@@ -122,7 +124,7 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub> impleme
                 .setStoreId(storeId)
                 .build();
 
-        GetStoreResponse resp = callWithRetry(PDGrpc.METHOD_GET_STORE, request);
+        GetStoreResponse resp = callWithRetry(PDGrpc.METHOD_GET_STORE, request, null);
         Store store = resp.getStore();
         if (store.getState() == Metapb.StoreState.Tombstone) {
             return null;
@@ -139,14 +141,14 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub> impleme
                         return null;
                     }
                     return store;
-        });
+                });
 
         GetStoreRequest request = GetStoreRequest.newBuilder()
                 .setHeader(header)
                 .setStoreId(storeId)
                 .build();
 
-        callAsyncWithRetry(PDGrpc.METHOD_GET_STORE, request, responseObserver);
+        callAsyncWithRetry(PDGrpc.METHOD_GET_STORE, request, responseObserver, null);
         return responseObserver.getFuture();
     }
 
@@ -289,15 +291,15 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub> impleme
     @Override
     protected PDBlockingStub getBlockingStub() {
         return leaderWrapper.getBlockingStub()
-                            .withDeadlineAfter(getConf().getTimeout(),
-                                               getConf().getTimeoutUnit());
+                .withDeadlineAfter(getConf().getTimeout(),
+                        getConf().getTimeoutUnit());
     }
 
     @Override
     protected PDStub getAsyncStub() {
         return leaderWrapper.getAsyncStub()
-                            .withDeadlineAfter(getConf().getTimeout(),
-                                               getConf().getTimeoutUnit());
+                .withDeadlineAfter(getConf().getTimeout(),
+                        getConf().getTimeoutUnit());
     }
 
     private PDClient(TiSession session) {
@@ -313,7 +315,7 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub> impleme
         updateLeader(resp);
         service = Executors.newSingleThreadScheduledExecutor();
         service.scheduleAtFixedRate(() -> updateLeader(null),
-                                    1, 1, TimeUnit.MINUTES);
+                1, 1, TimeUnit.MINUTES);
     }
 
     static PDClient createRaw(TiSession session) {
