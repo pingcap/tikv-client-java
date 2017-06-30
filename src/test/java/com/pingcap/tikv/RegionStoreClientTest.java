@@ -78,6 +78,29 @@ public class RegionStoreClientTest {
     }
 
     @Test
+    public void rawGet() throws Exception {
+        RegionStoreClient client = createClient();
+        server.put("key1", "value1");
+        Kvrpcpb.Context context = Kvrpcpb.Context.newBuilder()
+                .setRegionId(region.getId())
+                .setRegionEpoch(region.getRegionEpoch())
+                .setPeer(region.getPeers(0))
+                .build();
+        ByteString value = client.rawGet(ByteString.copyFromUtf8("key1"), context);
+        assertEquals(ByteString.copyFromUtf8("value1"), value);
+
+        server.putError("error1", KVMockServer.ABORT);
+        try {
+            client.rawGet(ByteString.copyFromUtf8("error1"), context);
+            fail();
+        } catch (Exception e) {
+            assertTrue(true);
+        }
+        server.clearAllMap();
+        client.close();
+    }
+
+    @Test
     public void get() throws Exception {
         RegionStoreClient client = createClient();
         server.put("key1", "value1");

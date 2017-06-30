@@ -80,7 +80,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
         }
     }
 
-    public ByteString rawGet(ByteString key,Context context){
+    public ByteString rawGet(ByteString key, Context context){
         RawGetRequest rawGetRequest = RawGetRequest.newBuilder()
                 .setContext(context)
                 .setKey(key)

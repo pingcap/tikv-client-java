@@ -35,7 +35,7 @@ public class TikvClient {
 
     public byte[] get(String key) {
         Pair<RegionStoreClient, Kvrpcpb.Context> pair = checkAndGetClient(key);
-        ByteString rawgetresp = pair.first.rawGet(ByteString.copyFrom(key.getBytes()),pair.second);
+        ByteString rawgetresp = pair.first.rawGet(ByteString.copyFrom(key.getBytes()), pair.second);
         return rawgetresp.toByteArray();
     }
 

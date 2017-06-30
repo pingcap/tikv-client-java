@@ -96,6 +96,7 @@ public class KVMockServer extends TikvGrpc.TikvImplBase {
                 //builder.setError("");
             } else {
                 ByteString value = ByteString.copyFromUtf8(dataMap.get(key.toStringUtf8()));
+                builder.setValue(value);
             }
             responseObserver.onNext(builder.build());
             responseObserver.onCompleted();
