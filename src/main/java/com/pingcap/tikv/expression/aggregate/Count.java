@@ -4,6 +4,8 @@ import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.expression.TiFunctionExpression;
 import com.pingcap.tikv.types.DataType;
+import com.pingcap.tikv.types.DataTypeFactory;
+import com.pingcap.tikv.types.Types;
 
 public class Count extends TiFunctionExpression {
 
@@ -23,6 +25,6 @@ public class Count extends TiFunctionExpression {
 
     @Override
     public DataType getType() {
-        return this.args.get(0).getType();
+        return DataTypeFactory.of(Types.TYPE_LONG);
     }
 }

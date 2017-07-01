@@ -83,7 +83,7 @@ public class TiColumnRef implements TiExpr {
     }
 
     @Override
-    public void bind(TiTableInfo table) {
+    public TiColumnRef bind(TiTableInfo table) {
         TiColumnInfo columnInfo = getColumnWithName(name, table);
         if (columnInfo == null) {
             throw new TiExpressionException("No Matching columns from TiTableInfo");
@@ -100,6 +100,7 @@ public class TiColumnRef implements TiExpr {
         }
         this.tableInfo = table;
         this.columnInfo = columnInfo;
+        return this;
     }
 
     public String getName() {

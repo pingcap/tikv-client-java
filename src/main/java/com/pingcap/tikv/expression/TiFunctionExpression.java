@@ -100,9 +100,10 @@ public abstract class TiFunctionExpression implements TiExpr {
     }
 
     @Override
-    public void bind(TiTableInfo table) {
+    public TiFunctionExpression bind(TiTableInfo table) {
         for (TiExpr arg : args) {
             arg.bind(table);
         }
+        return this;
     }
 }

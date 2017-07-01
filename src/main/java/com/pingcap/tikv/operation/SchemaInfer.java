@@ -21,14 +21,13 @@ import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.operation.transformer.*;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.DataTypeFactory;
-import com.pingcap.tikv.types.Types;
+import com.pingcap.tikv.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.pingcap.tikv.types.Types.TYPE_BLOB;
-import static com.pingcap.tikv.types.Types.TYPE_VARCHAR;
 
 /**
  * SchemaInfer extract row's type after query is executed.
@@ -61,7 +60,7 @@ public class SchemaInfer {
         // a byte array. we make a multiple decoding
         // 3. for no aggregation case, make only projected columns
         if (tiSelectRequest.getGroupByItems().isEmpty()) {
-            if (!tiSelectRequest.getAggregates().isEmpty()) {
+            if (!tiSelectRequest.getAggregatePairs().isEmpty()) {
                 rowTrans.addProjection(Skip.SKIP_OP);
             }
         } else {
@@ -75,10 +74,9 @@ public class SchemaInfer {
         }
 
         // append aggregates if present
-        // TODO: consume target type from outside
-        if (tiSelectRequest.getAggregates().size() != 0) {
-            for (TiExpr agg : tiSelectRequest.getAggregates()) {
-                rowTrans.addProjection(new Cast(DataTypeFactory.of(Types.TYPE_LONG)));
+        if (!tiSelectRequest.getAggregatePairs().isEmpty()) {
+            for (Pair<TiExpr, DataType> pair : tiSelectRequest.getAggregatePairs()) {
+                rowTrans.addProjection(new Cast(pair.second));
             }
         } else {
             for (TiExpr field : tiSelectRequest.getFields()) {
@@ -95,16 +93,10 @@ public class SchemaInfer {
      * @param tiSelectRequest is SelectRequest
      */
     private void extractFieldTypes(TiSelectRequest tiSelectRequest) {
-        if (!tiSelectRequest.getGroupByItems().isEmpty()) {
-            types.add(DataTypeFactory.of(TYPE_BLOB));
-        }
-
         if (!tiSelectRequest.getAggregates().isEmpty()) {
             // In some cases, aggregates come without group by clause, we need add a dummy
             // single group for it.
-            if(tiSelectRequest.getGroupByItems().isEmpty()) {
-                types.add(DataTypeFactory.of(TYPE_VARCHAR));
-            }
+            types.add(DataTypeFactory.of(TYPE_BLOB));
             tiSelectRequest.getAggregates().forEach(
                     expr -> types.add(expr.getType())
             );

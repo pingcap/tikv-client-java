@@ -16,23 +16,21 @@
 package com.pingcap.tikv.meta;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.protobuf.ByteString;
 import com.pingcap.tidb.tipb.SelectRequest;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.expression.TiByItem;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
+import com.pingcap.tikv.types.DataType;
+import com.pingcap.tikv.util.Pair;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.pingcap.tikv.predicates.PredicateUtils.extractColumnRefFromExpr;
 import static com.pingcap.tikv.predicates.PredicateUtils.mergeCNFExpressions;
 import static java.util.Objects.requireNonNull;
 
@@ -53,19 +51,15 @@ public class TiSelectRequest implements Serializable {
         }
     }
 
-    private static final KeyRange FULL_RANGE = KeyRange
-                                                    .newBuilder()
-                                                    .setStart(ByteString.EMPTY)
-                                                    .setEnd(ByteString.EMPTY)
-                                                    .build();
-
     private TiTableInfo tableInfo;
     private TiIndexInfo indexInfo;
-    private final List<TiExpr> fields = new ArrayList<>();
+    private final List<TiColumnRef> fields = new ArrayList<>();
     private final List<TiExpr> where = new ArrayList<>();
     private final List<TiByItem> groupByItems = new ArrayList<>();
     private final List<TiByItem> orderByItems = new ArrayList<>();
-    private final List<TiExpr> aggregates = new ArrayList<>();
+    // System like Spark has different type promotion rules
+    // we need a cast to target when given
+    private final List<Pair<TiExpr, DataType>> aggregates = new ArrayList<>();
     private final List<KeyRange> keyRanges = new ArrayList<>();
 
     private int limit;
@@ -76,61 +70,52 @@ public class TiSelectRequest implements Serializable {
     private boolean distinct;
 
     public void bind() {
-        fields.forEach(expr -> expr.bind(tableInfo));
-        where.forEach(expr -> expr.bind(tableInfo));
-        groupByItems.forEach(item -> item.getExpr().bind(tableInfo));
-        orderByItems.forEach(item -> item.getExpr().bind(tableInfo));
-        aggregates.forEach(expr -> expr.bind(tableInfo));
+        getFields().forEach(expr -> expr.bind(tableInfo));
+        getWhere().forEach(expr -> expr.bind(tableInfo));
+        getGroupByItems().forEach(item -> item.getExpr().bind(tableInfo));
+        getOrderByItems().forEach(item -> item.getExpr().bind(tableInfo));
+        getAggregates().forEach(expr -> expr.bind(tableInfo));
         if (having != null) {
             having.bind(tableInfo);
         }
     }
 
-    public SelectRequest buildAsIndexScan() {
+    public SelectRequest buildIndexScan() {
         checkArgument(startTs != 0, "timestamp is 0");
         SelectRequest.Builder builder = SelectRequest.newBuilder();
         if (indexInfo == null) {
             throw new TiClientInternalException("Index is empty for index scan");
         }
-        builder.setIndexInfo(indexInfo.toProto(tableInfo));
-        builder.setFlags(flags);
-
-        builder.setTimeZoneOffset(timeZoneOffset);
-        builder.setStartTs(startTs);
-        return builder.build();
+        return builder
+               .setIndexInfo(indexInfo.toProto(tableInfo))
+               .setFlags(flags)
+               .setTimeZoneOffset(timeZoneOffset)
+               .setStartTs(startTs)
+               .build();
     }
 
-    public SelectRequest build() {
+    public SelectRequest buildTableScan() {
         checkArgument(startTs != 0, "timestamp is 0");
         SelectRequest.Builder builder = SelectRequest.newBuilder();
         // TODO: add optimize later
         // Optimize merge groupBy
-        fields.forEach(expr -> builder.addFields(expr.toProto()));
+        getFields().forEach(expr -> builder.addFields(expr.toProto()));
 
-        Set<TiColumnRef> usedColumnRef = new HashSet<>();
-        if (!fields.isEmpty()) {
-            for (TiExpr field : fields) {
-                builder.addFields(field.toProto());
-                usedColumnRef.addAll(extractColumnRefFromExpr(field));
-            }
-        }
-
-        for (TiByItem item : groupByItems) {
+        for (TiByItem item : getGroupByItems()) {
             builder.addGroupBy(item.toProto());
-            usedColumnRef.addAll(extractColumnRefFromExpr(item.getExpr()));
         }
 
-        for (TiByItem item : orderByItems) {
+        for (TiByItem item : getOrderByItems()) {
             builder.addOrderBy(item.toProto());
         }
 
-        for (TiExpr agg : aggregates) {
+        for (TiExpr agg : getAggregates()) {
             builder.addAggregates(agg.toProto());
         }
 
-        List<TiColumnInfo> columns = tableInfo.getColumns()
+        List<TiColumnInfo> columns = getFields()
                 .stream()
-                .filter(col -> usedColumnRef.contains(TiColumnRef.create(col, tableInfo)))
+                .map(col -> col.bind(tableInfo).getColumnInfo())
                 .collect(Collectors.toList());
 
         TiTableInfo filteredTable = new TiTableInfo(
@@ -148,17 +133,17 @@ public class TiSelectRequest implements Serializable {
                 tableInfo.getOldSchemaId()
         );
 
-        TiExpr whereExpr = mergeCNFExpressions(where);
+        TiExpr whereExpr = mergeCNFExpressions(getWhere());
         if (whereExpr != null) {
             builder.setWhere(whereExpr.toProto());
         }
 
-        builder.setTableInfo(filteredTable.toProto());
-        builder.setFlags(flags);
-
-        builder.setTimeZoneOffset(timeZoneOffset);
-        builder.setStartTs(startTs);
-        return builder.build();
+        return builder
+               .setTableInfo(filteredTable.toProto())
+               .setFlags(flags)
+               .setTimeZoneOffset(timeZoneOffset)
+               .setStartTs(startTs)
+               .build();
     }
 
     public TiSelectRequest setTableInfo(TiTableInfo tableInfo) {
@@ -267,11 +252,22 @@ public class TiSelectRequest implements Serializable {
      * @return a SelectBuilder
      */
     public TiSelectRequest addAggregate(TiExpr expr) {
-        aggregates.add(requireNonNull(expr, "aggregation expr is null"));
+        requireNonNull(expr, "aggregation expr is null");
+        aggregates.add(Pair.create(expr, expr.getType()));
+        return this;
+    }
+
+    public TiSelectRequest addAggregate(TiExpr expr, DataType targetType) {
+        requireNonNull(expr, "aggregation expr is null");
+        aggregates.add(Pair.create(expr, targetType));
         return this;
     }
 
     public List<TiExpr> getAggregates() {
+        return aggregates.stream().map(p -> p.first).collect(Collectors.toList());
+    }
+
+    public List<Pair<TiExpr, DataType>> getAggregatePairs() {
         return aggregates;
     }
 
@@ -306,18 +302,21 @@ public class TiSelectRequest implements Serializable {
     }
 
     /**
-     * field is not support in TiDB yet, but we still implement this
-     * in case of TiDB support it in future.
-     * The usage of this function will be simple query such as select c1 from t.
+     * Field is not support in TiDB yet, for here we simply allow
+     * TiColumnRef instead of TiExpr like in SelectRequest proto
      *
-     * @param expr expr is a TiExpr. It is usually TiColumnRef.
+     * This interface allows duplicate columns and it's user's
+     * responsibility to do dedup since we need to ensure
+     * exact order and items preserved during decoding
+     *
+     * @param column is column referred during selectReq
      */
-    public TiSelectRequest addField(TiExpr expr) {
-        fields.add(requireNonNull(expr, "Field expr is null"));
+    public TiSelectRequest addField(TiColumnRef column) {
+        fields.add(requireNonNull(column, "columnRef is null"));
         return this;
     }
 
-    public List<TiExpr> getFields() {
+    public List<TiColumnRef> getFields() {
         return fields;
     }
 

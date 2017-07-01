@@ -93,8 +93,8 @@ public class TiConstant implements TiExpr {
     }
 
     @Override
-    public void bind(TiTableInfo table) {
-        return;
+    public TiConstant bind(TiTableInfo table) {
+        return this;
     }
 
     @Override
