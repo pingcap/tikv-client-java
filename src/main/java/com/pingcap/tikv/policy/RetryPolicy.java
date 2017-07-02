@@ -22,6 +22,7 @@ import io.grpc.Status;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.UncheckedIOException;
 import java.util.concurrent.Callable;
 
 public abstract class RetryPolicy {
@@ -34,7 +35,7 @@ public abstract class RetryPolicy {
             Status.Code.ALREADY_EXISTS, Status.Code.PERMISSION_DENIED,
             Status.Code.INVALID_ARGUMENT, Status.Code.NOT_FOUND,
             Status.Code.UNIMPLEMENTED, Status.Code.OUT_OF_RANGE,
-            Status.Code.UNAUTHENTICATED
+            Status.Code.UNAUTHENTICATED, Status.Code.CANCELLED
     );
 
     public RetryPolicy(ErrorHandler handler) {
@@ -56,6 +57,10 @@ public abstract class RetryPolicy {
         while (true) {
             try {
                 T result = proc.call();
+                // TODO: null check is only for temporary. In theory, every rpc call need
+                // have some mechanism to retry call. The reason we allow this having two reason:
+                // 1. Test's resp is null
+                // 2. getTimestamp pass a null error handler for now, since impl of it is not correct yet.
                 if(handler != null) {
                     handler.handle(result);
                 }

@@ -22,6 +22,9 @@ import com.pingcap.tikv.exception.RegionException;
 import com.pingcap.tikv.grpc.Errorpb;
 import com.pingcap.tikv.grpc.Kvrpcpb;
 import com.pingcap.tikv.grpc.Pdpb;
+import io.grpc.Status;
+import io.grpc.StatusException;
+import io.grpc.StatusRuntimeException;
 
 import java.util.function.Function;
 
@@ -45,32 +48,33 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
                 // update Leader here
                 // no need update here. just let retry take control of this.
 //                regionManager.updateLeader(context.getRegionId(), error.getNotLeader().getLeader().getStoreId());
-                throw new RegionException(error);
+                throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE));
             }
             if (error.hasRegionNotFound()) {
                 // throw RegionNotFound exception
-                throw new RegionException(error);
+                throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE));
             }
             // no need retry
             if (error.hasStaleEpoch()) {
-//                 regionManager.onRegionStale(context.getRegionId(), error.getStaleEpoch().getNewRegionsList());
-                throw new IllegalStateException("StaleEpoch is not need to retry");
+                // regionManager.onRegionStale(context.getRegionId(), error.getStaleEpoch().getNewRegionsList());
+                // StaleEpoch is not need to retry
+                throw new StatusRuntimeException(Status.fromCode(Status.Code.CANCELLED));
             }
 
             if (error.hasServerIsBusy()) {
-                throw new RegionException(error);
+                throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE));
             }
 
             // do not handle it in this level. this can be retryed.
             if (error.hasStaleCommand()) {
-                throw new RegionException(error);
+                throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE));
             }
 
             if (error.hasRaftEntryTooLarge()) {
-                throw new RegionException(error);
+                throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE));
             }
             // for other errors, we only drop cache here.
-//            regionManager.invalidateRegion(context.getRegionId());
+            // regionManager.invalidateRegion(context.getRegionId());
         }
     }
 }

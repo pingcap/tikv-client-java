@@ -88,12 +88,11 @@ public class KVMockServer extends TikvGrpc.TikvImplBase {
             ByteString key = request.getKey();
 
             Kvrpcpb.RawGetResponse.Builder builder = Kvrpcpb.RawGetResponse.newBuilder();
-            Integer errorCode = errorMap.get(key);
+            Integer errorCode = errorMap.remove(key);
             Errorpb.Error.Builder errBuilder = Errorpb.Error.newBuilder();
             if (errorCode != null) {
                setErrorInfo(errorCode, errBuilder);
                 builder.setRegionError(errBuilder.build());
-                //builder.setError("");
             } else {
                 ByteString value = ByteString.copyFromUtf8(dataMap.get(key.toStringUtf8()));
                 builder.setValue(value);
