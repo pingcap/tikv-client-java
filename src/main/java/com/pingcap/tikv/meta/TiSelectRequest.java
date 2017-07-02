@@ -97,8 +97,6 @@ public class TiSelectRequest implements Serializable {
     public SelectRequest buildTableScan() {
         checkArgument(startTs != 0, "timestamp is 0");
         SelectRequest.Builder builder = SelectRequest.newBuilder();
-        // TODO: add optimize later
-        // Optimize merge groupBy
         getFields().forEach(expr -> builder.addFields(expr.toProto()));
 
         for (TiByItem item : getGroupByItems()) {
@@ -113,10 +111,16 @@ public class TiSelectRequest implements Serializable {
             builder.addAggregates(agg.toProto());
         }
 
-        List<TiColumnInfo> columns = getFields()
-                .stream()
-                .map(col -> col.bind(tableInfo).getColumnInfo())
-                .collect(Collectors.toList());
+        List<TiColumnInfo> columns;
+
+        if (!getGroupByItems().isEmpty() || !getAggregates().isEmpty()) {
+            columns = tableInfo.getColumns();
+        } else {
+            columns = getFields()
+                    .stream()
+                    .map(col -> col.bind(tableInfo).getColumnInfo())
+                    .collect(Collectors.toList());
+        }
 
         TiTableInfo filteredTable = new TiTableInfo(
                 tableInfo.getId(),
