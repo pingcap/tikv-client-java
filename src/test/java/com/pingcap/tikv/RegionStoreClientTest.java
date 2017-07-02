@@ -90,15 +90,14 @@ public class RegionStoreClientTest {
         assertEquals(ByteString.copyFromUtf8("value1"), value);
 
         server.putError("error1", KVMockServer.NOT_LEADER);
-            // since not_leader is retryable, so the result should be correct.
-        client.rawGet(ByteString.copyFromUtf8("key1"), context);
+        // since not_leader is retryable, so the result should be correct.
+        value = client.rawGet(ByteString.copyFromUtf8("key1"), context);
         assertEquals(ByteString.copyFromUtf8("value1"), value);
 
         server.putError("failure", KVMockServer.STALE_EPOCH);
         try {
-            // since not_leader is retrable, so the result should be correct.
+            // since stale epoch is not retrable, so the test should fail.
             client.rawGet(ByteString.copyFromUtf8("failure"), context);
-            assertEquals(ByteString.copyFromUtf8("value1"), value);
             fail();
         } catch (Exception e) {
             assertTrue(true);
