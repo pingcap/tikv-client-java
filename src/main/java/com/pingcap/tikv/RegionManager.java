@@ -76,17 +76,6 @@ public class RegionManager {
         keyToRegionIdCache =  TreeRangeMap.create();
     }
 
-    public static RegionManager getInstance(ReadOnlyPDClient client) {
-       if (instance == null) {
-           synchronized (RegionManager.class) {
-               if (instance == null) {
-                   instance = new RegionManager(client);
-               }
-           }
-       }
-       return instance;
-    }
-
     @VisibleForTesting
     static void reset() {
         instance = null;

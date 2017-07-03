@@ -38,7 +38,7 @@ public class RegionManagerTest {
     public void setup() throws IOException {
         server = new PDMockServer();
         server.start(CLUSTER_ID);
-        mgr = RegionManager.getInstance(createClient());
+        mgr = new RegionManager(createClient());
     }
 
     @After

@@ -22,17 +22,19 @@ import com.pingcap.tikv.grpc.Pdpb;
 import java.util.function.Function;
 
 public class PDErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
-    private final Function<RespT, Pdpb.Error> getRegionError;
+    private final Function<RespT, Pdpb.Error> getError;
 
     public PDErrorHandler(Function<RespT, Pdpb.Error> errorExtractor) {
-       this.getRegionError = errorExtractor;
+       this.getError = errorExtractor;
     }
 
     public void handle(RespT resp) {
         if(resp == null) {
-//            throw new IllegalArgumentException("resp can not be null");
             return;
         }
-        Pdpb.Error error = getRegionError.apply(resp);
+        Pdpb.Error error = getError.apply(resp);
+        if (error != null) {
+
+        }
     }
 }
