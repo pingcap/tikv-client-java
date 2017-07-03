@@ -60,7 +60,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setVersion(version)
                 .build();
         KVErrorHandler<GetResponse> handler =
-                new KVErrorHandler<>(regionManager, context.getRegionId(), GetResponse::getRegionError);
+                new KVErrorHandler<>(regionManager, context, GetResponse::getRegionError);
         GetResponse resp = callWithRetry(TikvGrpc.METHOD_KV_GET, request, handler);
         return getHelper(resp);
     }
@@ -73,7 +73,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .build();
 
         KVErrorHandler<RawPutResponse> handler =
-                new KVErrorHandler<>(regionManager, context.getRegionId(), RawPutResponse::getRegionError);
+                new KVErrorHandler<>(regionManager, context, RawPutResponse::getRegionError);
         RawPutResponse resp = callWithRetry(TikvGrpc.METHOD_RAW_PUT, rawPutRequest, handler);
         if (resp.hasRegionError()) {
             throw new RegionException(resp.getRegionError());
@@ -86,7 +86,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setKey(key)
                 .build();
         KVErrorHandler<RawGetResponse> handler =
-                new KVErrorHandler<>(regionManager, context.getRegionId(), RawGetResponse::getRegionError);
+                new KVErrorHandler<>(regionManager, context, RawGetResponse::getRegionError);
         RawGetResponse resp = callWithRetry(TikvGrpc.METHOD_RAW_GET, rawGetRequest, handler);
 
         if (resp.hasRegionError()) {
@@ -102,7 +102,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .build();
 
         KVErrorHandler<RawDeleteResponse> handler =
-                new KVErrorHandler<>(regionManager, context.getRegionId(), RawDeleteResponse::getRegionError);
+                new KVErrorHandler<>(regionManager, context, RawDeleteResponse::getRegionError);
         RawDeleteResponse resp = callWithRetry(TikvGrpc.METHOD_RAW_DELETE, rawDeleteRequest,  handler);
         if (resp.hasRegionError()) {
             throw new RegionException(resp.getRegionError());
@@ -119,7 +119,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .build();
 
         KVErrorHandler<GetResponse> handler =
-                new KVErrorHandler<>(regionManager, context.getRegionId(), GetResponse::getRegionError);
+                new KVErrorHandler<>(regionManager, context, GetResponse::getRegionError);
         callAsyncWithRetry(TikvGrpc.METHOD_KV_GET, request, responseObserver, handler);
         return responseObserver.getFuture();
     }
@@ -141,7 +141,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setVersion(version)
                 .build();
         KVErrorHandler<BatchGetResponse> handler =
-                new KVErrorHandler<>(regionManager, context.getRegionId(), BatchGetResponse::getRegionError);
+                new KVErrorHandler<>(regionManager, context, BatchGetResponse::getRegionError);
         BatchGetResponse resp = callWithRetry(TikvGrpc.METHOD_KV_BATCH_GET, request, handler);
         return batchGetHelper(resp);
     }
@@ -157,7 +157,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .build();
 
         KVErrorHandler<BatchGetResponse> handler =
-                new KVErrorHandler<>(regionManager, context.getRegionId(), BatchGetResponse::getRegionError);
+                new KVErrorHandler<>(regionManager, context, BatchGetResponse::getRegionError);
         callAsyncWithRetry(TikvGrpc.METHOD_KV_BATCH_GET, request, responseObserver, handler);
         return responseObserver.getFuture();
     }
@@ -186,7 +186,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setLimit(getConf().getScanBatchSize())
                 .build();
         KVErrorHandler<ScanResponse> handler =
-                new KVErrorHandler<>(regionManager, context.getRegionId(), ScanResponse::getRegionError);
+                new KVErrorHandler<>(regionManager, context, ScanResponse::getRegionError);
         ScanResponse resp = callWithRetry(TikvGrpc.METHOD_KV_SCAN, request, handler);
         return scanHelper(resp);
     }
@@ -203,7 +203,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .build();
 
         KVErrorHandler<ScanResponse> handler =
-                new KVErrorHandler<>(regionManager, context.getRegionId(), ScanResponse::getRegionError);
+                new KVErrorHandler<>(regionManager, context, ScanResponse::getRegionError);
         callAsyncWithRetry(TikvGrpc.METHOD_KV_SCAN, request, responseObserver, handler);
         return responseObserver.getFuture();
     }
@@ -223,7 +223,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .addAllRanges(ranges)
                 .build();
         KVErrorHandler<Coprocessor.Response> handler =
-                new KVErrorHandler<>(regionManager, context.getRegionId(), Coprocessor.Response::getRegionError);
+                new KVErrorHandler<>(regionManager, context, Coprocessor.Response::getRegionError);
         Coprocessor.Response resp = callWithRetry(TikvGrpc.METHOD_COPROCESSOR, reqToSend, handler);
         return coprocessorHelper(resp);
     }
@@ -238,7 +238,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .addAllRanges(ranges)
                 .build();
         KVErrorHandler<Coprocessor.Response> handler =
-                new KVErrorHandler<>(regionManager, context.getRegionId(), Coprocessor.Response::getRegionError);
+                new KVErrorHandler<>(regionManager, context, Coprocessor.Response::getRegionError);
         callAsyncWithRetry(TikvGrpc.METHOD_COPROCESSOR, reqToSend, responseObserver, handler);
         return responseObserver.getFuture();
     }

@@ -205,4 +205,10 @@ public class RegionManager {
         return Range.closedOpen(startKey.asReadOnlyByteBuffer(),
                                 endKey.asReadOnlyByteBuffer());
     }
+
+    public void onRequestFail(long regionID, long storeID) {
+        //region on request failure
+        // check equality of storeID and region's storeID
+        // try to select another valid leader peer
+    }
 }

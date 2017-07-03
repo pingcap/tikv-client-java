@@ -24,7 +24,7 @@ import com.pingcap.tikv.grpc.Pdpb;
 
 import java.util.function.Function;
 
-public interface ErrorHandler<RespT, Error> {
+public interface ErrorHandler<RespT, ErrorT> {
     void handle(RespT resp);
 }
 

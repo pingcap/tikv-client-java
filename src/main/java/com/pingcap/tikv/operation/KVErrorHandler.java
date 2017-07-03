@@ -26,15 +26,16 @@ import io.grpc.Status;
 import io.grpc.StatusException;
 import io.grpc.StatusRuntimeException;
 
+import java.util.concurrent.Callable;
 import java.util.function.Function;
 
 public class KVErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
     private Function<RespT, Errorpb.Error> getRegionError;
     private RegionManager regionManager;
-    private long regionID;
+    private Kvrpcpb.Context ctx;
 
-    public KVErrorHandler(RegionManager regionManager, long regionID, Function<RespT, Errorpb.Error> getRegionError) {
-       this.regionID = regionID;
+    public KVErrorHandler(RegionManager regionManager, Kvrpcpb.Context ctx, Function<RespT, Errorpb.Error> getRegionError) {
+        this.ctx = ctx;
        this.regionManager = regionManager;
        this.getRegionError = getRegionError;
     }
@@ -47,21 +48,25 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
             if (error.hasNotLeader()) {
                 // update Leader here
                 // no need update here. just let retry take control of this.
-//                regionManager.updateLeader(context.getRegionId(), error.getNotLeader().getLeader().getStoreId());
+                this.regionManager.updateLeader(ctx.getRegionId(), ctx.getPeer().getStoreId());
+                // TODO add sleep here
                 throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE));
             }
-            if (error.hasRegionNotFound()) {
-                // throw RegionNotFound exception
+            if (error.hasStoreNotMatch()) {
+                this.regionManager.invalidateStore(ctx.getPeer().getStoreId());
                 throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE));
             }
-            // no need retry
+
+             // no need retry
             if (error.hasStaleEpoch()) {
                 // regionManager.onRegionStale(context.getRegionId(), error.getStaleEpoch().getNewRegionsList());
                 // StaleEpoch is not need to retry
+                this.regionManager.onRegionStale(ctx.getRegionId(), error.getStaleEpoch().getNewRegionsList());
                 throw new StatusRuntimeException(Status.fromCode(Status.Code.CANCELLED));
             }
 
             if (error.hasServerIsBusy()) {
+                // TODO add some sleep here.
                 throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE));
             }
 
@@ -74,7 +79,7 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
                 throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE));
             }
             // for other errors, we only drop cache here.
-            // regionManager.invalidateRegion(context.getRegionId());
+            this.regionManager.invalidateRegion(ctx.getRegionId());
         }
     }
 }

@@ -22,7 +22,6 @@ import io.grpc.Status;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.UncheckedIOException;
 import java.util.concurrent.Callable;
 
 public abstract class RetryPolicy {
@@ -66,6 +65,8 @@ public abstract class RetryPolicy {
                 }
                 return result;
             } catch (Exception e) {
+                // TODO retry is keep sending request to server, this is really bad behavior here. More refractory on the
+                // way
                 Status status = Status.fromThrowable(e);
                 if (checkNotRecoverableException(status) || !shouldRetry(e)) {
                     logger.error("Failed to recover from last grpc error calling %s.", methodName);
