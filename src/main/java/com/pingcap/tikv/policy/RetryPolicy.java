@@ -17,6 +17,7 @@ package com.pingcap.tikv.policy;
 
 import com.google.common.collect.ImmutableSet;
 import com.pingcap.tikv.exception.GrpcException;
+import com.pingcap.tikv.operation.ErrorHandler;
 import io.grpc.Status;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,7 +28,7 @@ public abstract class RetryPolicy {
     private static final Logger logger = LogManager.getFormatterLogger(RetryPolicy.class);
 
     // Basically a leader recheck method
-    private Callable<Void> recoverMethod;
+    private ErrorHandler handler;
 
     private ImmutableSet<Status.Code> unrecoverableStatus = ImmutableSet.of(
             Status.Code.ALREADY_EXISTS, Status.Code.PERMISSION_DENIED,
@@ -36,8 +37,8 @@ public abstract class RetryPolicy {
             Status.Code.UNAUTHENTICATED
     );
 
-    public RetryPolicy(Callable<Void> recoverMethod) {
-        this.recoverMethod = recoverMethod;
+    public RetryPolicy(ErrorHandler handler) {
+        this.handler = handler;
     }
 
     protected abstract boolean shouldRetry(Exception e);
@@ -55,6 +56,7 @@ public abstract class RetryPolicy {
         while (true) {
             try {
                 T result = proc.call();
+                handler.handle(result);
                 return result;
             } catch (Exception e) {
                 Status status = Status.fromThrowable(e);
@@ -63,10 +65,6 @@ public abstract class RetryPolicy {
                     throw new GrpcException(e);
                 }
                 try {
-                    if (recoverMethod != null && checkNotLeaderException(status)) {
-                        logger.info("Leader switched, recovering...");
-                        recoverMethod.call();
-                    }
                 } catch (Exception e1) {
                     // Ignore exception further spreading
                     logger.error("Error during grpc leader update.", e1);
@@ -76,6 +74,6 @@ public abstract class RetryPolicy {
     }
 
     public interface Builder {
-        RetryPolicy create(Callable<Void> recoverMethod);
+        RetryPolicy create(ErrorHandler handler);
     }
 }
