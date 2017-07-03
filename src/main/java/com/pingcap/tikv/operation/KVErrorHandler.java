@@ -38,7 +38,7 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
     }
 
     public void handle(RespT resp) {
-        // this is for test. In reality, resp is never null.
+        // if resp is null, then region maybe out of dated. we need handle this on RegionManager.
         if (resp == null) {
             this.regionManager.onRequestFail(ctx.getRegionId(), ctx.getPeer().getStoreId());
             return;
@@ -57,10 +57,9 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
                 throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE));
             }
 
-             // no need retry
+             // no need retry. NewRegions is returned in this response. we just need update RegionManage's region cache.
             if (error.hasStaleEpoch()) {
                  regionManager.onRegionStale(ctx.getRegionId(), error.getStaleEpoch().getNewRegionsList());
-                // StaleEpoch is not need to retry
                 this.regionManager.onRegionStale(ctx.getRegionId(), error.getStaleEpoch().getNewRegionsList());
                 throw new StatusRuntimeException(Status.fromCode(Status.Code.CANCELLED));
             }
@@ -70,7 +69,6 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
                 throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE));
             }
 
-            // do not handle it in this level. this can be retryed.
             if (error.hasStaleCommand()) {
                 throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE));
             }
@@ -78,7 +76,7 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
             if (error.hasRaftEntryTooLarge()) {
                 throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE));
             }
-            // for other errors, we only drop cache here.
+            // for other errors, we only drop cache here and throw a retryable exception.
             this.regionManager.invalidateRegion(ctx.getRegionId());
         }
     }
