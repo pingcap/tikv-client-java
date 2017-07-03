@@ -21,6 +21,7 @@ import com.pingcap.tidb.tipb.Chunk;
 import com.pingcap.tidb.tipb.SelectResponse;
 import com.pingcap.tikv.RegionManager;
 import com.pingcap.tikv.RegionStoreClient;
+import com.pingcap.tikv.TiRegion;
 import com.pingcap.tikv.TiSession;
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.exception.TiClientInternalException;
@@ -84,7 +85,7 @@ public class SelectIterator implements Iterator<Row> {
             RegionTask regionTask = rangeToRegions.get(index++);
 
             List<KeyRange> ranges = regionTask.getRanges();
-            Region region = regionTask.getRegion();
+            TiRegion region = regionTask.getRegion();
             Store store = regionTask.getStore();
 
             try (RegionStoreClient client = RegionStoreClient.create(region, store, session, regionManager)) {

@@ -33,9 +33,7 @@ import com.pingcap.tikv.util.Pair;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.nio.ByteBuffer;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -43,11 +41,10 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class RegionManager {
     private final ReadOnlyPDClient pdClient;
-    private final LoadingCache<Long, Future<Region>> regionCache;
+    private final LoadingCache<Long, Future<TiRegion>> regionCache;
     private final LoadingCache<Long, Future<Store>> storeCache;
     private final RangeMap<ByteBuffer, Long> keyToRegionIdCache;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    private static RegionManager instance;
 
     public static final int MAX_CACHE_CAPACITY = 4096;
 
@@ -58,9 +55,9 @@ public class RegionManager {
         this.pdClient = pdClient;
         regionCache = CacheBuilder.newBuilder()
                 .maximumSize(MAX_CACHE_CAPACITY)
-                .build(new CacheLoader<Long, Future<Region>>() {
+                .build(new CacheLoader<Long, Future<TiRegion>>() {
                     @ParametersAreNonnullByDefault
-                    public Future<Region> load(Long key) {
+                    public Future<TiRegion> load(Long key) {
                         return pdClient.getRegionByIDAsync(key);
                     }
                 });
@@ -76,16 +73,11 @@ public class RegionManager {
         keyToRegionIdCache =  TreeRangeMap.create();
     }
 
-    @VisibleForTesting
-    static void reset() {
-        instance = null;
-    }
-
     public TiSession getSession() {
         return pdClient.getSession();
     }
 
-    public Region getRegionByKey(ByteString key) {
+    public TiRegion getRegionByKey(ByteString key) {
         Long regionId;
         lock.readLock().lock();
         try {
@@ -95,7 +87,7 @@ public class RegionManager {
         }
 
         if (regionId == null) {
-            Region region = pdClient.getRegionByKey(key);
+            TiRegion region = pdClient.getRegionByKey(key);
             if (!putRegion(region)) {
                 throw new TiClientInternalException("Invalid Region: " + region.toString());
             }
@@ -107,7 +99,7 @@ public class RegionManager {
     public void invalidateRegion(long regionId) {
         lock.writeLock().lock();
         try {
-            Region region = regionCache.getUnchecked(regionId).get();
+            TiRegion region = regionCache.getUnchecked(regionId).get();
             keyToRegionIdCache.remove(makeRange(region.getStartKey(),
                                                 region.getEndKey()));
         } catch (Exception ignore) {
@@ -121,17 +113,17 @@ public class RegionManager {
         storeCache.invalidate(storeId);
     }
 
-    public Pair<Region, Store> getRegionStorePairByKey(ByteString key) {
-        Region region = getRegionByKey(key);
-        if (!ifValidRegion(region)) {
+    public Pair<TiRegion, Store> getRegionStorePairByKey(ByteString key) {
+        TiRegion region = getRegionByKey(key);
+        if (!region.isValid()) {
             throw new TiClientInternalException("Region invalid: " + region.toString());
         }
-        Peer leader = region.getPeers(0);
+        Peer leader = region.getLeader();
         long storeId = leader.getStoreId();
         return Pair.create(region, getStoreById(storeId));
     }
 
-    public Region getRegionById(long id) {
+    public TiRegion getRegionById(long id) {
         try {
             return regionCache.getUnchecked(id).get();
         } catch (Exception e) {
@@ -153,10 +145,10 @@ public class RegionManager {
                 !region.hasEndKey());
     }
 
-    private boolean putRegion(Region region) {
+    private boolean putRegion(TiRegion region) {
         if (!region.hasStartKey() || !region.hasEndKey()) return false;
 
-        SettableFuture<Region> regionFuture = SettableFuture.create();
+        SettableFuture<TiRegion> regionFuture = SettableFuture.create();
         regionFuture.set(region);
         regionCache.put(region.getId(), regionFuture);
 
@@ -169,9 +161,10 @@ public class RegionManager {
         }
         return true;
     }
+
     public void onRegionStale(long regionID, List<Region> regions) {
         invalidateRegion(regionID);
-        regions.forEach(this::putRegion);
+        regions.stream().map(r -> new TiRegion(r, r.getPeers(0))).forEach(this::putRegion);
     }
 
     private boolean isRegionLeaderSwitched(Region region, long storeID) {
@@ -182,10 +175,10 @@ public class RegionManager {
 
     public void updateLeader(long regionID, long storeID) {
         try {
-            Region region = regionCache.getUnchecked(regionID).get();
-            if(isRegionLeaderSwitched(region, storeID)) {
-                invalidateRegion(regionID);
-            }
+            TiRegion region = regionCache.getUnchecked(regionID).get();
+//            if(isRegionLeaderSwitched(region, storeID)) {
+//                invalidateRegion(regionID);
+//            }
         } catch (InterruptedException | ExecutionException e) {
         }
     }
@@ -199,5 +192,20 @@ public class RegionManager {
         //region on request failure
         // check equality of storeID and region's storeID
         // try to select another valid leader peer
+        try {
+            TiRegion region = regionCache.get(regionID).get();
+//            if(region.getLeader().getStoreId() == storeID) {
+//                Set<Long> tmpSet = this.regionUnreachableStoreMap.getOrDefault(storeID, new HashSet<>());
+//                tmpSet.add(storeID);
+//                this.regionUnreachableStoreMap.put(regionID, tmpSet);
+//                for(int i = 0; i < region.getPeersList().size(); i++) {
+//
+//                }
+//            }
+            // store's meta may be out of date.
+            invalidateStore(storeID);
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
     }
 }

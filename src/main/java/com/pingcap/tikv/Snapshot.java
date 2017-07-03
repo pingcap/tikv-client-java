@@ -68,7 +68,7 @@ public class Snapshot {
     }
 
     public ByteString get(ByteString key) {
-        Pair<Region, Store> pair = regionCache.getRegionStorePairByKey(key);
+        Pair<TiRegion, Store> pair = regionCache.getRegionStorePairByKey(key);
         RegionStoreClient client = RegionStoreClient.create(pair.first, pair.second, getSession(), regionCache);
         // TODO: Need to deal with lock error after grpc stable
         return client.get(key, version.getVersion());
@@ -126,14 +126,14 @@ public class Snapshot {
     // TODO: Need faster implementation, say concurrent version
     // Assume keys sorted
     public List<KvPair> batchGet(List<ByteString> keys) {
-        Region curRegion = null;
+        TiRegion curRegion = null;
         Range<ByteBuffer> curKeyRange = null;
-        Pair<Region, Store> lastPair = null;
+        Pair<TiRegion, Store> lastPair = null;
         List<ByteString> keyBuffer = new ArrayList<>();
         List<KvPair> result = new ArrayList<>(keys.size());
         for (ByteString key : keys) {
             if (curRegion == null || !curKeyRange.contains(key.asReadOnlyByteBuffer())) {
-                Pair<Region, Store> pair = regionCache.getRegionStorePairByKey(key);
+                Pair<TiRegion, Store> pair = regionCache.getRegionStorePairByKey(key);
                 lastPair = pair;
                 curRegion = pair.first;
                 curKeyRange = Range.closedOpen(

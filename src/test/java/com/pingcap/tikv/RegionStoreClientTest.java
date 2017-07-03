@@ -40,11 +40,11 @@ public class RegionStoreClientTest {
     private static final String LOCAL_ADDR = "127.0.0.1";
     private int port;
     private TiSession session;
-    private Metapb.Region region;
+    private TiRegion region;
 
     @Before
     public void setUp() throws Exception {
-        region = Metapb.Region.newBuilder()
+        Metapb.Region r = Metapb.Region.newBuilder()
                 .setRegionEpoch(Metapb.RegionEpoch.newBuilder()
                                     .setConfVer(1)
                                     .setVersion(2))
@@ -55,6 +55,7 @@ public class RegionStoreClientTest {
                                     .setId(11)
                                     .setStoreId(13))
                 .build();
+        region = new TiRegion(r, r.getPeers(0));
         server = new KVMockServer();
         port = server.start(region);
         // No PD needed in this test
@@ -84,7 +85,7 @@ public class RegionStoreClientTest {
         Kvrpcpb.Context context = Kvrpcpb.Context.newBuilder()
                 .setRegionId(region.getId())
                 .setRegionEpoch(region.getRegionEpoch())
-                .setPeer(region.getPeers(0))
+                .setPeer(region.getLeader())
                 .build();
         ByteString value = client.rawGet(ByteString.copyFromUtf8("key1"), context);
         assertEquals(ByteString.copyFromUtf8("value1"), value);

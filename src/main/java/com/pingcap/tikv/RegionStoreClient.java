@@ -269,7 +269,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
             .maximumSize(MAX_CACHE_CAPACITY)
             .build();
 
-    public static RegionStoreClient create(Region region, Store store, TiSession session, RegionManager regionManager) {
+    public static RegionStoreClient create(TiRegion region, Store store, TiSession session, RegionManager regionManager) {
         RegionStoreClient client = null;
         String addressStr = store.getAddress();
         try {
@@ -298,23 +298,19 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
         return client;
     }
 
-    private RegionStoreClient(Region region, TiSession session,
+    private RegionStoreClient(TiRegion region, TiSession session,
                               RegionManager regionManager,
                               ManagedChannel channel,
                               TikvBlockingStub blockingStub,
                               TikvStub asyncStub) {
         super(session);
         checkNotNull(region, "Region is empty");
-        checkArgument(region.getPeersCount() > 0, "Peer is empty");
+        checkArgument(region.getLeader() != null, "Leader Peer is null");
         this.channel = channel;
         this.regionManager = regionManager;
         this.blockingStub = blockingStub;
         this.asyncStub = asyncStub;
-        this.context = Context.newBuilder()
-                .setRegionId(region.getId())
-                .setRegionEpoch(region.getRegionEpoch())
-                .setPeer(region.getPeers(0))
-                .build();
+        this.context = region.getContext();
     }
 
     @Override

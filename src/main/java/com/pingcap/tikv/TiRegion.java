@@ -20,14 +20,16 @@ package com.pingcap.tikv;
 
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.grpc.Kvrpcpb;
+import com.pingcap.tikv.grpc.Metapb;
 import com.pingcap.tikv.grpc.Metapb.Peer;
 import com.pingcap.tikv.grpc.Metapb.Region;
-import com.sun.org.apache.regexp.internal.RE;
+
+import java.util.Set;
 
 public class TiRegion {
     private Region meta;
     private Peer peer;
-    private long[] unreachableStores;
+    private Set<Long> unreachableStores;
 
     public TiRegion(Region meta, Peer peer) {
         this.meta = meta;
@@ -48,7 +50,7 @@ public class TiRegion {
         }
     }
 
-    public long getID() {
+    public long getId() {
         return this.meta.getId();
     }
 
@@ -59,11 +61,11 @@ public class TiRegion {
         return new RegionVerID(id, confVer, ver);
     }
 
-    public ByteString startKey() {
+    public ByteString getStartKey() {
         return meta.getStartKey();
     }
 
-    public ByteString endKey() {
+    public ByteString getEndKey() {
         return meta.getEndKey();
     }
 
@@ -111,6 +113,10 @@ public class TiRegion {
 
     public boolean hasEndKey() {
         return meta.hasEndKey();
+    }
+
+    public Metapb.RegionEpoch getRegionEpoch() {
+        return this.meta.getRegionEpoch();
     }
 
     public Region getMeta() {

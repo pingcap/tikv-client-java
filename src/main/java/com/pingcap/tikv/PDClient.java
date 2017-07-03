@@ -77,7 +77,7 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub> impleme
     }
 
     @Override
-    public Region getRegionByKey(ByteString key) {
+    public TiRegion getRegionByKey(ByteString key) {
         GetRegionRequest request = GetRegionRequest.newBuilder()
                 .setHeader(header)
                 .setRegionKey(key)
@@ -85,13 +85,13 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub> impleme
 
         PDErrorHandler<GetRegionResponse> handler = new PDErrorHandler<>(r -> r.getHeader().getError());
         GetRegionResponse resp = callWithRetry(PDGrpc.METHOD_GET_REGION, request, handler);
-        return resp.getRegion();
+        return new TiRegion(resp.getRegion(), resp.getLeader());
     }
 
     @Override
-    public Future<Region> getRegionByKeyAsync(ByteString key) {
-        FutureObserver<Region, GetRegionResponse> responseObserver =
-                new FutureObserver<>(GetRegionResponse::getRegion);
+    public Future<TiRegion> getRegionByKeyAsync(ByteString key) {
+        FutureObserver<TiRegion, GetRegionResponse> responseObserver =
+                new FutureObserver<>(resp -> new TiRegion(resp.getRegion(), resp.getLeader()));
         GetRegionRequest request = GetRegionRequest.newBuilder()
                 .setHeader(header)
                 .setRegionKey(key)
@@ -115,9 +115,9 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub> impleme
     }
 
     @Override
-    public Future<Region> getRegionByIDAsync(long id) {
-        FutureObserver<Region, GetRegionResponse> responseObserver =
-                new FutureObserver<>(GetRegionResponse::getRegion);
+    public Future<TiRegion> getRegionByIDAsync(long id) {
+        FutureObserver<TiRegion, GetRegionResponse> responseObserver =
+                new FutureObserver<>(resp -> new TiRegion(resp.getRegion(), resp.getLeader()));
 
         GetRegionByIDRequest request = GetRegionByIDRequest.newBuilder()
                 .setHeader(header)

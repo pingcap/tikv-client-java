@@ -44,7 +44,6 @@ public class RegionManagerTest {
     @After
     public void tearDown() {
         server.stop();
-        RegionManager.reset();
     }
 
     private PDClient createClient() {
@@ -77,11 +76,11 @@ public class RegionManagerTest {
                         GrpcUtils.makePeer(2, 20)
                 )
         ));
-        Region region = mgr.getRegionByKey(startKey);
+        TiRegion region = mgr.getRegionByKey(startKey);
         assertEquals(region.getId(), regionId);
 
 
-        Region regionToSearch = mgr.getRegionByKey(searchKey);
+        TiRegion regionToSearch = mgr.getRegionByKey(searchKey);
         assertEquals(region, regionToSearch);
 
         // This will in turn invoke rpc and results in an error
@@ -120,7 +119,7 @@ public class RegionManagerTest {
                         GrpcUtils.makeStoreLabel("k2", "v2")
                 )
         ));
-        Pair<Region, Store> pair = mgr.getRegionStorePairByKey(searchKey);
+        Pair<TiRegion, Store> pair = mgr.getRegionStorePairByKey(searchKey);
         assertEquals(pair.first.getId(), regionId);
         assertEquals(pair.first.getId(), storeId);
     }
@@ -144,10 +143,10 @@ public class RegionManagerTest {
                         GrpcUtils.makePeer(2, 20)
                 )
         ));
-        Region region = mgr.getRegionById(regionId);
+        TiRegion region = mgr.getRegionById(regionId);
         assertEquals(region.getId(), regionId);
 
-        Region regionToSearch = mgr.getRegionById(regionId);
+        TiRegion regionToSearch = mgr.getRegionById(regionId);
         assertEquals(region, regionToSearch);
 
         mgr.invalidateRegion(regionId);

@@ -41,8 +41,8 @@ public interface ReadOnlyPDClient {
      * @param key key in bytes for locating a region
      * @return the region whose startKey and endKey range covers the given key
      */
-    Region getRegionByKey(ByteString key);
-    Future<Region> getRegionByKeyAsync(ByteString key);
+    TiRegion getRegionByKey(ByteString key);
+    Future<TiRegion> getRegionByKeyAsync(ByteString key);
 
     /**
      * <p>Get Region by Region Id</p>
@@ -51,7 +51,7 @@ public interface ReadOnlyPDClient {
      * @return the region corresponding to the given Id
      */
     Region getRegionByID(long id);
-    Future<Region> getRegionByIDAsync(long id);
+    Future<TiRegion> getRegionByIDAsync(long id);
 
     /**
      * <p>Get Store by StoreId</p>

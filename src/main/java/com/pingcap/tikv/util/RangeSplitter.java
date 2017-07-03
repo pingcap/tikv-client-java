@@ -19,6 +19,7 @@ package com.pingcap.tikv.util;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.RegionManager;
+import com.pingcap.tikv.TiRegion;
 import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
 import com.pingcap.tikv.grpc.Metapb;
 
@@ -33,11 +34,11 @@ import static java.util.Objects.requireNonNull;
 
 public class RangeSplitter {
     public static class RegionTask implements Serializable {
-        private final Metapb.Region region;
+        private final TiRegion region;
         private final Metapb.Store store;
         private final List<KeyRange> ranges;
 
-        public RegionTask(Metapb.Region region,
+        public RegionTask(TiRegion region,
                           Metapb.Store store,
                           List<KeyRange> ranges) {
             this.region = region;
@@ -45,7 +46,7 @@ public class RangeSplitter {
             this.ranges = ranges;
         }
 
-        public Metapb.Region getRegion() {
+        public TiRegion getRegion() {
             return region;
         }
 
@@ -88,14 +89,14 @@ public class RangeSplitter {
         int i = 0;
         KeyRange range = keyRanges.get(i++);
         Map<Long, List<KeyRange>> idToRange = new HashMap<>(); // region id to keyRange list
-        Map<Long, Pair<Metapb.Region, Metapb.Store>> idToRegion = new HashMap<>();
+        Map<Long, Pair<TiRegion, Metapb.Store>> idToRegion = new HashMap<>();
 
         while (true) {
-            Pair<Metapb.Region, Metapb.Store> regionStorePair =
+            Pair<TiRegion, Metapb.Store> regionStorePair =
                     regionManager.getRegionStorePairByKey(range.getStart());
 
             requireNonNull(regionStorePair, "fail to get region/store pair by key" + range.getStart());
-            Metapb.Region region = regionStorePair.first;
+            TiRegion region = regionStorePair.first;
             idToRegion.putIfAbsent(region.getId(), regionStorePair);
 
             // both key range is close-opened
@@ -128,7 +129,7 @@ public class RangeSplitter {
 
         ImmutableList.Builder<RegionTask> resultBuilder = ImmutableList.builder();
         for (Map.Entry<Long, List<KeyRange>> entry : idToRange.entrySet()) {
-            Pair<Metapb.Region, Metapb.Store> regionStorePair = idToRegion.get(entry.getKey());
+            Pair<TiRegion, Metapb.Store> regionStorePair = idToRegion.get(entry.getKey());
             resultBuilder.add(new RegionTask(
                     regionStorePair.first,
                     regionStorePair.second,

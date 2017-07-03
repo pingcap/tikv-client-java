@@ -42,7 +42,7 @@ public class KVMockServer extends TikvGrpc.TikvImplBase {
 
     private int port;
     private Server server;
-    private Metapb.Region region;
+    private TiRegion region;
     private TreeMap<String, String> dataMap = new TreeMap<>();
     private Map<ByteString, Integer> errorMap = new HashMap<>();
 
@@ -75,7 +75,7 @@ public class KVMockServer extends TikvGrpc.TikvImplBase {
     private void verifyContext(Context context) throws Exception {
         if (context.getRegionId() != region.getId() ||
                 !context.getRegionEpoch().equals(region.getRegionEpoch()) ||
-                !context.getPeer().equals(region.getPeers(0))) {
+                !context.getPeer().equals(region.getLeader())) {
             throw new Exception();
         }
     }
@@ -320,7 +320,7 @@ public class KVMockServer extends TikvGrpc.TikvImplBase {
         }
     }
 
-    int start(Metapb.Region region) throws IOException {
+    int start(TiRegion region) throws IOException {
         try (ServerSocket s = new ServerSocket(0)) {
             port = s.getLocalPort();
         }
