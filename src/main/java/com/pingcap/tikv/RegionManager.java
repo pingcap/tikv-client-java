@@ -188,20 +188,16 @@ public class RegionManager {
                                 endKey.asReadOnlyByteBuffer());
     }
 
+    // TODO figure out where to put this logic. TiKV put it under sendReqToRegion right before resp.
     public void onRequestFail(long regionID, long storeID) {
         //region on request failure
         // check equality of storeID and region's storeID
         // try to select another valid leader peer
         try {
             TiRegion region = regionCache.get(regionID).get();
-//            if(region.getLeader().getStoreId() == storeID) {
-//                Set<Long> tmpSet = this.regionUnreachableStoreMap.getOrDefault(storeID, new HashSet<>());
-//                tmpSet.add(storeID);
-//                this.regionUnreachableStoreMap.put(regionID, tmpSet);
-//                for(int i = 0; i < region.getPeersList().size(); i++) {
-//
-//                }
-//            }
+            if(region.onRequestFail(storeID)) {
+                invalidateRegion(regionID);
+            }
             // store's meta may be out of date.
             invalidateStore(storeID);
         } catch (InterruptedException | ExecutionException e) {

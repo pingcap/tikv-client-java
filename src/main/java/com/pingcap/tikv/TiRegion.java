@@ -24,6 +24,7 @@ import com.pingcap.tikv.grpc.Metapb;
 import com.pingcap.tikv.grpc.Metapb.Peer;
 import com.pingcap.tikv.grpc.Metapb.Region;
 
+import java.util.List;
 import java.util.Set;
 
 public class TiRegion {
@@ -75,13 +76,6 @@ public class TiRegion {
         return builder.build();
     }
 
-    public boolean onRequestFail(long storeID) {
-        if (peer.getStoreId() == storeID) {
-            return true;
-        }
-        //TODO region_cache line 537
-        return false;
-    }
     /**
      * switches current peer to the one on specific store. It return false if no
      * peer matches the storeID.
@@ -121,5 +115,25 @@ public class TiRegion {
 
     public Region getMeta() {
         return meta;
+    }
+
+    public List<Peer> getPeersList() {
+       return this.meta.getPeersList();
+    }
+
+    public boolean onRequestFail(long storeID) {
+        if(this.getLeader().getStoreId() == storeID) {
+            return true;
+        }
+        this.unreachableStores.add(storeID);
+        L:
+        for(Peer p: this.meta.getPeersList()) {
+            if(unreachableStores.contains(p.getStoreId())){
+                continue L;
+            }
+            this.peer = p;
+            return true;
+        }
+        return false;
     }
 }
