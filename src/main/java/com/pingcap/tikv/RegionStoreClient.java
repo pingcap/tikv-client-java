@@ -62,9 +62,6 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
         KVErrorHandler<GetResponse> handler =
                 new KVErrorHandler<>(regionManager, context, GetResponse::getRegionError);
         GetResponse resp = callWithRetry(TikvGrpc.METHOD_KV_GET, request, handler);
-        if(resp == null) {
-            this.regionManager.onRequestFail(context.getRegionId(), context.getPeer().getStoreId());
-        }
         return getHelper(resp);
     }
 
@@ -78,9 +75,6 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
         KVErrorHandler<RawPutResponse> handler =
                 new KVErrorHandler<>(regionManager, context, RawPutResponse::getRegionError);
         RawPutResponse resp = callWithRetry(TikvGrpc.METHOD_RAW_PUT, rawPutRequest, handler);
-        if(resp == null) {
-            this.regionManager.onRequestFail(context.getRegionId(), context.getPeer().getStoreId());
-        }
     }
 
     public ByteString rawGet(ByteString key, Context context){
@@ -91,9 +85,6 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
         KVErrorHandler<RawGetResponse> handler =
                 new KVErrorHandler<>(regionManager, context, RawGetResponse::getRegionError);
         RawGetResponse resp = callWithRetry(TikvGrpc.METHOD_RAW_GET, rawGetRequest, handler);
-        if(resp == null) {
-            this.regionManager.onRequestFail(context.getRegionId(), context.getPeer().getStoreId());
-        }
         return resp.getValue();
     }
 
@@ -193,9 +184,6 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
         KVErrorHandler<ScanResponse> handler =
                 new KVErrorHandler<>(regionManager, context, ScanResponse::getRegionError);
         ScanResponse resp = callWithRetry(TikvGrpc.METHOD_KV_SCAN, request, handler);
-        if(resp == null) {
-            this.regionManager.onRequestFail(context.getRegionId(), context.getPeer().getStoreId());
-        }
         return scanHelper(resp);
     }
 
@@ -233,9 +221,6 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
         KVErrorHandler<Coprocessor.Response> handler =
                 new KVErrorHandler<>(regionManager, context, Coprocessor.Response::getRegionError);
         Coprocessor.Response resp = callWithRetry(TikvGrpc.METHOD_COPROCESSOR, reqToSend, handler);
-        if(resp == null) {
-            this.regionManager.onRequestFail(context.getRegionId(), context.getPeer().getStoreId());
-        }
         return coprocessorHelper(resp);
     }
 

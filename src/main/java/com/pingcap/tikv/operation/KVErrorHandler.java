@@ -35,14 +35,17 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
     private Kvrpcpb.Context ctx;
 
     public KVErrorHandler(RegionManager regionManager, Kvrpcpb.Context ctx, Function<RespT, Errorpb.Error> getRegionError) {
-        this.ctx = ctx;
+       this.ctx = ctx;
        this.regionManager = regionManager;
        this.getRegionError = getRegionError;
     }
 
     public void handle(RespT resp) {
         // this is for test. In reality, resp is never null.
-        if (resp == null) return;
+        if (resp == null) {
+            this.regionManager.onRequestFail(ctx.getRegionId(), ctx.getPeer().getStoreId());
+            return;
+        };
         Errorpb.Error error = getRegionError.apply(resp);
         if (error != null) {
             if (error.hasNotLeader()) {

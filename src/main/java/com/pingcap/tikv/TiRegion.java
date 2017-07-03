@@ -136,4 +136,10 @@ public class TiRegion {
         }
         return false;
     }
+
+    public boolean isRegionLeaderSwitched(long storeID) {
+        return getPeersList().stream().anyMatch(
+                p -> p.getStoreId() == storeID
+        );
+    }
 }

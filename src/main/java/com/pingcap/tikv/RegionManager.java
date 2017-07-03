@@ -15,7 +15,6 @@
 
 package com.pingcap.tikv;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -34,6 +33,7 @@ import com.pingcap.tikv.util.Pair;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -139,12 +139,6 @@ public class RegionManager {
         }
     }
 
-    private boolean ifValidRegion(Region region) {
-        return !(region.getPeersCount() == 0 ||
-                !region.hasStartKey() ||
-                !region.hasEndKey());
-    }
-
     private boolean putRegion(TiRegion region) {
         if (!region.hasStartKey() || !region.hasEndKey()) return false;
 
@@ -162,24 +156,24 @@ public class RegionManager {
         return true;
     }
 
-    public void onRegionStale(long regionID, List<Region> regions) {
-        invalidateRegion(regionID);
-        regions.stream().map(r -> new TiRegion(r, r.getPeers(0))).forEach(this::putRegion);
-    }
-
-    private boolean isRegionLeaderSwitched(Region region, long storeID) {
+    private boolean isRegionLeaderSwitched(TiRegion region, long storeID) {
         return region.getPeersList().stream().anyMatch(
                 p -> p.getStoreId() == storeID
         );
     }
 
+    public void onRegionStale(long regionID, List<Region> regions) {
+        invalidateRegion(regionID);
+        regions.stream().map(r -> new TiRegion(r, r.getPeers(0))).forEach(this::putRegion);
+    }
+
     public void updateLeader(long regionID, long storeID) {
         try {
             TiRegion region = regionCache.getUnchecked(regionID).get();
-//            if(isRegionLeaderSwitched(region, storeID)) {
-//                invalidateRegion(regionID);
-//            }
-        } catch (InterruptedException | ExecutionException e) {
+            if(region.isRegionLeaderSwitched(storeID)) {
+                invalidateRegion(regionID);
+            }
+        } catch (InterruptedException | ExecutionException ignored) {
         }
     }
 
@@ -190,15 +184,17 @@ public class RegionManager {
 
     // TODO figure out where to put this logic. TiKV put it under sendReqToRegion right before resp.
     public void onRequestFail(long regionID, long storeID) {
-        try {
-            TiRegion region = regionCache.get(regionID).get();
-            if(region.onRequestFail(storeID)) {
-                invalidateRegion(regionID);
+        Optional<Future<TiRegion>> region = Optional.ofNullable(regionCache.getIfPresent(regionID));
+        region.ifPresent(r -> {
+            try {
+                if(r.get().onRequestFail(storeID)) {
+                    invalidateRegion(regionID);
+                }
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
             }
             // store's meta may be out of date.
             invalidateStore(storeID);
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-        }
+        });
     }
 }
