@@ -20,12 +20,14 @@ import com.google.common.collect.Range;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.grpc.Kvrpcpb.KvPair;
-import com.pingcap.tikv.grpc.Metapb.Region;
 import com.pingcap.tikv.grpc.Metapb.Store;
+import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.operation.IndexScanIterator;
 import com.pingcap.tikv.operation.ScanIterator;
 import com.pingcap.tikv.operation.SelectIterator;
+import com.pingcap.tikv.region.RegionManager;
+import com.pingcap.tikv.region.RegionStoreClient;
 import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.util.Pair;
 import com.pingcap.tikv.util.RangeSplitter.RegionTask;
@@ -68,8 +70,8 @@ public class Snapshot {
     }
 
     public ByteString get(ByteString key) {
-        Pair<Region, Store> pair = regionCache.getRegionStorePairByKey(key);
-        RegionStoreClient client = RegionStoreClient.create(pair.first, pair.second, getSession());
+        Pair<TiRegion, Store> pair = regionCache.getRegionStorePairByKey(key);
+        RegionStoreClient client = RegionStoreClient.create(pair.first, pair.second, getSession(), regionCache);
         // TODO: Need to deal with lock error after grpc stable
         return client.get(key, version.getVersion());
     }
@@ -103,7 +105,7 @@ public class Snapshot {
      * @return Row iterator to iterate over resulting rows
      */
     public Iterator<Row> select(TiSelectRequest req, RegionTask task) {
-        return new SelectIterator(req, ImmutableList.of(task), getSession(), false);
+        return new SelectIterator(req, ImmutableList.of(task), getSession(), regionCache,false);
     }
 
     /**
@@ -114,7 +116,7 @@ public class Snapshot {
      * @return Row iterator to iterate over resulting rows
      */
     public Iterator<Row> selectByIndex(TiSelectRequest req, RegionTask task) {
-        Iterator<Row> iter = new SelectIterator(req, ImmutableList.of(task), getSession(), true);
+        Iterator<Row> iter = new SelectIterator(req, ImmutableList.of(task), getSession(), regionCache,true);
         return new IndexScanIterator(this, req, iter);
     }
 
@@ -126,20 +128,20 @@ public class Snapshot {
     // TODO: Need faster implementation, say concurrent version
     // Assume keys sorted
     public List<KvPair> batchGet(List<ByteString> keys) {
-        Region curRegion = null;
+        TiRegion curRegion = null;
         Range<ByteBuffer> curKeyRange = null;
-        Pair<Region, Store> lastPair = null;
+        Pair<TiRegion, Store> lastPair = null;
         List<ByteString> keyBuffer = new ArrayList<>();
         List<KvPair> result = new ArrayList<>(keys.size());
         for (ByteString key : keys) {
             if (curRegion == null || !curKeyRange.contains(key.asReadOnlyByteBuffer())) {
-                Pair<Region, Store> pair = regionCache.getRegionStorePairByKey(key);
+                Pair<TiRegion, Store> pair = regionCache.getRegionStorePairByKey(key);
                 lastPair = pair;
                 curRegion = pair.first;
                 curKeyRange = Range.closedOpen(
                         curRegion.getStartKey().asReadOnlyByteBuffer(),
                         curRegion.getEndKey().asReadOnlyByteBuffer());
-                try (RegionStoreClient client = RegionStoreClient.create(lastPair.first, lastPair.second, getSession())) {
+                try (RegionStoreClient client = RegionStoreClient.create(lastPair.first, lastPair.second, getSession(), regionCache)) {
                     List<KvPair> partialResult = client.batchGet(keyBuffer, version.getVersion());
                     // TODO: Add lock check
                     result.addAll(partialResult);

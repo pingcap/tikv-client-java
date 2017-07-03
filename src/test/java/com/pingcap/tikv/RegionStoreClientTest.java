@@ -24,6 +24,9 @@ import com.pingcap.tidb.tipb.SelectResponse;
 import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
 import com.pingcap.tikv.grpc.Kvrpcpb;
 import com.pingcap.tikv.grpc.Metapb;
+import com.pingcap.tikv.region.TiRegion;
+import com.pingcap.tikv.region.RegionManager;
+import com.pingcap.tikv.region.RegionStoreClient;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,11 +43,11 @@ public class RegionStoreClientTest {
     private static final String LOCAL_ADDR = "127.0.0.1";
     private int port;
     private TiSession session;
-    private Metapb.Region region;
+    private TiRegion region;
 
     @Before
     public void setUp() throws Exception {
-        region = Metapb.Region.newBuilder()
+        Metapb.Region r = Metapb.Region.newBuilder()
                 .setRegionEpoch(Metapb.RegionEpoch.newBuilder()
                                     .setConfVer(1)
                                     .setVersion(2))
@@ -55,6 +58,7 @@ public class RegionStoreClientTest {
                                     .setId(11)
                                     .setStoreId(13))
                 .build();
+        region = new TiRegion(r, r.getPeers(0));
         server = new KVMockServer();
         port = server.start(region);
         // No PD needed in this test
@@ -69,12 +73,41 @@ public class RegionStoreClientTest {
                 .setState(Metapb.StoreState.Up)
                 .build();
 
-        return RegionStoreClient.create(region, store, session);
+        return RegionStoreClient.create(region, store, session, new RegionManager(PDClient.create(session)));
     }
 
     @After
     public void tearDown() throws Exception {
         server.stop();
+    }
+
+    @Test
+    public void rawGet() throws Exception {
+        RegionStoreClient client = createClient();
+        server.put("key1", "value1");
+        Kvrpcpb.Context context = Kvrpcpb.Context.newBuilder()
+                .setRegionId(region.getId())
+                .setRegionEpoch(region.getRegionEpoch())
+                .setPeer(region.getLeader())
+                .build();
+        ByteString value = client.rawGet(ByteString.copyFromUtf8("key1"), context);
+        assertEquals(ByteString.copyFromUtf8("value1"), value);
+
+        server.putError("error1", KVMockServer.NOT_LEADER);
+        // since not_leader is retryable, so the result should be correct.
+        value = client.rawGet(ByteString.copyFromUtf8("key1"), context);
+        assertEquals(ByteString.copyFromUtf8("value1"), value);
+
+        server.putError("failure", KVMockServer.STALE_EPOCH);
+        try {
+            // since stale epoch is not retrable, so the test should fail.
+            client.rawGet(ByteString.copyFromUtf8("failure"), context);
+            fail();
+        } catch (Exception e) {
+            assertTrue(true);
+        }
+        server.clearAllMap();
+        client.close();
     }
 
     @Test

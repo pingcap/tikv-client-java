@@ -19,6 +19,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.grpc.Metapb;
 import com.pingcap.tikv.grpc.Metapb.*;
+import com.pingcap.tikv.region.TiRegion;
+import com.pingcap.tikv.region.RegionManager;
 import com.pingcap.tikv.util.Pair;
 import org.junit.After;
 import org.junit.Before;
@@ -32,11 +34,13 @@ public class RegionManagerTest {
     private PDMockServer server;
     private static final long CLUSTER_ID = 1024;
     private static final String LOCAL_ADDR = "127.0.0.1";
+    private RegionManager mgr;
 
     @Before
     public void setup() throws IOException {
         server = new PDMockServer();
         server.start(CLUSTER_ID);
+        mgr = new RegionManager(createClient());
     }
 
     @After
@@ -57,7 +61,6 @@ public class RegionManagerTest {
 
     @Test
     public void getRegionByKey() throws Exception {
-        RegionManager mgr = new RegionManager(createClient());
         ByteString startKey = ByteString.copyFrom(new byte[]{1});
         ByteString endKey = ByteString.copyFrom(new byte[]{10});
         ByteString searchKey = ByteString.copyFrom(new byte[]{5});
@@ -75,11 +78,11 @@ public class RegionManagerTest {
                         GrpcUtils.makePeer(2, 20)
                 )
         ));
-        Region region = mgr.getRegionByKey(startKey);
+        TiRegion region = mgr.getRegionByKey(startKey);
         assertEquals(region.getId(), regionId);
 
 
-        Region regionToSearch = mgr.getRegionByKey(searchKey);
+        TiRegion regionToSearch = mgr.getRegionByKey(searchKey);
         assertEquals(region, regionToSearch);
 
         // This will in turn invoke rpc and results in an error
@@ -92,7 +95,6 @@ public class RegionManagerTest {
 
     @Test
     public void getStoreByKey() throws Exception {
-        RegionManager mgr = new RegionManager(createClient());
         ByteString startKey = ByteString.copyFrom(new byte[]{1});
         ByteString endKey = ByteString.copyFrom(new byte[]{10});
         ByteString searchKey = ByteString.copyFrom(new byte[]{5});
@@ -119,14 +121,13 @@ public class RegionManagerTest {
                         GrpcUtils.makeStoreLabel("k2", "v2")
                 )
         ));
-        Pair<Region, Store> pair = mgr.getRegionStorePairByKey(searchKey);
+        Pair<TiRegion, Store> pair = mgr.getRegionStorePairByKey(searchKey);
         assertEquals(pair.first.getId(), regionId);
         assertEquals(pair.first.getId(), storeId);
     }
 
     @Test
     public void getRegionById() throws Exception {
-        RegionManager mgr = new RegionManager(createClient());
         ByteString startKey = ByteString.copyFrom(new byte[]{1});
         ByteString endKey = ByteString.copyFrom(new byte[]{10});
 
@@ -144,10 +145,10 @@ public class RegionManagerTest {
                         GrpcUtils.makePeer(2, 20)
                 )
         ));
-        Region region = mgr.getRegionById(regionId);
+        TiRegion region = mgr.getRegionById(regionId);
         assertEquals(region.getId(), regionId);
 
-        Region regionToSearch = mgr.getRegionById(regionId);
+        TiRegion regionToSearch = mgr.getRegionById(regionId);
         assertEquals(region, regionToSearch);
 
         mgr.invalidateRegion(regionId);
@@ -162,8 +163,7 @@ public class RegionManagerTest {
 
     @Test
     public void getStoreById() throws Exception {
-        RegionManager mgr = new RegionManager(createClient());
-        long storeId = 233;
+        long storeId = 234;
         String testAddress = "testAddress";
         server.addGetStoreResp(GrpcUtils.makeGetStoreResponse(
                 server.getClusterId(),

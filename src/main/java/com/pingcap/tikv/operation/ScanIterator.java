@@ -18,8 +18,9 @@ package com.pingcap.tikv.operation;
 
 import com.google.common.collect.Range;
 import com.google.protobuf.ByteString;
-import com.pingcap.tikv.RegionManager;
-import com.pingcap.tikv.RegionStoreClient;
+import com.pingcap.tikv.region.RegionManager;
+import com.pingcap.tikv.region.RegionStoreClient;
+import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.TiSession;
 import com.pingcap.tikv.codec.KeyUtils;
 import com.pingcap.tikv.exception.TiClientInternalException;
@@ -65,11 +66,11 @@ public class ScanIterator implements Iterator<Kvrpcpb.KvPair> {
     private boolean loadCache() {
         if (eof) return false;
 
-        Pair<Metapb.Region, Metapb.Store> pair = regionCache.getRegionStorePairByKey(startKey);
-        Metapb.Region region = pair.first;
+        Pair<TiRegion, Metapb.Store> pair = regionCache.getRegionStorePairByKey(startKey);
+        TiRegion region = pair.first;
         Metapb.Store store = pair.second;
         try (RegionStoreClient client =
-                     RegionStoreClient.create(region, store, session)) {
+                     RegionStoreClient.create(region, store, session, regionCache)) {
             currentCache = client.scan(startKey, version);
             if (currentCache == null || currentCache.size() == 0) {
                 return false;

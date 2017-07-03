@@ -19,13 +19,13 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.ByteString;
 import com.pingcap.tidb.tipb.Chunk;
 import com.pingcap.tidb.tipb.SelectResponse;
-import com.pingcap.tikv.RegionManager;
-import com.pingcap.tikv.RegionStoreClient;
+import com.pingcap.tikv.region.RegionManager;
+import com.pingcap.tikv.region.RegionStoreClient;
+import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.TiSession;
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
-import com.pingcap.tikv.grpc.Metapb.Region;
 import com.pingcap.tikv.grpc.Metapb.Store;
 import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.row.Row;
@@ -70,6 +70,7 @@ public class SelectIterator implements Iterator<Row> {
     public SelectIterator(TiSelectRequest req,
                           List<RegionTask> rangeToRegionsIn,
                           TiSession session,
+                          RegionManager regionManager,
                           boolean indexScan) {
         this.rangeToRegions = rangeToRegionsIn;
         this.session = session;
@@ -83,10 +84,10 @@ public class SelectIterator implements Iterator<Row> {
             RegionTask regionTask = rangeToRegions.get(index++);
 
             List<KeyRange> ranges = regionTask.getRanges();
-            Region region = regionTask.getRegion();
+            TiRegion region = regionTask.getRegion();
             Store store = regionTask.getStore();
 
-            try (RegionStoreClient client = RegionStoreClient.create(region, store, session)) {
+            try (RegionStoreClient client = RegionStoreClient.create(region, store, session, regionManager)) {
                 SelectResponse resp =
                         client.coprocess(indexScan ? req.buildIndexScan() : req.buildTableScan(), ranges);
                 if (resp == null) {
@@ -108,6 +109,7 @@ public class SelectIterator implements Iterator<Row> {
                           boolean indexScan) {
         this(req, RangeSplitter.newSplitter(rm).splitRangeByRegion(req.getRanges()),
                                                                    session,
+                                                                   rm,
                                                                    indexScan
         );
     }

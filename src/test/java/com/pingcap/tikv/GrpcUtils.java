@@ -17,9 +17,7 @@ package com.pingcap.tikv;
 
 import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
-import com.pingcap.tikv.grpc.Metapb;
 import com.pingcap.tikv.grpc.Metapb.*;
-import com.pingcap.tikv.grpc.Pdpb;
 import com.pingcap.tikv.grpc.Pdpb.*;
 
 import java.util.Arrays;

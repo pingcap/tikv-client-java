@@ -1,4 +1,5 @@
 /*
+ *
  * Copyright 2017 PingCAP, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,28 +12,30 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package com.pingcap.tikv;
+package com.pingcap.tikv.region;
 
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.net.HostAndPort;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.pingcap.tidb.tipb.SelectRequest;
 import com.pingcap.tidb.tipb.SelectResponse;
-import com.pingcap.tikv.exception.KeyException;
-import com.pingcap.tikv.exception.RegionException;
-import com.pingcap.tikv.exception.SelectException;
-import com.pingcap.tikv.exception.TiClientInternalException;
+import com.pingcap.tikv.AbstractGrpcClient;
+import com.pingcap.tikv.TiSession;
+import com.pingcap.tikv.exception.*;
 import com.pingcap.tikv.grpc.Coprocessor;
 import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
 import com.pingcap.tikv.grpc.Kvrpcpb.*;
-import com.pingcap.tikv.grpc.Metapb.Region;
 import com.pingcap.tikv.grpc.Metapb.Store;
 import com.pingcap.tikv.grpc.TikvGrpc;
 import com.pingcap.tikv.grpc.TikvGrpc.TikvBlockingStub;
 import com.pingcap.tikv.grpc.TikvGrpc.TikvStub;
+import com.pingcap.tikv.operation.KVErrorHandler;
 import com.pingcap.tikv.util.FutureObserver;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -48,6 +51,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
     private final TikvBlockingStub          blockingStub;
     private final TikvStub                  asyncStub;
     private final ManagedChannel            channel;
+    private RegionManager regionManager;
 
     private final int ReqTypeSelect = 101;
     private final int ReqTypeIndex = 102;
@@ -58,8 +62,47 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setKey(key)
                 .setVersion(version)
                 .build();
-        GetResponse resp = callWithRetry(TikvGrpc.METHOD_KV_GET, request);
+        KVErrorHandler<GetResponse> handler =
+                new KVErrorHandler<>(regionManager, context, GetResponse::getRegionError);
+        GetResponse resp = callWithRetry(TikvGrpc.METHOD_KV_GET, request, handler);
         return getHelper(resp);
+    }
+
+    public void rawPut(ByteString key, ByteString value,Context context) {
+        RawPutRequest rawPutRequest = RawPutRequest.newBuilder()
+                .setContext(context)
+                .setKey(key)
+                .setValue(value)
+                .build();
+
+        KVErrorHandler<RawPutResponse> handler =
+                new KVErrorHandler<>(regionManager, context, RawPutResponse::getRegionError);
+        RawPutResponse resp = callWithRetry(TikvGrpc.METHOD_RAW_PUT, rawPutRequest, handler);
+    }
+
+    public ByteString rawGet(ByteString key, Context context){
+        RawGetRequest rawGetRequest = RawGetRequest.newBuilder()
+                .setContext(context)
+                .setKey(key)
+                .build();
+        KVErrorHandler<RawGetResponse> handler =
+                new KVErrorHandler<>(regionManager, context, RawGetResponse::getRegionError);
+        RawGetResponse resp = callWithRetry(TikvGrpc.METHOD_RAW_GET, rawGetRequest, handler);
+        return resp.getValue();
+    }
+
+    public void rawDelete(ByteString key,Context context){
+        RawDeleteRequest rawDeleteRequest = RawDeleteRequest.newBuilder()
+                .setContext(context)
+                .setKey(key)
+                .build();
+
+        KVErrorHandler<RawDeleteResponse> handler =
+                new KVErrorHandler<>(regionManager, context, RawDeleteResponse::getRegionError);
+        RawDeleteResponse resp = callWithRetry(TikvGrpc.METHOD_RAW_DELETE, rawDeleteRequest,  handler);
+        if(resp == null) {
+            this.regionManager.onRequestFail(context.getRegionId(), context.getPeer().getStoreId());
+        }
     }
 
     public Future<ByteString> getAsync(ByteString key, long version) {
@@ -71,7 +114,9 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setVersion(version)
                 .build();
 
-        callAsyncWithRetry(TikvGrpc.METHOD_KV_GET, request, responseObserver);
+        KVErrorHandler<GetResponse> handler =
+                new KVErrorHandler<>(regionManager, context, GetResponse::getRegionError);
+        callAsyncWithRetry(TikvGrpc.METHOD_KV_GET, request, responseObserver, handler);
         return responseObserver.getFuture();
     }
 
@@ -91,13 +136,18 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .addAllKeys(keys)
                 .setVersion(version)
                 .build();
-        BatchGetResponse resp = callWithRetry(TikvGrpc.METHOD_KV_BATCH_GET, request);
+        KVErrorHandler<BatchGetResponse> handler =
+                new KVErrorHandler<>(regionManager, context, BatchGetResponse::getRegionError);
+        BatchGetResponse resp = callWithRetry(TikvGrpc.METHOD_KV_BATCH_GET, request, handler);
+        if(resp == null) {
+            this.regionManager.onRequestFail(context.getRegionId(), context.getPeer().getStoreId());
+        }
         return batchGetHelper(resp);
     }
 
     public Future<List<KvPair>> batchGetAsync(Iterable<ByteString> keys, long version) {
         FutureObserver<List<KvPair>, BatchGetResponse> responseObserver =
-                new FutureObserver<>((BatchGetResponse resp) -> batchGetHelper(resp));
+                new FutureObserver<>(this::batchGetHelper);
 
         BatchGetRequest request = BatchGetRequest.newBuilder()
                 .setContext(context)
@@ -105,7 +155,9 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setVersion(version)
                 .build();
 
-        callAsyncWithRetry(TikvGrpc.METHOD_KV_BATCH_GET, request, responseObserver);
+        KVErrorHandler<BatchGetResponse> handler =
+                new KVErrorHandler<>(regionManager, context, BatchGetResponse::getRegionError);
+        callAsyncWithRetry(TikvGrpc.METHOD_KV_BATCH_GET, request, responseObserver, handler);
         return responseObserver.getFuture();
     }
 
@@ -132,7 +184,9 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setKeyOnly(keyOnly)
                 .setLimit(getConf().getScanBatchSize())
                 .build();
-        ScanResponse resp = callWithRetry(TikvGrpc.METHOD_KV_SCAN, request);
+        KVErrorHandler<ScanResponse> handler =
+                new KVErrorHandler<>(regionManager, context, ScanResponse::getRegionError);
+        ScanResponse resp = callWithRetry(TikvGrpc.METHOD_KV_SCAN, request, handler);
         return scanHelper(resp);
     }
 
@@ -147,7 +201,9 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setKeyOnly(keyOnly)
                 .build();
 
-        callAsyncWithRetry(TikvGrpc.METHOD_KV_SCAN, request, responseObserver);
+        KVErrorHandler<ScanResponse> handler =
+                new KVErrorHandler<>(regionManager, context, ScanResponse::getRegionError);
+        callAsyncWithRetry(TikvGrpc.METHOD_KV_SCAN, request, responseObserver, handler);
         return responseObserver.getFuture();
     }
 
@@ -165,7 +221,9 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setData(req.toByteString())
                 .addAllRanges(ranges)
                 .build();
-        Coprocessor.Response resp = callWithRetry(TikvGrpc.METHOD_COPROCESSOR, reqToSend);
+        KVErrorHandler<Coprocessor.Response> handler =
+                new KVErrorHandler<>(regionManager, context, Coprocessor.Response::getRegionError);
+        Coprocessor.Response resp = callWithRetry(TikvGrpc.METHOD_COPROCESSOR, reqToSend, handler);
         return coprocessorHelper(resp);
     }
 
@@ -178,7 +236,9 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 .setData(req.toByteString())
                 .addAllRanges(ranges)
                 .build();
-        callAsyncWithRetry(TikvGrpc.METHOD_COPROCESSOR, reqToSend, responseObserver);
+        KVErrorHandler<Coprocessor.Response> handler =
+                new KVErrorHandler<>(regionManager, context, Coprocessor.Response::getRegionError);
+        callAsyncWithRetry(TikvGrpc.METHOD_COPROCESSOR, reqToSend, responseObserver, handler);
         return responseObserver.getFuture();
     }
 
@@ -202,44 +262,55 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
         channel.shutdown();
     }
 
-    public static RegionStoreClient create(Region region, Store store, TiSession session) {
+    public static final int MAX_CACHE_CAPACITY = 64;
+    private static final Cache<String, ManagedChannel> connPool = CacheBuilder
+            .newBuilder()
+            .maximumSize(MAX_CACHE_CAPACITY)
+            .build();
+
+    public static RegionStoreClient create(TiRegion region, Store store, TiSession session, RegionManager regionManager) {
         RegionStoreClient client = null;
+        String addressStr = store.getAddress();
         try {
-            HostAndPort address = HostAndPort.fromString(store.getAddress());
-            ManagedChannel channel = ManagedChannelBuilder
-                    .forAddress(address.getHostText(), address.getPort())
-                    .usePlaintext(true)
-                    .build();
+            ManagedChannel channel;
+            channel = connPool.getIfPresent(addressStr);
+            if (channel == null || channel.isShutdown()) {
+                HostAndPort address = HostAndPort.fromString(addressStr);
+                channel = ManagedChannelBuilder
+                        .forAddress(address.getHostText(), address.getPort())
+                        .usePlaintext(true)
+                        .build();
+                connPool.put(addressStr, channel);
+            }
             TikvBlockingStub blockingStub = TikvGrpc.newBlockingStub(channel);
             TikvStub asyncStub = TikvGrpc.newStub(channel);
-            client = new RegionStoreClient(region, session, channel, blockingStub, asyncStub);
+            client = new RegionStoreClient(region, session, regionManager, channel, blockingStub, asyncStub);
         } catch (Exception e) {
             if (client != null) {
                 try {
+                    connPool.invalidate(addressStr);
                     client.close();
-                } catch (Exception ignore) {
-                }
+                } catch (Exception ignore) {}
             }
             throw e;
         }
         return client;
     }
 
-    private RegionStoreClient(Region region, TiSession session,
+    private RegionStoreClient(TiRegion region, TiSession session,
+                              RegionManager regionManager,
                               ManagedChannel channel,
                               TikvBlockingStub blockingStub,
                               TikvStub asyncStub) {
         super(session);
         checkNotNull(region, "Region is empty");
-        checkArgument(region.getPeersCount() > 0, "Peer is empty");
+        checkNotNull(region.getLeader(), "Leader Peer is null");
+        checkArgument(region.getLeader() != null, "Leader Peer is null");
         this.channel = channel;
+        this.regionManager = regionManager;
         this.blockingStub = blockingStub;
         this.asyncStub = asyncStub;
-        this.context = Context.newBuilder()
-                .setRegionId(region.getId())
-                .setRegionEpoch(region.getRegionEpoch())
-                .setPeer(region.getPeers(0))
-                .build();
+        this.context = region.getContext();
     }
 
     @Override
@@ -253,4 +324,5 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
         return asyncStub.withDeadlineAfter(getConf().getTimeout(),
                 getConf().getTimeoutUnit());
     }
+
 }

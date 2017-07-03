@@ -17,6 +17,7 @@ package com.pingcap.tikv.policy;
 
 import com.google.common.collect.ImmutableSet;
 import com.pingcap.tikv.exception.GrpcException;
+import com.pingcap.tikv.operation.ErrorHandler;
 import io.grpc.Status;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,17 +28,17 @@ public abstract class RetryPolicy {
     private static final Logger logger = LogManager.getFormatterLogger(RetryPolicy.class);
 
     // Basically a leader recheck method
-    private Callable<Void> recoverMethod;
+    private ErrorHandler handler;
 
     private ImmutableSet<Status.Code> unrecoverableStatus = ImmutableSet.of(
             Status.Code.ALREADY_EXISTS, Status.Code.PERMISSION_DENIED,
             Status.Code.INVALID_ARGUMENT, Status.Code.NOT_FOUND,
             Status.Code.UNIMPLEMENTED, Status.Code.OUT_OF_RANGE,
-            Status.Code.UNAUTHENTICATED
+            Status.Code.UNAUTHENTICATED, Status.Code.CANCELLED
     );
 
-    public RetryPolicy(Callable<Void> recoverMethod) {
-        this.recoverMethod = recoverMethod;
+    public RetryPolicy(ErrorHandler handler) {
+        this.handler = handler;
     }
 
     protected abstract boolean shouldRetry(Exception e);
@@ -55,27 +56,27 @@ public abstract class RetryPolicy {
         while (true) {
             try {
                 T result = proc.call();
+                // TODO: null check is only for temporary. In theory, every rpc call need
+                // have some mechanism to retry call. The reason we allow this having two reason:
+                // 1. Test's resp is null
+                // 2. getTimestamp pass a null error handler for now, since impl of it is not correct yet.
+                if(handler != null) {
+                    handler.handle(result);
+                }
                 return result;
             } catch (Exception e) {
+                // TODO retry is keep sending request to server, this is really bad behavior here. More refractory on the
+                // way
                 Status status = Status.fromThrowable(e);
                 if (checkNotRecoverableException(status) || !shouldRetry(e)) {
                     logger.error("Failed to recover from last grpc error calling %s.", methodName);
                     throw new GrpcException(e);
-                }
-                try {
-                    if (recoverMethod != null && checkNotLeaderException(status)) {
-                        logger.info("Leader switched, recovering...");
-                        recoverMethod.call();
-                    }
-                } catch (Exception e1) {
-                    // Ignore exception further spreading
-                    logger.error("Error during grpc leader update.", e1);
                 }
             }
         }
     }
 
     public interface Builder {
-        RetryPolicy create(Callable<Void> recoverMethod);
+        RetryPolicy create(ErrorHandler handler);
     }
 }

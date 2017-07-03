@@ -2,7 +2,8 @@ package com.pingcap.tikv.util;
 
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
-import com.pingcap.tikv.RegionManager;
+import com.pingcap.tikv.region.RegionManager;
+import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
 import com.pingcap.tikv.grpc.Metapb;
@@ -25,7 +26,7 @@ public class RangeSplitterTest {
                 keyRange(50L, null)
         );
 
-        private Map<KeyRange, Metapb.Region> mockRegionMap = regionRanges
+        private Map<KeyRange, TiRegion> mockRegionMap = regionRanges
                 .stream()
                 .collect(Collectors.toMap(
                         kr -> kr,
@@ -37,10 +38,10 @@ public class RangeSplitterTest {
         }
 
         @Override
-        public Pair<Metapb.Region, Metapb.Store> getRegionStorePairByKey(ByteString key) {
-            for (Map.Entry<KeyRange, Metapb.Region> entry : mockRegionMap.entrySet()) {
+        public Pair<TiRegion, Metapb.Store> getRegionStorePairByKey(ByteString key) {
+            for (Map.Entry<KeyRange, TiRegion> entry : mockRegionMap.entrySet()) {
                 if (KeyRangeUtils.toRange(entry.getKey()).contains(Comparables.wrap(key))) {
-                    Metapb.Region region = entry.getValue();
+                    TiRegion region = entry.getValue();
                     return Pair.create(region,
                                        Metapb.Store.newBuilder().setId(region.getId()).build());
                 }
@@ -70,13 +71,13 @@ public class RangeSplitterTest {
                 .build();
     }
 
-    private static Metapb.Region region(long id, KeyRange range) {
-        return Metapb.Region
+    private static TiRegion region(long id, KeyRange range) {
+        return new TiRegion(Metapb.Region
                 .newBuilder()
                 .setId(id)
                 .setStartKey(range.getStart())
                 .setEndKey(range.getEnd())
-                .build();
+                .build(), null);
     }
 
     private MockRegionManager mgr = new MockRegionManager();

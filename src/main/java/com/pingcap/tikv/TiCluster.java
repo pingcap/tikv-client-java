@@ -16,7 +16,7 @@
 package com.pingcap.tikv;
 
 import com.pingcap.tikv.catalog.Catalog;
-import com.pingcap.tikv.grpc.Pdpb.RequestHeader;
+import com.pingcap.tikv.region.RegionManager;
 
 // Should be different per session thread
 public class TiCluster implements AutoCloseable {
@@ -27,8 +27,7 @@ public class TiCluster implements AutoCloseable {
     private TiCluster(TiConfiguration conf) {
         this.session = TiSession.create(conf);
         this.client = PDClient.createRaw(session);
-        RequestHeader header = this.client.getHeader();
-        this.regionManager = new RegionManager(client);
+        this.regionManager = new RegionManager(this.client);
     }
 
     public static TiCluster getCluster(TiConfiguration conf) {
