@@ -20,7 +20,7 @@ import com.google.common.collect.Range;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.RegionManager;
 import com.pingcap.tikv.RegionStoreClient;
-import com.pingcap.tikv.TiRegion;
+import com.pingcap.tikv.meta.TiRegion;
 import com.pingcap.tikv.TiSession;
 import com.pingcap.tikv.codec.KeyUtils;
 import com.pingcap.tikv.exception.TiClientInternalException;

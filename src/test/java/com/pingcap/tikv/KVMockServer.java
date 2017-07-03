@@ -17,7 +17,6 @@ package com.pingcap.tikv;
 
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.protobuf.ByteString;
 import com.pingcap.tidb.tipb.Chunk;
 import com.pingcap.tidb.tipb.SelectRequest;
@@ -25,6 +24,7 @@ import com.pingcap.tidb.tipb.SelectResponse;
 import com.pingcap.tikv.grpc.*;
 import com.pingcap.tikv.grpc.Errorpb.Error;
 import com.pingcap.tikv.grpc.Kvrpcpb.Context;
+import com.pingcap.tikv.meta.TiRegion;
 import com.pingcap.tikv.util.TiFluentIterable;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
@@ -34,7 +34,6 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 
 public class KVMockServer extends TikvGrpc.TikvImplBase {

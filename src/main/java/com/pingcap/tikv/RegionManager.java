@@ -28,6 +28,7 @@ import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.grpc.Metapb.Region;
 import com.pingcap.tikv.grpc.Metapb.Store;
 import com.pingcap.tikv.grpc.Metapb.Peer;
+import com.pingcap.tikv.meta.TiRegion;
 import com.pingcap.tikv.util.Pair;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -181,12 +182,11 @@ public class RegionManager {
                                 endKey.asReadOnlyByteBuffer());
     }
 
-    // TODO figure out where to put this logic. TiKV put it under sendReqToRegion right before resp.
     public void onRequestFail(long regionID, long storeID) {
         Optional<Future<TiRegion>> region = Optional.ofNullable(regionCache.getIfPresent(regionID));
         region.ifPresent(r -> {
             try {
-                if(r.get().onRequestFail(storeID)) {
+                if(!r.get().onRequestFail(storeID)) {
                     invalidateRegion(regionID);
                 }
             } catch (InterruptedException | ExecutionException e) {

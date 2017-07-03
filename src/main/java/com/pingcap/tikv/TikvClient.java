@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.grpc.Kvrpcpb;
 import com.pingcap.tikv.grpc.Metapb;
+import com.pingcap.tikv.meta.TiRegion;
 import com.pingcap.tikv.util.Pair;
 
 import java.util.HashMap;

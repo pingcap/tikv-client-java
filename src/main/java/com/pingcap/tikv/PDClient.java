@@ -26,6 +26,7 @@ import com.pingcap.tikv.grpc.PDGrpc;
 import com.pingcap.tikv.grpc.PDGrpc.PDBlockingStub;
 import com.pingcap.tikv.grpc.PDGrpc.PDStub;
 import com.pingcap.tikv.grpc.Pdpb.*;
+import com.pingcap.tikv.meta.TiRegion;
 import com.pingcap.tikv.meta.TiTimestamp;
 import com.pingcap.tikv.operation.PDErrorHandler;
 import com.pingcap.tikv.util.FutureObserver;

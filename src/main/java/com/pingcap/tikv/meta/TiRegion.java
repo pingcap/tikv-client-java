@@ -15,7 +15,7 @@
  *
  */
 
-package com.pingcap.tikv;
+package com.pingcap.tikv.meta;
 
 
 import com.google.protobuf.ByteString;
@@ -24,7 +24,7 @@ import com.pingcap.tikv.grpc.Metapb;
 import com.pingcap.tikv.grpc.Metapb.Peer;
 import com.pingcap.tikv.grpc.Metapb.Region;
 
-import java.util.List;
+import java.util.HashSet;
 import java.util.Set;
 
 public class TiRegion {
@@ -35,31 +35,14 @@ public class TiRegion {
     public TiRegion(Region meta, Peer peer) {
         this.meta = meta;
         this.peer = peer;
+        this.unreachableStores = new HashSet<>();
     }
 
     public Peer getLeader() {
         return peer;
     }
-    public class RegionVerID {
-        long id;
-        long confVer;
-        long ver;
-        public RegionVerID(long id, long confVer, long ver) {
-            this.id = id;
-            this.confVer = confVer;
-            this.ver = ver;
-        }
-    }
-
     public long getId() {
         return this.meta.getId();
-    }
-
-    public RegionVerID VerID() {
-        long id = this.meta.getId();
-        long confVer = this.meta.getRegionEpoch().getConfVer();
-        long ver = this.meta.getRegionEpoch().getVersion();
-        return new RegionVerID(id, confVer, ver);
     }
 
     public ByteString getStartKey() {
@@ -118,19 +101,20 @@ public class TiRegion {
         return meta;
     }
 
-    public List<Peer> getPeersList() {
-       return this.meta.getPeersList();
-    }
-
+    /**
+     * records unreachable peer and tries to select another valid peer.
+     * It returns false if all peers are unreachable.
+     * @param storeID leader store ID
+     * @return false if peers are unreachable.
+     */
     public boolean onRequestFail(long storeID) {
-        if(this.getLeader().getStoreId() == storeID) {
+        if(this.peer.getStoreId() == storeID) {
             return true;
         }
         this.unreachableStores.add(storeID);
-        L:
         for(Peer p: this.meta.getPeersList()) {
             if(unreachableStores.contains(p.getStoreId())){
-                continue L;
+                continue;
             }
             this.peer = p;
             return true;

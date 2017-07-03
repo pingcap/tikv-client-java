@@ -19,6 +19,7 @@ package com.pingcap.tikv;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.grpc.Metapb.Region;
 import com.pingcap.tikv.grpc.Metapb.Store;
+import com.pingcap.tikv.meta.TiRegion;
 import com.pingcap.tikv.meta.TiTimestamp;
 
 import java.util.concurrent.Future;

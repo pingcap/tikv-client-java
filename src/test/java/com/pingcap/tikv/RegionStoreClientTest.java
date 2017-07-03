@@ -24,6 +24,7 @@ import com.pingcap.tidb.tipb.SelectResponse;
 import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
 import com.pingcap.tikv.grpc.Kvrpcpb;
 import com.pingcap.tikv.grpc.Metapb;
+import com.pingcap.tikv.meta.TiRegion;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

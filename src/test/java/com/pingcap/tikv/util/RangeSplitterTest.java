@@ -2,9 +2,8 @@ package com.pingcap.tikv.util;
 
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
-import com.pingcap.tikv.ReadOnlyPDClient;
 import com.pingcap.tikv.RegionManager;
-import com.pingcap.tikv.TiRegion;
+import com.pingcap.tikv.meta.TiRegion;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
 import com.pingcap.tikv.grpc.Metapb;
