@@ -20,7 +20,7 @@ import com.google.common.net.HostAndPort;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.exception.GrpcException;
 import com.pingcap.tikv.grpc.Metapb;
-import com.pingcap.tikv.meta.TiRegion;
+import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.meta.TiTimestamp;
 import com.pingcap.tikv.grpc.Metapb.Region;
 import com.pingcap.tikv.grpc.Metapb.Store;

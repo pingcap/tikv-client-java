@@ -17,16 +17,13 @@
 
 package com.pingcap.tikv.operation;
 
-import com.pingcap.tikv.RegionManager;
-import com.pingcap.tikv.exception.RegionException;
+import com.pingcap.tikv.region.RegionManager;
 import com.pingcap.tikv.grpc.Errorpb;
 import com.pingcap.tikv.grpc.Kvrpcpb;
 import com.pingcap.tikv.grpc.Pdpb;
 import io.grpc.Status;
-import io.grpc.StatusException;
 import io.grpc.StatusRuntimeException;
 
-import java.util.concurrent.Callable;
 import java.util.function.Function;
 
 public class KVErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {

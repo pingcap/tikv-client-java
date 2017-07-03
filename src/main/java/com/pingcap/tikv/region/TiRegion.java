@@ -15,7 +15,7 @@
  *
  */
 
-package com.pingcap.tikv.meta;
+package com.pingcap.tikv.region;
 
 
 import com.google.protobuf.ByteString;

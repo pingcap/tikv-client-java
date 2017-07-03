@@ -1,4 +1,5 @@
 /*
+ *
  * Copyright 2017 PingCAP, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,9 +12,10 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package com.pingcap.tikv;
+package com.pingcap.tikv.region;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -23,12 +25,13 @@ import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.protobuf.ByteString;
+import com.pingcap.tikv.ReadOnlyPDClient;
+import com.pingcap.tikv.TiSession;
 import com.pingcap.tikv.exception.GrpcException;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.grpc.Metapb.Region;
 import com.pingcap.tikv.grpc.Metapb.Store;
 import com.pingcap.tikv.grpc.Metapb.Peer;
-import com.pingcap.tikv.meta.TiRegion;
 import com.pingcap.tikv.util.Pair;
 
 import javax.annotation.ParametersAreNonnullByDefault;

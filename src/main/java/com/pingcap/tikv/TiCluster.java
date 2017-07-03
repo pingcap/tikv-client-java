@@ -16,7 +16,7 @@
 package com.pingcap.tikv;
 
 import com.pingcap.tikv.catalog.Catalog;
-import com.pingcap.tikv.grpc.Pdpb.RequestHeader;
+import com.pingcap.tikv.region.RegionManager;
 
 // Should be different per session thread
 public class TiCluster implements AutoCloseable {

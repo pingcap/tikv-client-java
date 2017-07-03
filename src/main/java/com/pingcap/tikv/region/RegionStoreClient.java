@@ -1,4 +1,5 @@
 /*
+ *
  * Copyright 2017 PingCAP, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,9 +12,10 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package com.pingcap.tikv;
+package com.pingcap.tikv.region;
 
 
 import com.google.common.cache.Cache;
@@ -23,6 +25,8 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.pingcap.tidb.tipb.SelectRequest;
 import com.pingcap.tidb.tipb.SelectResponse;
+import com.pingcap.tikv.AbstractGrpcClient;
+import com.pingcap.tikv.TiSession;
 import com.pingcap.tikv.exception.*;
 import com.pingcap.tikv.grpc.Coprocessor;
 import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
@@ -31,7 +35,6 @@ import com.pingcap.tikv.grpc.Metapb.Store;
 import com.pingcap.tikv.grpc.TikvGrpc;
 import com.pingcap.tikv.grpc.TikvGrpc.TikvBlockingStub;
 import com.pingcap.tikv.grpc.TikvGrpc.TikvStub;
-import com.pingcap.tikv.meta.TiRegion;
 import com.pingcap.tikv.operation.KVErrorHandler;
 import com.pingcap.tikv.util.FutureObserver;
 import io.grpc.ManagedChannel;

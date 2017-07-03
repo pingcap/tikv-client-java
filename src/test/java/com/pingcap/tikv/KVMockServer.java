@@ -24,7 +24,7 @@ import com.pingcap.tidb.tipb.SelectResponse;
 import com.pingcap.tikv.grpc.*;
 import com.pingcap.tikv.grpc.Errorpb.Error;
 import com.pingcap.tikv.grpc.Kvrpcpb.Context;
-import com.pingcap.tikv.meta.TiRegion;
+import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.util.TiFluentIterable;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
