@@ -123,9 +123,10 @@ public class TimestampType extends DataType {
         int minute = time.getMinute();
         int second = time.getSecond();
         // 1 microsecond = 1000 nano second
-        int micro = time.getNano() / 1000;
-        int ymd = (year*13 + month) << 5 | day;
-        int hms = hour << 12 | minute << 6 | second;
+        // TODO if nano divide 1000, then the result is not correct.
+        int micro = time.getNano();
+        long ymd = (year*13 + month) << 5 | day;
+        long hms = hour << 12 | minute << 6 | second;
         return ((ymd << 17 | hms) << 24) | micro;
     }
 
