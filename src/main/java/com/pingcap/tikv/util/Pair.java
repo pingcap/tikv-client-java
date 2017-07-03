@@ -16,7 +16,9 @@
 package com.pingcap.tikv.util;
 
 
-public class Pair<F, S> {
+import java.io.Serializable;
+
+public class Pair<F, S> implements Serializable {
     public final F first;
     public final S second;
     public Pair(F f, S s) {

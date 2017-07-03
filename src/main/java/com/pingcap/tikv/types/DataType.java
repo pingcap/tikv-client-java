@@ -100,7 +100,7 @@ public abstract class DataType implements Serializable {
     }
 
     protected void decodeValueNoNullToRow(Row row, int pos, Object value) {
-        row.set(pos, DataTypeFactory.of(this.tp), value);
+        row.set(pos, this, value);
     }
 
     public abstract Object decodeNotNull(int flag, CodecDataInput cdi);

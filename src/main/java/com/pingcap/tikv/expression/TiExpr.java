@@ -29,5 +29,5 @@ public interface TiExpr extends Serializable {
     DataType getType();
 
     // TODO: Make it visitor
-    void bind(TiTableInfo table);
+    TiExpr bind(TiTableInfo table);
 }

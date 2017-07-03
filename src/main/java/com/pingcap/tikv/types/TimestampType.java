@@ -47,6 +47,9 @@ public class TimestampType extends DataType {
         if (flag == UVARINT_FLAG) {
             // read packedUint
             LocalDateTime localDateTime = fromPackedLong(IntegerType.readUVarLong(cdi));
+            if (localDateTime == null) {
+                return null;
+            }
             return Timestamp.valueOf(localDateTime);
         // row.setTimestamp(pos, timestamp);
         } else if (flag == INT_FLAG){
@@ -72,6 +75,9 @@ public class TimestampType extends DataType {
         if (flag == UVARINT_FLAG) {
             // read packedUint
             LocalDateTime localDateTime = fromPackedLong(IntegerType.readUVarLong(cdi));
+            if (localDateTime == null) {
+                row.setNull(pos);
+            }
             Timestamp timestamp = Timestamp.valueOf(localDateTime);
             row.setTimestamp(pos, timestamp);
         } else if (flag == INT_FLAG){
@@ -129,18 +135,24 @@ public class TimestampType extends DataType {
      * @return a decoded LocalDateTime.
      */
     public static LocalDateTime fromPackedLong(long packed) {
+        // TODO: As for JDBC behavior, it can be configured to "round" or "toNull"
+        // for now we didn't pass in session so we do a toNull behavior
+        if (packed == 0) {
+            return null;
+        }
         long ymdhms = packed >> 24;
         long ymd = ymdhms >> 17;
-        int day = (int)(ymd & (1 << 5 -1));
+        int day = (int)(ymd & ((1 << 5) -1));
         long ym = ymd >> 5;
         int month = (int)(ym % 13);
-        int year = (int)(ym/13);
+        int year = (int)(ym / 13);
 
-        int hms = (int)(ymdhms & (1<<17-1));
-        int second = hms & (1<<6 - 1);
-        int minute = (hms >> 6) & (1<<6 - 1);
+        int hms = (int)(ymdhms & ((1 << 17) - 1));
+        int second = hms & ((1 << 6) - 1);
+        int minute = (hms >> 6) & ((1 << 6) - 1);
         int hour = hms >> 12;
         int microsec = (int)(packed % (1 << 24));
         return LocalDateTime.of(year, month, day, hour, minute, second, microsec);
     }
+
 }

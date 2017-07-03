@@ -24,11 +24,6 @@ public class Sum extends TiUnaryFunctionExpression {
         return DataTypeFactory.of(Types.TYPE_NEW_DECIMAL);
     }
 
-    // TODO: refactor is needed. Only for Sum casting.
-    public DataType getColumnType() {
-        return this.args.get(0).getType();
-    }
-
     @Override
     public String getName() {
         return "sum";

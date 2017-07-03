@@ -46,6 +46,10 @@ public class TiColumnRef implements TiExpr {
         return ref;
     }
 
+    public static TiColumnRef create(TiColumnInfo columnInfo, TiTableInfo table) {
+        return new TiColumnRef(columnInfo.getName(), columnInfo, table);
+    }
+
     private final String name;
 
     private TiColumnInfo columnInfo;
@@ -53,6 +57,14 @@ public class TiColumnRef implements TiExpr {
 
     private TiColumnRef(String name) {
         this.name = name;
+    }
+
+    private TiColumnRef(String name,
+                        TiColumnInfo columnInfo,
+                        TiTableInfo tableInfo) {
+        this.name = name;
+        this.columnInfo = columnInfo;
+        this.tableInfo = tableInfo;
     }
 
     @Override
@@ -71,7 +83,7 @@ public class TiColumnRef implements TiExpr {
     }
 
     @Override
-    public void bind(TiTableInfo table) {
+    public TiColumnRef bind(TiTableInfo table) {
         TiColumnInfo columnInfo = getColumnWithName(name, table);
         if (columnInfo == null) {
             throw new TiExpressionException("No Matching columns from TiTableInfo");
@@ -88,6 +100,7 @@ public class TiColumnRef implements TiExpr {
         }
         this.tableInfo = table;
         this.columnInfo = columnInfo;
+        return this;
     }
 
     public String getName() {

@@ -89,12 +89,6 @@ public class IntegerType extends DataType {
         super(holder);
     }
 
-    @Override
-    public String toString() {
-        return "ClassInt";
-    }
-
-
     /**
      * Encoding a long value to byte buffer with type flag at the beginning
      * @param cdo For outputting data in bytes array

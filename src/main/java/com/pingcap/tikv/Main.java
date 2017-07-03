@@ -38,7 +38,7 @@ public class Main {
 
         Catalog cat = cluster.getCatalog();
         TiDBInfo db = cat.getDatabase("test");
-        TiTableInfo table = cat.getTable(db, "test");
+        TiTableInfo table = cat.getTable(db, "item");
 
         TiIndexInfo index = TiIndexInfo.generateFakePrimaryKeyIndex(table);
 

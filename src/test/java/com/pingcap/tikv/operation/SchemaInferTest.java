@@ -45,7 +45,7 @@ public class SchemaInferTest {
 
     private TiTableInfo table = Catalog.parseFromJson(table29Bs, TiTableInfo.class);
     private TiExpr number = TiColumnRef.create("number", table);
-    private TiExpr name = TiColumnRef.create("name", table);
+    private TiColumnRef name = TiColumnRef.create("name", table);
     private TiExpr sum = new Sum(number);
     private TiByItem simpleGroupBy = TiByItem.create(name, false);
     private TiByItem complexGroupBy = TiByItem.create(new Plus(name, TiConstant.create("1")), false);
@@ -65,10 +65,10 @@ public class SchemaInferTest {
         // select sum(number) from t1;
         // SingleGroup is added as dummy variable.
         TiSelectRequest selectRequest = new TiSelectRequest();
-        selectRequest.getAggregates().add(sum);
+        selectRequest.addAggregate(sum);
         List<DataType> dataTypes = SchemaInfer.create(selectRequest).getTypes();
         Assert.assertSame(2, dataTypes.size());
-        Assert.assertSame(DataTypeFactory.of(TYPE_VARCHAR), dataTypes.get(0));
+        Assert.assertSame(DataTypeFactory.of(TYPE_BLOB), dataTypes.get(0));
         Assert.assertSame(DataTypeFactory.of(TYPE_NEW_DECIMAL), dataTypes.get(1));
     }
 
@@ -77,7 +77,7 @@ public class SchemaInferTest {
         // select sum(number) from t1 group by name;
         TiSelectRequest selectRequest = new TiSelectRequest();
         selectRequest.getFields().add(name);
-        selectRequest.getAggregates().add(sum);
+        selectRequest.addAggregate(sum);
         selectRequest.getGroupByItems().add(complexGroupBy);
         List<DataType> dataTypes = SchemaInfer.create(selectRequest).getTypes();
         Assert.assertSame(2, dataTypes.size());
@@ -90,7 +90,7 @@ public class SchemaInferTest {
         // select sum(number) from t1 group by name + "1";
         TiSelectRequest selectRequest = new TiSelectRequest();
         selectRequest.getFields().add(name);
-        selectRequest.getAggregates().add(sum);
+        selectRequest.addAggregate(sum);
         selectRequest.getGroupByItems().add(complexGroupBy);
         List<DataType> dataTypes = SchemaInfer.create(selectRequest).getTypes();
         Assert.assertSame(2, dataTypes.size());
