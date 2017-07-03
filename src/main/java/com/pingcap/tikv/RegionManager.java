@@ -190,9 +190,6 @@ public class RegionManager {
 
     // TODO figure out where to put this logic. TiKV put it under sendReqToRegion right before resp.
     public void onRequestFail(long regionID, long storeID) {
-        //region on request failure
-        // check equality of storeID and region's storeID
-        // try to select another valid leader peer
         try {
             TiRegion region = regionCache.get(regionID).get();
             if(region.onRequestFail(storeID)) {
