@@ -79,12 +79,13 @@ public class TiRegion {
     /**
      * switches current peer to the one on specific store. It return false if no
      * peer matches the storeID.
-     *
+     * @param leaderStoreID  is leader peer id.
+     * @return false if no peers matches the store id.
      */
-    public  boolean switchPeer(long storeID) {
+    public boolean switchPeer(long leaderStoreID) {
         return meta.getPeersList().stream().anyMatch(
                 p -> {
-                    if (p.getStoreId() == storeID) {
+                    if (p.getStoreId() == leaderStoreID) {
                         this.peer = p;
                         return true;
                     }
@@ -137,9 +138,6 @@ public class TiRegion {
         return false;
     }
 
-    public boolean isRegionLeaderSwitched(long storeID) {
-        return getPeersList().stream().anyMatch(
-                p -> p.getStoreId() == storeID
-        );
-    }
+
+
 }

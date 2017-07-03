@@ -156,25 +156,24 @@ public class RegionManager {
         return true;
     }
 
-    private boolean isRegionLeaderSwitched(TiRegion region, long storeID) {
-        return region.getPeersList().stream().anyMatch(
-                p -> p.getStoreId() == storeID
-        );
-    }
-
     public void onRegionStale(long regionID, List<Region> regions) {
         invalidateRegion(regionID);
         regions.stream().map(r -> new TiRegion(r, r.getPeers(0))).forEach(this::putRegion);
     }
 
     public void updateLeader(long regionID, long storeID) {
-        try {
-            TiRegion region = regionCache.getUnchecked(regionID).get();
-            if(region.isRegionLeaderSwitched(storeID)) {
-                invalidateRegion(regionID);
-            }
-        } catch (InterruptedException | ExecutionException ignored) {
-        }
+        Optional<Future<TiRegion>> region = Optional.of(regionCache.getUnchecked(regionID));
+            region.ifPresent(
+                   r -> {
+                       try {
+                           if(r.get().switchPeer(storeID)) {
+                               invalidateRegion(regionID);
+                           }
+                       } catch (InterruptedException | ExecutionException e) {
+                           e.printStackTrace();
+                       }
+                   }
+            );
     }
 
     private static Range<ByteBuffer> makeRange(ByteString startKey, ByteString endKey) {

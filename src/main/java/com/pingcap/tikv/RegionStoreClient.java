@@ -301,6 +301,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                               TikvStub asyncStub) {
         super(session);
         checkNotNull(region, "Region is empty");
+        checkNotNull(region.getLeader(), "Leader Peer is null");
         checkArgument(region.getLeader() != null, "Leader Peer is null");
         this.channel = channel;
         this.regionManager = regionManager;

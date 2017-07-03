@@ -62,7 +62,7 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
 
              // no need retry
             if (error.hasStaleEpoch()) {
-                // regionManager.onRegionStale(context.getRegionId(), error.getStaleEpoch().getNewRegionsList());
+                 regionManager.onRegionStale(ctx.getRegionId(), error.getStaleEpoch().getNewRegionsList());
                 // StaleEpoch is not need to retry
                 this.regionManager.onRegionStale(ctx.getRegionId(), error.getStaleEpoch().getNewRegionsList());
                 throw new StatusRuntimeException(Status.fromCode(Status.Code.CANCELLED));
