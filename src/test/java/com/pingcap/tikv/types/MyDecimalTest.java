@@ -71,6 +71,24 @@ public class MyDecimalTest {
                      );
     }
 
+    @Test
+    public void toBinTest() throws Exception {
+       MyDecimal dec = new MyDecimal();
+       dec.fromDecimal(-1234567890.1234);
+       int[] data = dec.toBin(dec.precision(), dec.frac());
+       int[] expected = new int[] {
+               0x7E,
+               0xF2,
+               0x04,
+               0xC7,
+               0x2D,
+               0xFB,
+               0x2D,
+       };
+       // something wrong with toBin and fromBin
+       assertArrayEquals(expected, data);
+    }
+
     // MyDecimalTestStruct is only used for simplifing testing.
     private class MyDecimalTestStruct {
         String in;
