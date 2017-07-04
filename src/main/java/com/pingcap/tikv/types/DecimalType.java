@@ -21,12 +21,12 @@ import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.codec.InvalidCodecFormatException;
 import com.pingcap.tikv.codec.MyDecimal;
-import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.meta.TiColumnInfo;
 import gnu.trove.list.array.TIntArrayList;
 
 public class DecimalType extends DataType {
 
+    private static final long signMask = 0x8000000000000000L;
     static DecimalType of(int tp) {
        return new DecimalType(tp);
     }
@@ -100,7 +100,7 @@ public class DecimalType extends DataType {
      * @param cdo cdo is destination data.
      * @param lvalue is decimal value that will be written into cdo.
      * */
-    public static void writeDecimalFully(CodecDataOutput cdo, double lvalue) {
+    static void writeDecimalFully(CodecDataOutput cdo, double lvalue) {
         MyDecimal dec = new MyDecimal();
         dec.fromDecimal(lvalue);
         int[] data = dec.toBin(dec.precision(), dec.frac());
@@ -126,14 +126,13 @@ public class DecimalType extends DataType {
         return Double.longBitsToDouble(u);
     }
 
-
     /**
      * Encoding a double value to byte buffer
      * @param cdo For outputting data in bytes array
      * @param val The data to encode
      */
     public static void writeDouble(CodecDataOutput cdo, double val) {
-        throw new UnsupportedOperationException();
+        writeDecimalFully(cdo, val);
     }
 
     /**
@@ -142,7 +141,7 @@ public class DecimalType extends DataType {
      * @param val The data to encode
      */
     public static void writeFloat(CodecDataOutput cdo, float val) {
-        throw new UnsupportedOperationException();
+        writeDecimalFully(cdo, val);
     }
 
 }
