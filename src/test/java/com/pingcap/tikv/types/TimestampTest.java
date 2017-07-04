@@ -24,6 +24,7 @@ import java.time.format.DateTimeFormatter;
 
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class TimestampTest {
     @Test
@@ -33,8 +34,20 @@ public class TimestampTest {
         assertEquals(time, time1);
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        time = LocalDateTime.parse("2010-10-10 10:11:11", formatter);
-        time1 = TimestampType.fromPackedLong(TimestampType.toPackedLong(time));
-        assertEquals(time, time1);
+        LocalDateTime time2 = LocalDateTime.parse("2010-10-10 10:11:11", formatter);
+        LocalDateTime time3 = TimestampType.fromPackedLong(TimestampType.toPackedLong(time2));
+        assertEquals(time2, time3);
+
+        // when packedLong is 0, then null is returned
+        LocalDateTime time4 = TimestampType.fromPackedLong(0);
+        assertNull(time4);
+
+        LocalDateTime time5 = LocalDateTime.parse("9999-12-31 23:59:59", formatter);
+        LocalDateTime time6 = TimestampType.fromPackedLong(TimestampType.toPackedLong(time5));
+        assertEquals(time5, time6);
+
+        LocalDateTime time7 = LocalDateTime.parse("1000-01-01 00:00:00", formatter);
+        LocalDateTime time8 = TimestampType.fromPackedLong(TimestampType.toPackedLong(time7));
+        assertEquals(time7, time8);
     }
 }
