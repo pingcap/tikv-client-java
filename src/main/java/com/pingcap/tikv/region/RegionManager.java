@@ -181,6 +181,14 @@ public class RegionManager {
     }
 
     private static Range<ByteBuffer> makeRange(ByteString startKey, ByteString endKey) {
+        if (startKey.isEmpty() && endKey.isEmpty()) {
+            return Range.all();
+        }
+        if (startKey.isEmpty()) {
+            return Range.lessThan(endKey.asReadOnlyByteBuffer());
+        } else if (endKey.isEmpty()) {
+            return Range.atLeast(startKey.asReadOnlyByteBuffer());
+        }
         return Range.closedOpen(startKey.asReadOnlyByteBuffer(),
                                 endKey.asReadOnlyByteBuffer());
     }

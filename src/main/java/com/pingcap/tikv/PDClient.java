@@ -84,7 +84,9 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub> impleme
                 .setRegionKey(key)
                 .build();
 
-        PDErrorHandler<GetRegionResponse> handler = new PDErrorHandler<>(r -> r.getHeader().getError());
+        PDErrorHandler<GetRegionResponse> handler = new PDErrorHandler<>(
+                r -> r.getHeader().hasError() ? r.getHeader().getError() : null
+        );
         GetRegionResponse resp = callWithRetry(PDGrpc.METHOD_GET_REGION, request, handler);
         return new TiRegion(resp.getRegion(), resp.getLeader());
     }
@@ -98,7 +100,9 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub> impleme
                 .setRegionKey(key)
                 .build();
 
-        PDErrorHandler<GetRegionResponse> handler = new PDErrorHandler<>(r -> r.getHeader().getError());
+        PDErrorHandler<GetRegionResponse> handler = new PDErrorHandler<>(
+                r -> r.getHeader().hasError() ? r.getHeader().getError() : null
+        );
         callAsyncWithRetry(PDGrpc.METHOD_GET_REGION, request, responseObserver, handler);
         return responseObserver.getFuture();
     }
@@ -109,7 +113,9 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub> impleme
                 .setHeader(header)
                 .setRegionId(id)
                 .build();
-        PDErrorHandler<GetRegionResponse> handler = new PDErrorHandler<>(r -> r.getHeader().getError());
+        PDErrorHandler<GetRegionResponse> handler = new PDErrorHandler<>(
+                r -> r.getHeader().hasError() ? r.getHeader().getError() : null
+        );
         GetRegionResponse resp = callWithRetry(PDGrpc.METHOD_GET_REGION_BY_ID, request, handler);
         // Instead of using default leader instance, explicitly set no leader to null
         return resp.getRegion();
@@ -124,7 +130,9 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub> impleme
                 .setHeader(header)
                 .setRegionId(id)
                 .build();
-        PDErrorHandler<GetRegionResponse> handler = new PDErrorHandler<>(r -> r.getHeader().getError());
+        PDErrorHandler<GetRegionResponse> handler = new PDErrorHandler<>(
+                r -> r.getHeader().hasError() ? r.getHeader().getError() : null
+        );
         callAsyncWithRetry(PDGrpc.METHOD_GET_REGION_BY_ID, request, responseObserver, handler);
         return responseObserver.getFuture();
     }
@@ -135,7 +143,9 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub> impleme
                 .setHeader(header)
                 .setStoreId(storeId)
                 .build();
-        PDErrorHandler<GetStoreResponse> handler = new PDErrorHandler<>(r -> r.getHeader().getError());
+        PDErrorHandler<GetStoreResponse> handler = new PDErrorHandler<>(
+                r -> r.getHeader().hasError() ? r.getHeader().getError() : null
+        );
         GetStoreResponse resp = callWithRetry(PDGrpc.METHOD_GET_STORE, request, handler);
         Store store = resp.getStore();
         if (store.getState() == Metapb.StoreState.Tombstone) {
@@ -159,7 +169,9 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub> impleme
                 .setHeader(header)
                 .setStoreId(storeId)
                 .build();
-        PDErrorHandler<GetStoreResponse> handler = new PDErrorHandler<>(r -> r.getHeader().getError());
+        PDErrorHandler<GetStoreResponse> handler = new PDErrorHandler<>(
+                r -> r.getHeader().hasError() ? r.getHeader().getError() : null
+        );
         callAsyncWithRetry(PDGrpc.METHOD_GET_STORE, request, responseObserver, handler);
         return responseObserver.getFuture();
     }
