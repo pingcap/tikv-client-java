@@ -34,6 +34,17 @@ public class RealTypeTest {
         RealType.writeDouble(cdo, 0.00);
         double u = RealType.readDouble(new CodecDataInput(cdo.toBytes()));
         assertEquals(0.00, u, 0);
+
+        cdo.reset();
+        RealType.writeDouble(cdo, Double.MAX_VALUE);
+        u = RealType.readDouble(new CodecDataInput(cdo.toBytes()));
+        assertEquals(Double.MAX_VALUE, u, 0);
+
+        cdo.reset();
+        RealType.writeDouble(cdo, Double.MIN_VALUE);
+        u = RealType.readDouble(new CodecDataInput(cdo.toBytes()));
+        assertEquals(Double.MIN_VALUE, u, 0);
+
     }
 
     @Test
