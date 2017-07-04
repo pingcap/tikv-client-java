@@ -21,11 +21,13 @@ import com.google.protobuf.ByteString;
 import com.pingcap.tidb.tipb.Chunk;
 import com.pingcap.tidb.tipb.SelectRequest;
 import com.pingcap.tidb.tipb.SelectResponse;
-import com.pingcap.tikv.grpc.*;
+import com.pingcap.tikv.grpc.Coprocessor;
+import com.pingcap.tikv.grpc.Errorpb;
 import com.pingcap.tikv.grpc.Errorpb.Error;
+import com.pingcap.tikv.grpc.Kvrpcpb;
 import com.pingcap.tikv.grpc.Kvrpcpb.Context;
+import com.pingcap.tikv.grpc.TikvGrpc;
 import com.pingcap.tikv.region.TiRegion;
-import com.pingcap.tikv.util.TiFluentIterable;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.Status;
@@ -302,11 +304,16 @@ public class KVMockServer extends TikvGrpc.TikvImplBase {
                 } else {
                     ByteString startKey = keyRange.getStart();
                     SortedMap<String, String> kvs = dataMap.tailMap(startKey.toStringUtf8());
-                    builder.addAllChunks(TiFluentIterable.from(kvs.entrySet()).filter(Objects::nonNull)
-                            .stopWhen(kv -> kv.getKey().compareTo(keyRange.getEnd().toStringUtf8()) > 0)
-                            .transform(kv -> Chunk.newBuilder()
+                    builder.addAllChunks(
+                            kvs.entrySet()
+                            .stream()
+                            .filter(Objects::nonNull)
+                            .filter(kv -> kv.getKey().compareTo(keyRange.getEnd().toStringUtf8()) <= 0)
+                            .map(kv -> Chunk.newBuilder()
                                     .setRowsData(ByteString.copyFromUtf8(kv.getValue()))
-                                    .build()));
+                                    .build())
+                            .collect(Collectors.toList())
+                    );
                 }
             }
 

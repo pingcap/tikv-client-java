@@ -82,7 +82,7 @@ public class TiColumnRef implements TiExpr {
     public TiColumnRef bind(TiTableInfo table) {
         TiColumnInfo columnInfo = getColumnWithName(name, table);
         if (columnInfo == null) {
-            throw new TiExpressionException("No Matching columns from TiTableInfo");
+            throw new TiExpressionException("No Matching columns from " + table.getName());
         }
 
         // TODO: After type system finished, do a type check

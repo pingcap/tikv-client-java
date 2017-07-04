@@ -7,7 +7,6 @@ import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
 import com.pingcap.tikv.grpc.Metapb;
-import com.pingcap.tikv.predicates.Comparables;
 import com.pingcap.tikv.types.IntegerType;
 import org.junit.Test;
 

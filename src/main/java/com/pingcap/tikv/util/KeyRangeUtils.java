@@ -18,7 +18,6 @@ package com.pingcap.tikv.util;
 
 import com.google.common.collect.Range;
 import com.pingcap.tikv.grpc.Coprocessor;
-import com.pingcap.tikv.predicates.Comparables;
 
 public class KeyRangeUtils {
     public static Range toRange(Coprocessor.KeyRange range) {

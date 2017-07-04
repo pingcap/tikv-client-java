@@ -56,10 +56,18 @@ public abstract class TiFunctionExpression implements TiExpr {
         Expr.Builder builder = Expr.newBuilder();
 
         builder.setTp(getExprType());
+<<<<<<< HEAD
+        builder.addAllChildren(this.args
+                .stream()
+                .map(TiExpr::toProto)
+                .collect(Collectors.toList())
+        );
+=======
 
         for (TiExpr arg : args) {
             builder.addChildren(arg.toProto());
         }
+>>>>>>> fix range and comparables
 
         return builder.build();
     }

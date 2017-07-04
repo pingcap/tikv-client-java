@@ -24,13 +24,14 @@ import com.pingcap.tikv.grpc.Metapb;
 import com.pingcap.tikv.grpc.Metapb.Peer;
 import com.pingcap.tikv.grpc.Metapb.Region;
 
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
-public class TiRegion {
-    private Region meta;
+public class TiRegion implements Serializable {
+    private final Region meta;
+    private final Set<Long> unreachableStores;
     private Peer peer;
-    private Set<Long> unreachableStores;
 
     public TiRegion(Region meta, Peer peer) {
         this.meta = meta;
@@ -55,7 +56,9 @@ public class TiRegion {
 
     public Kvrpcpb.Context getContext() {
         Kvrpcpb.Context.Builder builder = Kvrpcpb.Context.newBuilder();
-        builder.setRegionId(meta.getId()).setPeer(this.peer).setRegionEpoch(this.meta.getRegionEpoch());
+        builder.setRegionId(meta.getId())
+                .setPeer(this.peer)
+                .setRegionEpoch(this.meta.getRegionEpoch());
         return builder.build();
     }
 
