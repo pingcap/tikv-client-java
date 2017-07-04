@@ -112,7 +112,7 @@ public class RealType extends DataType {
      * @param val The data to encode
      */
     public static void writeDouble(CodecDataOutput cdo, double val) {
-        encodeDoubleToCmpLong(val);
+        IntegerType.writeULong(cdo, encodeDoubleToCmpLong(val));
     }
 
     /**
@@ -121,6 +121,6 @@ public class RealType extends DataType {
      * @param val The data to encode
      */
     public static void writeFloat(CodecDataOutput cdo, float val) {
-        IntegerType.writeULong(cdo, encodeDoubleToCmpLong(val));
+        writeDouble(cdo, val);
     }
 }
