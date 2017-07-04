@@ -20,7 +20,6 @@ package com.pingcap.tikv.region;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
 import com.google.common.util.concurrent.SettableFuture;
@@ -29,25 +28,27 @@ import com.pingcap.tikv.ReadOnlyPDClient;
 import com.pingcap.tikv.TiSession;
 import com.pingcap.tikv.exception.GrpcException;
 import com.pingcap.tikv.exception.TiClientInternalException;
+import com.pingcap.tikv.grpc.Metapb.Peer;
 import com.pingcap.tikv.grpc.Metapb.Region;
 import com.pingcap.tikv.grpc.Metapb.Store;
-import com.pingcap.tikv.grpc.Metapb.Peer;
+import com.pingcap.tikv.util.Comparables;
 import com.pingcap.tikv.util.Pair;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import static com.pingcap.tikv.util.KeyRangeUtils.makeRange;
+
 
 public class RegionManager {
     private final ReadOnlyPDClient pdClient;
     private final LoadingCache<Long, Future<TiRegion>> regionCache;
     private final LoadingCache<Long, Future<Store>> storeCache;
-    private final RangeMap<ByteBuffer, Long> keyToRegionIdCache;
+    private final RangeMap<Comparable, Long> keyToRegionIdCache;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
     public static final int MAX_CACHE_CAPACITY = 4096;
@@ -85,7 +86,7 @@ public class RegionManager {
         Long regionId;
         lock.readLock().lock();
         try {
-            regionId = keyToRegionIdCache.get(key.asReadOnlyByteBuffer());
+            regionId = keyToRegionIdCache.get(Comparables.wrap(key));
         } finally {
             lock.readLock().unlock();
         }
@@ -178,19 +179,6 @@ public class RegionManager {
                        }
                    }
             );
-    }
-
-    private static Range<ByteBuffer> makeRange(ByteString startKey, ByteString endKey) {
-        if (startKey.isEmpty() && endKey.isEmpty()) {
-            return Range.all();
-        }
-        if (startKey.isEmpty()) {
-            return Range.lessThan(endKey.asReadOnlyByteBuffer());
-        } else if (endKey.isEmpty()) {
-            return Range.atLeast(startKey.asReadOnlyByteBuffer());
-        }
-        return Range.closedOpen(startKey.asReadOnlyByteBuffer(),
-                                endKey.asReadOnlyByteBuffer());
     }
 
     public void onRequestFail(long regionID, long storeID) {
