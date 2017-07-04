@@ -27,23 +27,21 @@ import io.grpc.StatusRuntimeException;
 import java.util.function.Function;
 
 public class KVErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
-    private Function<RespT, Errorpb.Error> getRegionError;
-    private RegionManager regionManager;
-    private Kvrpcpb.Context ctx;
+    private final Function<RespT, Errorpb.Error> getRegionError;
+    private final Function<RespT, Boolean> hasRegionError;
+    private final RegionManager regionManager;
+    private final Kvrpcpb.Context ctx;
 
-    public KVErrorHandler(RegionManager regionManager, Kvrpcpb.Context ctx, Function<RespT, Errorpb.Error> getRegionError) {
+    public KVErrorHandler(RegionManager regionManager, Kvrpcpb.Context ctx,
+                          Function<RespT, Errorpb.Error> getRegionError,
+                          Function<RespT, Boolean> hasRegionError) {
        this.ctx = ctx;
        this.regionManager = regionManager;
        this.getRegionError = getRegionError;
+        this.hasRegionError = hasRegionError;
     }
 
-    public void handle(RespT resp) {
-        // if resp is null, then region maybe out of dated. we need handle this on RegionManager.
-        if (resp == null) {
-            this.regionManager.onRequestFail(ctx.getRegionId(), ctx.getPeer().getStoreId());
-            return;
-        };
-        Errorpb.Error error = getRegionError.apply(resp);
+    private void handleRegionError(Errorpb.Error error) {
         if (error != null) {
             if (error.hasNotLeader()) {
                 // update Leader here
@@ -78,6 +76,19 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
             }
             // for other errors, we only drop cache here and throw a retryable exception.
             this.regionManager.invalidateRegion(ctx.getRegionId());
+        }
+    }
+
+    public void handle(RespT resp) {
+        // if resp is null, then region maybe out of dated. we need handle this on RegionManager.
+        if (resp == null) {
+            this.regionManager.onRequestFail(ctx.getRegionId(), ctx.getPeer().getStoreId());
+            return;
+        };
+
+        // handle region error only if resp has one.
+        if(hasRegionError.apply(resp)) {
+            handleRegionError(getRegionError.apply(resp));
         }
     }
 }
