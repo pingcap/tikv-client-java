@@ -26,11 +26,20 @@ import static org.junit.Assert.assertEquals;
 
 public class DecimalTypeTest {
     @Test
-    public void readDecimalFullyTest() throws Exception {
+    public void writeDoubleAndReadDoubleTest() {
         CodecDataOutput cdo = new CodecDataOutput();
-        DecimalType.writeDecimalFully(cdo, 206.0);
-        CodecDataInput cdi = new CodecDataInput(cdo.toBytes());
-        double value = DecimalType.readDecimalFully(cdi);
-        assertEquals(206.0, value, 0.0001);
+        DecimalType.writeDouble(cdo, 0.00);
+        double u = DecimalType.readDouble(new CodecDataInput(cdo.toBytes()));
+        assertEquals(0.00, u, 0.01);
+
+        cdo.reset();
+        DecimalType.writeDouble(cdo, 206.0);
+        u = DecimalType.readDouble(new CodecDataInput(cdo.toBytes()));
+        assertEquals(206.0, u, 0.0001);
+
+        cdo.reset();
+        DecimalType.writeDouble(cdo, Double.MIN_VALUE);
+        u = DecimalType.readDouble(new CodecDataInput(cdo.toBytes()));
+        assertEquals(Double.MIN_VALUE, u, 0);
     }
 }

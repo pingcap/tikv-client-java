@@ -117,13 +117,7 @@ public class DecimalType extends DataType {
      * @return decoded unsigned long value
      */
     public static double readDouble(CodecDataInput cdi) {
-        long u = IntegerType.readULong(cdi);
-        if (u < 0) {
-            u &= Long.MAX_VALUE;
-        } else {
-            u = ~u;
-        }
-        return Double.longBitsToDouble(u);
+        return readDecimalFully(cdi);
     }
 
     /**
