@@ -60,7 +60,9 @@ public class TiConstant implements TiExpr {
             IntegerType.writeLong(cdo, ((Number)value).longValue());
         } else if (value instanceof String) {
             builder.setTp(ExprType.String);
-            BytesType.writeBytes(cdo, ((String)value).getBytes());
+            // Instead of using BytesType codec, coprocessor reads
+            // raw string as bytes
+            cdo.write(((String)value).getBytes());
         } else if (value instanceof Float) {
             builder.setTp(ExprType.Float32);
             DecimalType.writeFloat(cdo, (Float)value);
