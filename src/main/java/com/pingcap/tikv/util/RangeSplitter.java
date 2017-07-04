@@ -24,10 +24,7 @@ import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
 import com.pingcap.tikv.grpc.Metapb;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
@@ -71,6 +68,9 @@ public class RangeSplitter {
     // both arguments represent right side of end points
     // so that empty is +INF
     private static int rightCompareTo(ByteString lhs, ByteString rhs) {
+        requireNonNull(lhs, "lhs is null");
+        requireNonNull(rhs, "rhs is null");
+
         // both infinite
         if (lhs.isEmpty() && rhs.isEmpty()) {
             return 0;
@@ -81,7 +81,8 @@ public class RangeSplitter {
         if (rhs.isEmpty()) {
             return -1;
         }
-        return lhs.asReadOnlyByteBuffer().compareTo(rhs.asReadOnlyByteBuffer());
+
+        return Comparables.wrap(lhs).compareTo(Comparables.wrap(rhs));
     }
 
     public List<RegionTask> splitRangeByRegion(List<KeyRange> keyRanges) {

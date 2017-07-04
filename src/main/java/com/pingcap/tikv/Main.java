@@ -37,7 +37,7 @@ public class Main {
         log.setLevel(Level.WARNING);
 
         Catalog cat = cluster.getCatalog();
-        TiDBInfo db = cat.getDatabase("test");
+        TiDBInfo db = cat.getDatabase("global_temp");
         TiTableInfo table = cat.getTable(db, "item");
 
         TiIndexInfo index = TiIndexInfo.generateFakePrimaryKeyIndex(table);

@@ -15,16 +15,19 @@
 
 package com.pingcap.tikv.catalog;
 
-import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.Snapshot;
+import com.pingcap.tikv.codec.CodecDataInput;
+import com.pingcap.tikv.codec.CodecDataOutput;
+import com.pingcap.tikv.codec.KeyUtils;
 import com.pingcap.tikv.exception.TiClientInternalException;
-import com.pingcap.tikv.codec.*;
-import com.pingcap.tikv.types.IntegerType;
+import com.pingcap.tikv.grpc.Kvrpcpb;
 import com.pingcap.tikv.types.BytesType;
+import com.pingcap.tikv.types.IntegerType;
 import com.pingcap.tikv.util.Pair;
-import com.pingcap.tikv.util.TiFluentIterable;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -96,11 +99,16 @@ public class CatalogTransaction {
         encodeHashDataKeyPrefix(cdo, prefix, key.toByteArray());
         ByteString encodedKey = cdo.toByteString();
 
-        Iterable<Pair<ByteString, ByteString>> iter =
-                TiFluentIterable.from(snapshot.scan(encodedKey))
-                                .stopWhen(kv -> !KeyUtils.hasPrefix(kv.getKey(), encodedKey))
-                                .transform(kv -> Pair.create(decodeHashDataKey(kv.getKey()).second, kv.getValue()));
+        Iterator<Kvrpcpb.KvPair> iterator = snapshot.scan(encodedKey);
+        List<Pair<ByteString, ByteString>> fields = new ArrayList<>();
+        while (iterator.hasNext()) {
+            Kvrpcpb.KvPair kv = iterator.next();
+            if (!KeyUtils.hasPrefix(kv.getKey(), encodedKey)) {
+                break;
+            }
+            fields.add(Pair.create(decodeHashDataKey(kv.getKey()).second, kv.getValue()));
+        }
 
-        return ImmutableList.copyOf(iter);
+        return fields;
     }
 }

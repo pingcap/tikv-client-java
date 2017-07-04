@@ -20,7 +20,6 @@ import com.google.common.collect.ImmutableList;
 import com.pingcap.tidb.tipb.Expr;
 import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.meta.TiTableInfo;
-import com.pingcap.tikv.util.TiFluentIterable;
 
 import java.util.List;
 
@@ -56,10 +55,10 @@ public abstract class TiFunctionExpression implements TiExpr {
         Expr.Builder builder = Expr.newBuilder();
 
         builder.setTp(getExprType());
-        builder.addAllChildren(TiFluentIterable
-                .from(args)
-                .transform(TiExpr::toProto)
-        );
+
+        for (TiExpr arg : args) {
+            builder.addChildren(arg.toProto());
+        }
 
         return builder.build();
     }
