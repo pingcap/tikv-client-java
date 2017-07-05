@@ -23,9 +23,12 @@ import java.util.function.Function;
 
 public class PDErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
     private final Function<RespT, Pdpb.Error> getError;
+    private final Function<RespT, Boolean> hasError;
 
-    public PDErrorHandler(Function<RespT, Pdpb.Error> errorExtractor) {
+
+    public PDErrorHandler(Function<RespT, Pdpb.Error> errorExtractor, Function<RespT, Boolean> hasError) {
        this.getError = errorExtractor;
+        this.hasError = hasError;
     }
 
     public void handle(RespT resp) {
