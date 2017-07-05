@@ -27,7 +27,7 @@ import static org.junit.Assert.assertTrue;
 
 
 public class TiTableInfoTest {
-    String tableJson = "\n" +
+    public final static String tableJson = "\n" +
             "{\n" +
             "   \"id\": 42,\n" +
             "   \"name\": {\n" +
@@ -187,7 +187,6 @@ public class TiTableInfoTest {
         assertEquals("c2", tableInfo.getColumns().get(1).getName());
         assertEquals(BytesType.class, tableInfo.getColumns().get(1).getType().getClass());
         assertTrue(tableInfo.isPkHandle());
-        return;
     }
 
     @Test

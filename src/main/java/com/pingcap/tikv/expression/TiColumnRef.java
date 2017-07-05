@@ -36,10 +36,6 @@ public class TiColumnRef implements TiExpr {
         return columnInfo;
     }
 
-    public static TiColumnRef create(String name) {
-         return new TiColumnRef(name);
-    }
-
     public static TiColumnRef create(String name, TiTableInfo table) {
         TiColumnRef ref = new TiColumnRef(name);
         ref.bind(table);

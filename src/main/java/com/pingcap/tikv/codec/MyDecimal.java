@@ -15,6 +15,10 @@
 
 package com.pingcap.tikv.codec;
 
+import org.apache.logging.log4j.util.Strings;
+
+import java.math.BigDecimal;
+import java.text.NumberFormat;
 import java.util.Arrays;
 
 public class MyDecimal {
@@ -153,7 +157,7 @@ public class MyDecimal {
             int i = dig2bytes[leadingDigits];
             int x = readWord(bin, i, binIdx);
             binIdx += i;
-            this.wordBuf[wordIdx] = x ^ mask;
+            this.wordBuf[wordIdx] = (x ^ mask) > 0 ? x ^ mask : (x ^ mask) &0xFF;
             if (this.wordBuf[wordIdx] >= powers10[leadingDigits+1]) {
                 throw new IllegalArgumentException("BadNumber");
             }
@@ -164,7 +168,7 @@ public class MyDecimal {
             }
         }
         for (int stop = binIdx + wordsInt*wordSize; binIdx < stop; binIdx += wordSize) {
-            this.wordBuf[wordIdx] = readWord(bin, 4, binIdx) ^ mask;
+            this.wordBuf[wordIdx] = (readWord(bin, 4, binIdx) ^ mask);
             if (this.wordBuf[wordIdx] > wordMax) {
                 throw new IllegalArgumentException("BadNumber");
             }
@@ -177,7 +181,7 @@ public class MyDecimal {
 
         for (int stop = binIdx + wordsFrac*wordSize; binIdx < stop; binIdx += wordSize) {
             int x = readWord(bin, 4, binIdx);
-            this.wordBuf[wordIdx] = x ^ mask;
+            this.wordBuf[wordIdx] = (x ^ mask) > 0 ? x ^ mask : (x ^ mask) &0xFF;
             if  (this.wordBuf[wordIdx] > wordMax) {
                 throw new IllegalArgumentException("BadNumber");
             }
@@ -187,7 +191,7 @@ public class MyDecimal {
         if (trailingDigits > 0) {
             int i = dig2bytes[trailingDigits];
             int x = readWord(bin, i, binIdx);
-            this.wordBuf[wordIdx] = (x ^ mask) * powers10[digitsPerWord-trailingDigits];
+            this.wordBuf[wordIdx] = ((x ^ mask) > 0 ? x ^ mask : (x ^ mask) &0xFF) * powers10[digitsPerWord-trailingDigits];
             if  (this.wordBuf[wordIdx] > wordMax ){
                 throw new IllegalArgumentException("BadNumber");
             }
@@ -310,7 +314,7 @@ public class MyDecimal {
         // skip sign and record where digits start from
         // [-, 1, 2, 3]
         // [+, 1, 2, 3]
-        // for +/-, we need skip them and record sign information into negtaive field.
+        // for +/-, we need skip them and record sign information into negative field.
         switch (str[0]) {
         case '-':
             this.negative = true;
@@ -464,7 +468,7 @@ public class MyDecimal {
 
     // Returns a decimal string.
     public String toString() {
-        char[] str = new char[stringSize()];
+        char[] str;
         int digitsFrac = this.digitsFrac;
         int[] res = removeLeadingZeros();
         int wordStartIdx = res[0];
@@ -598,6 +602,83 @@ public class MyDecimal {
     }
 
     /**
+     *
+     * ToBin converts decimal to its binary fixed-length representation
+     * two representations of the same length can be compared with memcmp
+     * with the correct -1/0/+1 result
+
+     * PARAMS
+     * precision/frac - if precision is 0, internal value of the decimal will be used,
+     * then the encoded value is not memory comparable.
+
+     * NOTE
+     * the buffer is assumed to be of the size decimalBinSize(precision, frac)
+
+     * RETURN VALUE
+     * bin     - binary value
+     * errCode - eDecOK/eDecTruncate/eDecOverflow
+
+     * DESCRIPTION
+     * for storage decimal numbers are converted to the "binary" format.
+
+     * This format has the following properties:
+     * 1. length of the binary representation depends on the {precision, frac}
+     * as provided by the caller and NOT on the digitsInt/digitsFrac of the decimal to
+     * convert.
+     * 2. binary representations of the same {precision, frac} can be compared
+     * with memcmp - with the same result as DecimalCompare() of the original
+     * decimals (not taking into account possible precision loss during
+     * conversion).
+
+     * This binary format is as follows:
+     * 1. First the number is converted to have a requested precision and frac.
+     * 2. Every full digitsPerWord digits of digitsInt part are stored in 4 bytes
+     * as is
+     * 3. The first digitsInt % digitesPerWord digits are stored in the reduced
+     * number of bytes (enough bytes to store this number of digits -
+     * see dig2bytes)
+     * 4. same for frac - full word are stored as is,
+     * the last frac % digitsPerWord digits - in the reduced number of bytes.
+     * 5. If the number is negative - every byte is inversed.
+     * 5. The very first bit of the resulting byte array is inverted (because
+     * memcmp compares unsigned bytes, see property 2 above)
+
+     * Example:
+
+     * 1234567890.1234
+
+     * internally is represented as 3 words
+
+     * 1 234567890 123400000
+
+     * (assuming we want a binary representation with precision=14, frac=4)
+     * in hex it's
+
+     * 00-00-00-01  0D-FB-38-D2  07-5A-EF-40
+
+     * now, middle word is full - it stores 9 decimal digits. It goes
+     * into binary representation as is:
+
+
+     * ...........  0D-FB-38-D2 ............
+
+     * First word has only one decimal digit. We can store one digit in
+     * one byte, no need to waste four:
+
+     * 01 0D-FB-38-D2 ............
+
+     * now, last word. It's 123400000. We can store 1234 in two bytes:
+
+     * 01 0D-FB-38-D2 04-D2
+
+     * So, we've packed 12 bytes number in 7 bytes.
+     * And now we invert the highest bit to get the final result:
+
+     * 81 0D FB 38 D2 04 D2
+
+     * And for -1234567890.1234 it would be
+
+     * 7E F2 04 C7 2D FB 2D
      * return a int array which represents a decimal value.
      * @param precision precision for decimal value.
      * @param frac      fraction for decimal value.
@@ -694,7 +775,7 @@ public class MyDecimal {
         }
         
         if (trailingDigitsFrom > 0) {
-            int x  = 0;
+            int x;
             int i = dig2bytes[trailingDigitsFrom];
             int lim = trailingDigits;
             if (wordsFracFrom < wordsFrac) {
@@ -725,7 +806,7 @@ public class MyDecimal {
     private void writeWord(int[] b, int word, int size, int start) {
         switch (size) {
         case 1:
-            b[start] = word;
+            b[start] = word & 0xFF;
             break;
         case 2:
             b[start] = (word >>> 8) & 0xFF;

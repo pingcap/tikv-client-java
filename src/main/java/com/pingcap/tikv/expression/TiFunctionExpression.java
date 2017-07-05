@@ -23,6 +23,7 @@ import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.util.TiFluentIterable;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
@@ -56,9 +57,10 @@ public abstract class TiFunctionExpression implements TiExpr {
         Expr.Builder builder = Expr.newBuilder();
 
         builder.setTp(getExprType());
-        builder.addAllChildren(TiFluentIterable
-                .from(args)
-                .transform(TiExpr::toProto)
+        builder.addAllChildren(this.args
+                .stream()
+                .map(TiExpr::toProto)
+                .collect(Collectors.toList())
         );
 
         return builder.build();

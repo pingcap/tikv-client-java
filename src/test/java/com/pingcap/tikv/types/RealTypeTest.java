@@ -19,6 +19,8 @@ package com.pingcap.tikv.types;
 
 
 import com.pingcap.tikv.codec.CodecDataInput;
+import com.pingcap.tikv.codec.CodecDataOutput;
+import org.junit.Assert;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -26,6 +28,24 @@ import static org.junit.Assert.*;
 
 
 public class RealTypeTest {
+    @Test
+    public void writeFloatTest() throws Exception {
+        CodecDataOutput cdo = new CodecDataOutput();
+        RealType.writeDouble(cdo, 0.00);
+        double u = RealType.readDouble(new CodecDataInput(cdo.toBytes()));
+        assertEquals(0.00, u, 0);
+
+        cdo.reset();
+        RealType.writeDouble(cdo, Double.MAX_VALUE);
+        u = RealType.readDouble(new CodecDataInput(cdo.toBytes()));
+        assertEquals(Double.MAX_VALUE, u, 0);
+
+        cdo.reset();
+        RealType.writeDouble(cdo, Double.MIN_VALUE);
+        u = RealType.readDouble(new CodecDataInput(cdo.toBytes()));
+        assertEquals(Double.MIN_VALUE, u, 0);
+    }
+
     @Test
     public void readFloatTest() throws Exception {
         byte [] data = new byte[] {(byte)(191 & 0xFF),
