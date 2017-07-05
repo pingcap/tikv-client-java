@@ -257,7 +257,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
         try {
             SelectResponse selectResp = SelectResponse.parseFrom(resp.getData());
             if (selectResp.hasError()) {
-                throw new SelectException(selectResp.getError());
+                throw new SelectException(selectResp.getError(), selectResp.getError().getMsg());
             }
             return selectResp;
         } catch (InvalidProtocolBufferException e) {
