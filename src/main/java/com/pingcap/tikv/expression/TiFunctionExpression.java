@@ -22,6 +22,7 @@ import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.meta.TiTableInfo;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
@@ -55,10 +56,11 @@ public abstract class TiFunctionExpression implements TiExpr {
         Expr.Builder builder = Expr.newBuilder();
 
         builder.setTp(getExprType());
-
-        for (TiExpr arg : args) {
-            builder.addChildren(arg.toProto());
-        }
+        builder.addAllChildren(this.args
+                .stream()
+                .map(TiExpr::toProto)
+                .collect(Collectors.toList())
+        );
 
         return builder.build();
     }

@@ -196,11 +196,6 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub> impleme
         return createRaw(session);
     }
 
-    @Override
-    protected Callable<Void> getRecoveryMethod() {
-        return () -> { updateLeader(getMembers()); return null; };
-    }
-
     @VisibleForTesting
     RequestHeader getHeader() {
         return header;
