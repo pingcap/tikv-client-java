@@ -87,7 +87,9 @@ public class SelectIterator implements Iterator<Row> {
             TiRegion region = regionTask.getRegion();
             Store store = regionTask.getStore();
 
-            try (RegionStoreClient client = RegionStoreClient.create(region, store, session, regionManager)) {
+            RegionStoreClient client;
+            try {
+                client = RegionStoreClient.create(region, store, session, regionManager);
                 SelectResponse resp =
                         client.coprocess(indexScan ? req.buildIndexScan() : req.buildTableScan(), ranges);
                 if (resp == null) {

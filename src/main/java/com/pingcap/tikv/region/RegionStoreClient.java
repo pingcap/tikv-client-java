@@ -27,7 +27,10 @@ import com.pingcap.tidb.tipb.SelectRequest;
 import com.pingcap.tidb.tipb.SelectResponse;
 import com.pingcap.tikv.AbstractGrpcClient;
 import com.pingcap.tikv.TiSession;
-import com.pingcap.tikv.exception.*;
+import com.pingcap.tikv.exception.KeyException;
+import com.pingcap.tikv.exception.RegionException;
+import com.pingcap.tikv.exception.SelectException;
+import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.grpc.Coprocessor;
 import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
 import com.pingcap.tikv.grpc.Kvrpcpb.*;
@@ -42,6 +45,7 @@ import io.grpc.ManagedChannelBuilder;
 
 import java.util.List;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -55,6 +59,10 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
 
     private final int ReqTypeSelect = 101;
     private final int ReqTypeIndex = 102;
+
+    private static final int MAX_MSG_SIZE = 67108864;
+    private static final int MAX_DEADLINE = 10;
+    private static final TimeUnit DEF_DEADLINE_UNIT = TimeUnit.MINUTES;
 
     public ByteString get(ByteString key, long version) {
         GetRequest request = GetRequest.newBuilder()
@@ -286,12 +294,15 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                 HostAndPort address = HostAndPort.fromString(addressStr);
                 channel = ManagedChannelBuilder
                         .forAddress(address.getHostText(), address.getPort())
+                        .maxInboundMessageSize(MAX_MSG_SIZE)
                         .usePlaintext(true)
                         .build();
                 connPool.put(addressStr, channel);
             }
             TikvBlockingStub blockingStub = TikvGrpc.newBlockingStub(channel);
+
             TikvStub asyncStub = TikvGrpc.newStub(channel);
+
             client = new RegionStoreClient(region, session, regionManager, channel, blockingStub, asyncStub);
         } catch (Exception e) {
             if (client != null) {
