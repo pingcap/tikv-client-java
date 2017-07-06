@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.pingcap.tikv.GrpcUtils.encodeKey;
 import static org.junit.Assert.assertEquals;
 
 
@@ -74,8 +75,8 @@ public class RangeSplitterTest {
         return new TiRegion(Metapb.Region
                 .newBuilder()
                 .setId(id)
-                .setStartKey(range.getStart())
-                .setEndKey(range.getEnd())
+                .setStartKey(encodeKey(range.getStart().toByteArray()))
+                .setEndKey(encodeKey(range.getEnd().toByteArray()))
                 .build(), null);
     }
 

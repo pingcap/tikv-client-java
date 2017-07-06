@@ -19,10 +19,12 @@ package com.pingcap.tikv.region;
 
 
 import com.google.protobuf.ByteString;
+import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.grpc.Kvrpcpb;
 import com.pingcap.tikv.grpc.Metapb;
 import com.pingcap.tikv.grpc.Metapb.Peer;
 import com.pingcap.tikv.grpc.Metapb.Region;
+import com.pingcap.tikv.types.BytesType;
 
 import java.io.Serializable;
 import java.util.HashSet;
@@ -34,9 +36,33 @@ public class TiRegion implements Serializable {
     private Peer peer;
 
     public TiRegion(Region meta, Peer peer) {
-        this.meta = meta;
+        this.meta = decodeRegion(meta);
         this.peer = peer;
         this.unreachableStores = new HashSet<>();
+    }
+
+    private Region decodeRegion(Region region) {
+        Region.Builder builder =
+                Region.newBuilder()
+                .setId(region.getId())
+                .setRegionEpoch(region.getRegionEpoch())
+                .addAllPeers(region.getPeersList());
+
+        if (region.getStartKey().isEmpty()) {
+            builder.setStartKey(region.getStartKey());
+        } else {
+            byte[] decodecStartKey = BytesType.readBytes(new CodecDataInput(region.getStartKey()));
+            builder.setStartKey(ByteString.copyFrom(decodecStartKey));
+        }
+
+        if (region.getEndKey().isEmpty()) {
+            builder.setEndKey(region.getEndKey());
+        } else {
+            byte[] decodecEndKey = BytesType.readBytes(new CodecDataInput(region.getEndKey()));
+            builder.setEndKey(ByteString.copyFrom(decodecEndKey));
+        }
+
+        return builder.build();
     }
 
     public Peer getLeader() {
