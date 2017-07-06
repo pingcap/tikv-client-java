@@ -28,7 +28,7 @@ import java.util.Iterator;
 
 // A very bad implementation of Index Scanner barely made work
 // TODO: need to make it parallel and group indexes
-public class IndexScanIterator  implements Iterator<Row> {
+public abstract class IndexScanIterator  implements Iterator<Row> {
     private final Iterator<Row> iter;
     private final TiSelectRequest selReq;
     private final Snapshot snapshot;
