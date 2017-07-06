@@ -17,8 +17,10 @@ package com.pingcap.tikv;
 
 import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
+import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.grpc.Metapb.*;
 import com.pingcap.tikv.grpc.Pdpb.*;
+import com.pingcap.tikv.types.BytesType;
 
 import java.util.Arrays;
 
@@ -59,6 +61,12 @@ public class GrpcUtils {
                 .setStoreId(storeId)
                 .setId(id)
                 .build();
+    }
+
+    public static ByteString encodeKey(byte[] key) {
+        CodecDataOutput cdo = new CodecDataOutput();
+        BytesType.writeBytes(cdo, key);
+        return cdo.toByteString();
     }
 
     public static RegionEpoch makeRegionEpoch(long confVer, long ver) {

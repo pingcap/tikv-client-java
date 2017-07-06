@@ -19,6 +19,7 @@ import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.operation.SchemaInfer;
 import com.pingcap.tikv.predicates.PredicateUtils;
 import com.pingcap.tikv.predicates.ScanBuilder;
+import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.util.RangeSplitter;
 
@@ -38,6 +39,11 @@ public class Main {
         // May need to save this reference
         Logger log = Logger.getLogger("io.grpc");
         log.setLevel(Level.WARNING);
+        PDClient client = PDClient.createRaw(cluster.getSession());
+        for (int i = 0; i < 51; i++) {
+            TiRegion r = client.getRegionByID(i);
+            r.getId();
+        }
 
         Catalog cat = cluster.getCatalog();
         TiDBInfo db = cat.getDatabase("global_temp");

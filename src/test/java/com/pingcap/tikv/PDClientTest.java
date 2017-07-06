@@ -20,16 +20,16 @@ import com.google.common.net.HostAndPort;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.exception.GrpcException;
 import com.pingcap.tikv.grpc.Metapb;
-import com.pingcap.tikv.region.TiRegion;
-import com.pingcap.tikv.meta.TiTimestamp;
-import com.pingcap.tikv.grpc.Metapb.Region;
 import com.pingcap.tikv.grpc.Metapb.Store;
+import com.pingcap.tikv.meta.TiTimestamp;
+import com.pingcap.tikv.region.TiRegion;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
 
+import static com.pingcap.tikv.GrpcUtils.encodeKey;
 import static org.junit.Assert.*;
 
 
@@ -88,8 +88,8 @@ public class PDClientTest {
                 server.getClusterId(),
                 GrpcUtils.makeRegion(
                         1,
-                        ByteString.copyFrom(startKey),
-                        ByteString.copyFrom(endKey),
+                        encodeKey(startKey),
+                        encodeKey(endKey),
                         GrpcUtils.makeRegionEpoch(confVer, ver),
                         GrpcUtils.makePeer(1, 10),
                         GrpcUtils.makePeer(2, 20)
@@ -102,9 +102,7 @@ public class PDClientTest {
             assertEquals(r.getRegionEpoch().getConfVer(), confVer);
             assertEquals(r.getRegionEpoch().getVersion(), ver);
             assertEquals(r.getLeader().getId(), 1);
-//            assertEquals(r.getLeader().getId(), 2);
             assertEquals(r.getLeader().getStoreId(), 10);
-//            assertEquals(r.getLeader().getStoreId(), 20);
         }
     }
 
@@ -118,8 +116,8 @@ public class PDClientTest {
                 server.getClusterId(),
                 GrpcUtils.makeRegion(
                         1,
-                        ByteString.copyFrom(startKey),
-                        ByteString.copyFrom(endKey),
+                        encodeKey(startKey),
+                        encodeKey(endKey),
                         GrpcUtils.makeRegionEpoch(confVer, ver),
                         GrpcUtils.makePeer(1, 10),
                         GrpcUtils.makePeer(2, 20)
@@ -132,9 +130,7 @@ public class PDClientTest {
             assertEquals(r.getRegionEpoch().getConfVer(), confVer);
             assertEquals(r.getRegionEpoch().getVersion(), ver);
             assertEquals(r.getLeader().getId(), 1);
-//            assertEquals(r.getLeader().getId(), 2);
             assertEquals(r.getLeader().getStoreId(), 10);
-//            assertEquals(r.getLeader().getStoreId(), 20);
         }
     }
 
@@ -144,27 +140,28 @@ public class PDClientTest {
         byte[] endKey = new byte[]{1, 0, 2, 5};
         int confVer = 1026;
         int ver = 1027;
+
+
+
         server.addGetRegionByIDResp(GrpcUtils.makeGetRegionResponse(
                 server.getClusterId(),
                 GrpcUtils.makeRegion(
                         1,
-                        ByteString.copyFrom(startKey),
-                        ByteString.copyFrom(endKey),
+                        encodeKey(startKey),
+                        encodeKey(endKey),
                         GrpcUtils.makeRegionEpoch(confVer, ver),
                         GrpcUtils.makePeer(1, 10),
                         GrpcUtils.makePeer(2, 20)
                 )
         ));
         try (PDClient client = createClient()) {
-            Region r = client.getRegionByID(0);
+            TiRegion r = client.getRegionByID(0);
             assertEquals(r.getStartKey(), ByteString.copyFrom(startKey));
             assertEquals(r.getEndKey(), ByteString.copyFrom(endKey));
             assertEquals(r.getRegionEpoch().getConfVer(), confVer);
             assertEquals(r.getRegionEpoch().getVersion(), ver);
-            assertEquals(r.getPeers(0).getId(), 1);
-//            assertEquals(r.getPeers(1).getId(), 2);
-            assertEquals(r.getPeers(0).getStoreId(), 10);
-//            assertEquals(r.getPeers(1).getStoreId(), 20);
+            assertEquals(r.getLeader().getId(), 1);
+            assertEquals(r.getLeader().getStoreId(), 10);
         }
     }
 
@@ -178,8 +175,8 @@ public class PDClientTest {
                 server.getClusterId(),
                 GrpcUtils.makeRegion(
                         1,
-                        ByteString.copyFrom(startKey),
-                        ByteString.copyFrom(endKey),
+                        encodeKey(startKey),
+                        encodeKey(endKey),
                         GrpcUtils.makeRegionEpoch(confVer, ver),
                         GrpcUtils.makePeer(1, 10),
                         GrpcUtils.makePeer(2, 20)
@@ -192,9 +189,7 @@ public class PDClientTest {
             assertEquals(r.getRegionEpoch().getConfVer(), confVer);
             assertEquals(r.getRegionEpoch().getVersion(), ver);
             assertEquals(r.getLeader().getId(), 1);
-//            assertEquals(r.getLeader().getId(), 2);
             assertEquals(r.getLeader().getStoreId(), 10);
-//            assertEquals(r.getLeader().getStoreId(), 20);
         }
     }
 

@@ -17,10 +17,9 @@ package com.pingcap.tikv;
 
 
 import com.google.protobuf.ByteString;
-import com.pingcap.tikv.grpc.Metapb.Region;
 import com.pingcap.tikv.grpc.Metapb.Store;
-import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.meta.TiTimestamp;
+import com.pingcap.tikv.region.TiRegion;
 
 import java.util.concurrent.Future;
 
@@ -51,7 +50,7 @@ public interface ReadOnlyPDClient {
      * @param id Region Id
      * @return the region corresponding to the given Id
      */
-    Region getRegionByID(long id);
+    TiRegion getRegionByID(long id);
     Future<TiRegion> getRegionByIDAsync(long id);
 
     /**
