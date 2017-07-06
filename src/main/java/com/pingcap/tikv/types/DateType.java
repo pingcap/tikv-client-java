@@ -23,8 +23,6 @@ import com.pingcap.tikv.codec.InvalidCodecFormatException;
 import com.pingcap.tikv.meta.TiColumnInfo;
 
 import java.sql.Date;
-import java.sql.Timestamp;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
@@ -48,9 +46,6 @@ public class DateType extends DataType {
             if (localDateTime == null) {
                 return null;
             }
-            localDateTime.getYear();
-            localDateTime.getMonth();
-            localDateTime.getDayOfMonth();
             //TODO revisit this later.
             return new Date(localDateTime.getYear(), localDateTime.getMonthValue(), localDateTime.getDayOfMonth());
         } else {

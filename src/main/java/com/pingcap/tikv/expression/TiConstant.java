@@ -20,12 +20,16 @@ import com.pingcap.tidb.tipb.Expr;
 import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.meta.TiTableInfo;
-import com.pingcap.tikv.types.*;
+import com.pingcap.tikv.types.DataType;
+import com.pingcap.tikv.types.DataTypeFactory;
+import com.pingcap.tikv.types.DecimalType;
+import com.pingcap.tikv.types.IntegerType;
 
 import java.util.Objects;
 
 import static com.pingcap.tikv.types.Types.*;
 
+// TODO: This might need a refactor to accept an DataType?
 public class TiConstant implements TiExpr {
     private Object value;
 
@@ -48,6 +52,10 @@ public class TiConstant implements TiExpr {
         return value;
     }
 
+    // refer to expr_to_pb.go:datumToPBExpr
+    // But since it's a java client, we ignored
+    // unsigned types for now
+    // TODO: Add unsigned constant types support
     @Override
     public Expr toProto() {
         Expr.Builder builder = Expr.newBuilder();
