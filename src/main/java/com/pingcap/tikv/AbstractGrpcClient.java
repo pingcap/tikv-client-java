@@ -15,7 +15,6 @@
 
 package com.pingcap.tikv;
 
-import com.pingcap.tikv.grpc.Pdpb;
 import com.pingcap.tikv.operation.ErrorHandler;
 import io.grpc.MethodDescriptor;
 import io.grpc.stub.AbstractStub;
@@ -23,8 +22,6 @@ import io.grpc.stub.ClientCalls;
 import io.grpc.stub.StreamObserver;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.util.concurrent.Callable;
 
 import static io.grpc.stub.ClientCalls.asyncBidiStreamingCall;
 
@@ -104,9 +101,4 @@ public abstract class AbstractGrpcClient<BlockingStubT extends AbstractStub<Bloc
 
     protected abstract BlockingStubT getBlockingStub();
     protected abstract StubT getAsyncStub();
-
-    // TODO: A little bit odd to put here, should be inside policy
-    protected Callable<Void> getRecoveryMethod() {
-        return null;
-    }
 }
