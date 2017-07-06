@@ -48,3 +48,4 @@ bazel-*
 scripts/format.sh
 scripts/pd/
 scripts/tikv/
+*.java

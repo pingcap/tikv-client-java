@@ -33,10 +33,18 @@ public class IndexScanIterator  implements Iterator<Row> {
     private final TiSelectRequest selReq;
     private final Snapshot snapshot;
 
-    public IndexScanIterator(Snapshot snapshot, TiSelectRequest req, Iterator<Row> iter) {
+    protected IndexScanIterator(Snapshot snapshot, TiSelectRequest req, Iterator<Row> iter) {
         this.iter = iter;
         this.selReq = req;
         this.snapshot = snapshot;
+    }
+
+    public static IndexScanIterator of(Snapshot snapshot, TiSelectRequest req, Iterator<Row> iter, boolean singReadMode) {
+        if(singReadMode)  {
+            return new IndexSingleScanIterator(snapshot, req, iter);
+        } else {
+            return new IndexDoubleScanIterator(snapshot, req, iter);
+        }
     }
 
     @Override
@@ -50,6 +58,7 @@ public class IndexScanIterator  implements Iterator<Row> {
         long handle = r.getLong(0);
         ByteString startKey = TableCodec.encodeRowKeyWithHandle(selReq.getTableInfo().getId(), handle);
         ByteString endKey = ByteString.copyFrom(KeyUtils.prefixNext(startKey.toByteArray()));
+        // getRowFromRange
         selReq.resetRanges(ImmutableList.of(KeyRange.newBuilder().setStart(startKey).setEnd(endKey).build()));
         Iterator<Row> it = snapshot.select(selReq);
         return it.next();
