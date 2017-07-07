@@ -130,7 +130,7 @@ public class TiIndexInfo implements Serializable {
         for (TiIndexColumn indexColumn : getIndexColumns()) {
             int offset = indexColumn.getOffset();
             TiColumnInfo column = columns.get(offset);
-            builder.addColumns(column.toProto());
+            builder.addColumns(column.toProto(tableInfo));
         }
 
         if (tableInfo.isPkHandle()) {
@@ -138,7 +138,7 @@ public class TiIndexInfo implements Serializable {
                 if (!column.isPrimaryKey()) {
                     continue;
                 }
-                ColumnInfo pbColumn = column.toProtoBuilder()
+                ColumnInfo pbColumn = column.toProtoBuilder(tableInfo)
                                             .setPkHandle(true)
                                             .build();
                 builder.addColumns(pbColumn);

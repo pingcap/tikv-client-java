@@ -181,11 +181,11 @@ public class TiColumnInfo implements Serializable {
         return new TiIndexColumn(CIStr.newCIStr(getName()), getOffset(), type.getLength());
     }
 
-    public ColumnInfo toProto() {
-        return toProtoBuilder().build();
+    public ColumnInfo toProto(TiTableInfo table) {
+        return toProtoBuilder(table).build();
     }
 
-    public ColumnInfo.Builder toProtoBuilder() {
+    public ColumnInfo.Builder toProtoBuilder(TiTableInfo table) {
         return ColumnInfo.newBuilder()
                 .setColumnId(id)
                 .setTp(type.getTypeCode())
@@ -194,7 +194,7 @@ public class TiColumnInfo implements Serializable {
                 .setDecimal(type.getDecimal())
                 .setFlag(type.getFlag())
                 .setColumnLen(type.getLength())
-                .setPkHandle(isPrimaryKey())
+                .setPkHandle(table.isPkHandle() && isPrimaryKey())
                 .addAllElems(type.getElems());
     }
 }

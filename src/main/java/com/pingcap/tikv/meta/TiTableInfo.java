@@ -121,7 +121,9 @@ public class TiTableInfo implements Serializable {
     public TableInfo toProto() {
         return TableInfo.newBuilder()
                 .setTableId(getId())
-                .addAllColumns(getColumns().stream().map(TiColumnInfo::toProto).collect(Collectors.toList()))
+                .addAllColumns(getColumns().stream()
+                                           .map(col -> col.toProto(this))
+                                           .collect(Collectors.toList()))
                 .build();
     }
 
@@ -136,5 +138,10 @@ public class TiTableInfo implements Serializable {
             }
         }
         return null;
+    }
+
+    @Override
+    public String toString() {
+        return toProto().toString();
     }
 }
