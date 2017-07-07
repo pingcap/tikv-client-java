@@ -49,4 +49,15 @@ public class KeyRangeUtils {
         return Range.closedOpen(Comparables.wrap(startKey),
                                 Comparables.wrap(endKey));
     }
+
+    public static String formatByteString(ByteString key) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < key.size(); i++) {
+            sb.append(key.byteAt(i) & 0xff);
+            if (i < key.size() - 1) {
+                sb.append(",");
+            }
+        }
+        return sb.toString();
+    }
 }
