@@ -21,7 +21,7 @@ import com.pingcap.tikv.types.DataType;
 
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.util.Date;
+import java.sql.Date;
 
 // A dummy implementation of Row interface
 // Using non-memory compact format
@@ -129,6 +129,16 @@ public class ObjectRowImpl implements Row {
     @Override
     public Timestamp getTimestamp(int pos) {
         return (Timestamp)values[pos];
+    }
+
+    @Override
+    public void setDate(int pos, Date v) {
+        values[pos] = v;
+    }
+
+    @Override
+    public Date getDate(int pos) {
+        return (Date)values[pos];
     }
 
     @Override
