@@ -105,8 +105,8 @@ maven_jar(
 
 git_repository(
     name = "org_pubref_rules_protobuf",
-    remote = "https://github.com/pubref/rules_protobuf",
-    tag = "v0.7.1",
+    remote = "https://github.com/zhexuany/rules_protobuf",
+    commit = "47291fa",
 )
 
 load("@org_pubref_rules_protobuf//java:rules.bzl", "java_proto_repositories")
