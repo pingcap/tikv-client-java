@@ -5,7 +5,7 @@ os:
   - linux
 
 env:
-  - V=0.5.1
+  - V=0.5.2
 
 before_install:
   - OS=linux
