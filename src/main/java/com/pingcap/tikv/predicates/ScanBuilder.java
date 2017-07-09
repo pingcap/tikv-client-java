@@ -18,6 +18,7 @@ package com.pingcap.tikv.predicates;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.BoundType;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.codec.CodecDataOutput;
@@ -70,7 +71,6 @@ public class ScanBuilder {
 
     public ScanPlan buildScan(List<TiExpr> conditions, TiIndexInfo index, TiTableInfo table) {
         requireNonNull(table, "Table cannot be null to encoding keyRange");
-        requireNonNull(index, "Index cannot be null to encoding keyRange");
         requireNonNull(conditions, "conditions cannot be null to encoding keyRange");
 
         for (TiExpr expr : conditions) {
@@ -82,7 +82,7 @@ public class ScanBuilder {
                                                                result.accessConditions, result.rangeType);
 
         List<KeyRange> keyRanges;
-        if (index.isFakePrimaryKey()) {
+        if (index == null || index.isFakePrimaryKey()) {
             keyRanges = buildTableScanKeyRange(table, irs);
         } else {
             keyRanges = buildIndexScanKeyRange(table, index, irs);
@@ -92,8 +92,7 @@ public class ScanBuilder {
     }
 
     private List<KeyRange> buildTableScanKeyRange(TiTableInfo       table,
-                                                        List<IndexRange>  indexRanges) {
-        checkArgument(table.isPkHandle());
+                                                  List<IndexRange>  indexRanges) {
         requireNonNull(table, "Table cannot be null to encoding keyRange");
         requireNonNull(indexRanges, "indexRanges cannot be null to encoding keyRange");
 
@@ -287,6 +286,14 @@ public class ScanBuilder {
             this.accessConditions = accessConditions;
             this.rangeType = rangeType;
         }
+
+        public static IndexMatchingResult create(List<TiExpr> residualConditions) {
+            return new IndexMatchingResult(residualConditions,
+                                            ImmutableList.of(),
+                                            ImmutableList.of(),
+                                            ImmutableList.of(),
+                                            null);
+        }
     }
 
     @VisibleForTesting
@@ -306,50 +313,53 @@ public class ScanBuilder {
         List<TiExpr> accessConditions = new ArrayList<>();
         DataType accessConditionType = null;
 
-        Set<TiExpr> visited = new HashSet<>();
-        IndexMatchingLoop:
-        for (int i = 0; i < index.getIndexColumns().size(); i++) {
-            // for each index column try matches an equal condition
-            // and push remaining back
-            // TODO: if more than one equal conditions match an
-            // index, it likely yields nothing. Maybe a check needed
-            // to simplify it to a false condition
-            TiIndexColumn col = index.getIndexColumns().get(i);
-            IndexMatcher matcher = new IndexMatcher(col, true);
-            boolean found = false;
-            // For first prefix index encountered, it equals to a range
-            // and we cannot push equal conditions further
-            for (TiExpr cond : conditions) {
-                if (visited.contains(cond)) continue;
-                if (matcher.match(cond)) {
-                    accessPoints.add(cond);
-                    TiColumnInfo tiColumnInfo = table.getColumns().get(col.getOffset());
-                    accessPointTypes.add(tiColumnInfo.getType());
-                    if (col.isPrefixIndex()) {
-                        residualConditions.add(cond);
-                        break IndexMatchingLoop;
-                    }
-                    visited.add(cond);
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                // For first "broken index chain piece"
-                // search for a matching range condition
-                matcher = new IndexMatcher(col, false);
+        // When index is null, no access condition can be applied
+        if (index != null) {
+            Set<TiExpr> visited = new HashSet<>();
+            IndexMatchingLoop:
+            for (int i = 0; i < index.getIndexColumns().size(); i++) {
+                // for each index column try matches an equal condition
+                // and push remaining back
+                // TODO: if more than one equal conditions match an
+                // index, it likely yields nothing. Maybe a check needed
+                // to simplify it to a false condition
+                TiIndexColumn col = index.getIndexColumns().get(i);
+                IndexMatcher matcher = new IndexMatcher(col, true);
+                boolean found = false;
+                // For first prefix index encountered, it equals to a range
+                // and we cannot push equal conditions further
                 for (TiExpr cond : conditions) {
                     if (visited.contains(cond)) continue;
                     if (matcher.match(cond)) {
-                        accessConditions.add(cond);
+                        accessPoints.add(cond);
                         TiColumnInfo tiColumnInfo = table.getColumns().get(col.getOffset());
-                        accessConditionType = tiColumnInfo.getType();
-                    }
-                    if (col.isPrefixIndex()) {
-                        residualConditions.add(cond);
+                        accessPointTypes.add(tiColumnInfo.getType());
+                        if (col.isPrefixIndex()) {
+                            residualConditions.add(cond);
+                            break IndexMatchingLoop;
+                        }
+                        visited.add(cond);
+                        found = true;
+                        break;
                     }
                 }
-                break;
+                if (!found) {
+                    // For first "broken index chain piece"
+                    // search for a matching range condition
+                    matcher = new IndexMatcher(col, false);
+                    for (TiExpr cond : conditions) {
+                        if (visited.contains(cond)) continue;
+                        if (matcher.match(cond)) {
+                            accessConditions.add(cond);
+                            TiColumnInfo tiColumnInfo = table.getColumns().get(col.getOffset());
+                            accessConditionType = tiColumnInfo.getType();
+                        }
+                        if (col.isPrefixIndex()) {
+                            residualConditions.add(cond);
+                        }
+                    }
+                    break;
+                }
             }
         }
 

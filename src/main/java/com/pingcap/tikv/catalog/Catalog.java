@@ -18,18 +18,17 @@ package com.pingcap.tikv.catalog;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.Snapshot;
-import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.codec.KeyUtils;
+import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.meta.TiDBInfo;
 import com.pingcap.tikv.meta.TiTableInfo;
-import com.pingcap.tikv.util.TiFluentIterable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 public class Catalog {
@@ -47,11 +46,10 @@ public class Catalog {
     }
 
     public List<TiDBInfo> listDatabases() {
-        Iterable<TiDBInfo> iter =
-                TiFluentIterable.from(trx.hashGetFields(KEY_DB))
-                                .transform(kv -> parseFromJson(kv.second, TiDBInfo.class));
-
-        return ImmutableList.copyOf(iter);
+        return trx.hashGetFields(KEY_DB)
+                .stream()
+                .map(kv -> parseFromJson(kv.second, TiDBInfo.class))
+                .collect(Collectors.toList());
     }
 
     public TiDBInfo getDatabase(long id) {
@@ -64,12 +62,11 @@ public class Catalog {
             throw new TiClientInternalException("Database not exists: " + db.getName());
         }
 
-        Iterable<TiTableInfo> iter =
-                TiFluentIterable.from(trx.hashGetFields(dbKey))
-                                .filter(kv -> KeyUtils.hasPrefix(kv.first, KEY_TABLE))
-                                .transform(kv -> parseFromJson(kv.second, TiTableInfo.class));
-
-        return ImmutableList.copyOf(iter);
+        return trx.hashGetFields(dbKey)
+                .stream()
+                .filter(kv -> KeyUtils.hasPrefix(kv.first, KEY_TABLE))
+                .map(kv -> parseFromJson(kv.second, TiTableInfo.class))
+                .collect(Collectors.toList());
     }
 
     private TiDBInfo getDatabase(ByteString dbKey) {

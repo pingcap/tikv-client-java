@@ -352,4 +352,34 @@ public class TiSelectRequest implements Serializable {
     public List<TiExpr> getWhere() {
         return where;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        if (tableInfo != null) {
+            sb.append(String.format("[table: %s] ", tableInfo.toString()));
+            tableInfo.toString();
+        }
+
+        for (TiColumnRef ref: fields) {
+            sb.append(String.format("ColumnRef:[%s]", ref.toProto().toString()));
+        }
+
+        for (Pair<TiExpr, DataType> agg : aggregates) {
+            sb.append(String.format("Aggregates:[%s]", agg.first.toProto().toString()));
+        }
+
+        for (TiByItem by : groupByItems) {
+            sb.append(String.format("GroupBys:[%s]", by.toProto().toString()));
+        }
+
+        for (TiByItem by : orderByItems) {
+            sb.append(String.format("OrderBys:[%s]", by.toProto().toString()));
+        }
+
+        for (TiExpr cond : where) {
+            sb.append(String.format("Where:[%s]", cond.toProto().toString()));
+        }
+        return sb.toString();
+    }
 }

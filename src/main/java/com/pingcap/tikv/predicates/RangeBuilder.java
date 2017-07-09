@@ -24,6 +24,7 @@ import com.pingcap.tikv.expression.TiFunctionExpression;
 import com.pingcap.tikv.expression.scalar.*;
 import com.pingcap.tikv.predicates.AccessConditionNormalizer.NormalizedCondition;
 import com.pingcap.tikv.types.DataType;
+import com.pingcap.tikv.util.Comparables;
 
 import java.util.ArrayList;
 import java.util.List;

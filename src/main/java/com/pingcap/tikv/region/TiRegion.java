@@ -19,23 +19,50 @@ package com.pingcap.tikv.region;
 
 
 import com.google.protobuf.ByteString;
+import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.grpc.Kvrpcpb;
 import com.pingcap.tikv.grpc.Metapb;
 import com.pingcap.tikv.grpc.Metapb.Peer;
 import com.pingcap.tikv.grpc.Metapb.Region;
+import com.pingcap.tikv.types.BytesType;
 
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
-public class TiRegion {
-    private Region meta;
+public class TiRegion implements Serializable {
+    private final Region meta;
+    private final Set<Long> unreachableStores;
     private Peer peer;
-    private Set<Long> unreachableStores;
 
     public TiRegion(Region meta, Peer peer) {
-        this.meta = meta;
+        this.meta = decodeRegion(meta);
         this.peer = peer;
         this.unreachableStores = new HashSet<>();
+    }
+
+    private Region decodeRegion(Region region) {
+        Region.Builder builder =
+                Region.newBuilder()
+                .setId(region.getId())
+                .setRegionEpoch(region.getRegionEpoch())
+                .addAllPeers(region.getPeersList());
+
+        if (region.getStartKey().isEmpty()) {
+            builder.setStartKey(region.getStartKey());
+        } else {
+            byte[] decodecStartKey = BytesType.readBytes(new CodecDataInput(region.getStartKey()));
+            builder.setStartKey(ByteString.copyFrom(decodecStartKey));
+        }
+
+        if (region.getEndKey().isEmpty()) {
+            builder.setEndKey(region.getEndKey());
+        } else {
+            byte[] decodecEndKey = BytesType.readBytes(new CodecDataInput(region.getEndKey()));
+            builder.setEndKey(ByteString.copyFrom(decodecEndKey));
+        }
+
+        return builder.build();
     }
 
     public Peer getLeader() {
@@ -55,7 +82,9 @@ public class TiRegion {
 
     public Kvrpcpb.Context getContext() {
         Kvrpcpb.Context.Builder builder = Kvrpcpb.Context.newBuilder();
-        builder.setRegionId(meta.getId()).setPeer(this.peer).setRegionEpoch(this.meta.getRegionEpoch());
+        builder.setRegionId(meta.getId())
+                .setPeer(this.peer)
+                .setRegionEpoch(this.meta.getRegionEpoch());
         return builder.build();
     }
 

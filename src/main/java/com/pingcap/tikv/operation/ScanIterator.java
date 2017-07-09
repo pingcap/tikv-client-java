@@ -27,7 +27,7 @@ import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
 import com.pingcap.tikv.grpc.Kvrpcpb;
 import com.pingcap.tikv.grpc.Metapb;
-import com.pingcap.tikv.predicates.Comparables;
+import com.pingcap.tikv.util.Comparables;
 import com.pingcap.tikv.util.KeyRangeUtils;
 import com.pingcap.tikv.util.Pair;
 

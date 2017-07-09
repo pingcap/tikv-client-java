@@ -51,7 +51,6 @@ public class TimestampType extends DataType {
                 return null;
             }
             return Timestamp.valueOf(localDateTime);
-        // row.setTimestamp(pos, timestamp);
         } else if (flag == INT_FLAG){
             long nanoSec = IntegerType.readLong(cdi);
             Duration duration = Duration.ofNanos(nanoSec);

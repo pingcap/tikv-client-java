@@ -42,7 +42,8 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
         if (resp == null) {
             this.regionManager.onRequestFail(ctx.getRegionId(), ctx.getPeer().getStoreId());
             return;
-        };
+        }
+
         Errorpb.Error error = getRegionError.apply(resp);
         if (error != null) {
             if (error.hasNotLeader()) {

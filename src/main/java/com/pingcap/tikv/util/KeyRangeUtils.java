@@ -17,8 +17,8 @@ package com.pingcap.tikv.util;
 
 
 import com.google.common.collect.Range;
+import com.google.protobuf.ByteString;
 import com.pingcap.tikv.grpc.Coprocessor;
-import com.pingcap.tikv.predicates.Comparables;
 
 public class KeyRangeUtils {
     public static Range toRange(Coprocessor.KeyRange range) {
@@ -35,5 +35,29 @@ public class KeyRangeUtils {
         }
         return Range.closedOpen(Comparables.wrap(range.getStart()),
                 Comparables.wrap(range.getEnd()));
+    }
+
+    public static Range makeRange(ByteString startKey, ByteString endKey) {
+        if (startKey.isEmpty() && endKey.isEmpty()) {
+            return Range.all();
+        }
+        if (startKey.isEmpty()) {
+            return Range.lessThan(Comparables.wrap(endKey));
+        } else if (endKey.isEmpty()) {
+            return Range.atLeast(Comparables.wrap(startKey));
+        }
+        return Range.closedOpen(Comparables.wrap(startKey),
+                                Comparables.wrap(endKey));
+    }
+
+    public static String formatByteString(ByteString key) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < key.size(); i++) {
+            sb.append(key.byteAt(i) & 0xff);
+            if (i < key.size() - 1) {
+                sb.append(",");
+            }
+        }
+        return sb.toString();
     }
 }

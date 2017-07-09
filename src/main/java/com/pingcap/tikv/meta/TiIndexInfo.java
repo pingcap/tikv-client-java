@@ -19,8 +19,8 @@ package com.pingcap.tikv.meta;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
+import com.pingcap.tidb.tipb.ColumnInfo;
 import com.pingcap.tidb.tipb.IndexInfo;
-import com.pingcap.tikv.util.TiFluentIterable;
 
 import java.io.Serializable;
 import java.util.List;
@@ -126,16 +126,23 @@ public class TiIndexInfo implements Serializable {
                 .setUnique(isUnique);
 
         List<TiColumnInfo> columns = tableInfo.getColumns();
-        TiFluentIterable.from(getIndexColumns())
-                .transform(idxCol -> idxCol.getOffset())
-                .transform(idx -> columns.get(idx))
-                .forEach(col -> builder.addColumns(col.toProto()));
+
+        for (TiIndexColumn indexColumn : getIndexColumns()) {
+            int offset = indexColumn.getOffset();
+            TiColumnInfo column = columns.get(offset);
+            builder.addColumns(column.toProto(tableInfo));
+        }
 
         if (tableInfo.isPkHandle()) {
-            TiFluentIterable.from(columns)
-                    .filter(col -> col.isPrimaryKey())
-                    .transform(col -> col.toProtoBuilder().setPkHandle(true).build())
-                    .forEach(col -> builder.addColumns(col));
+            for (TiColumnInfo column : columns) {
+                if (!column.isPrimaryKey()) {
+                    continue;
+                }
+                ColumnInfo pbColumn = column.toProtoBuilder(tableInfo)
+                                            .setPkHandle(true)
+                                            .build();
+                builder.addColumns(pbColumn);
+            }
         }
         return builder.build();
     }

@@ -18,7 +18,6 @@ package com.pingcap.tikv;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.net.HostAndPort;
 
 import java.util.ArrayList;
@@ -28,7 +27,7 @@ import java.util.stream.Collectors;
 
 public class TiConfiguration {
     private static final int                     DEF_TIMEOUT = 3;
-    private static final TimeUnit                DEF_TIMEOUT_UNIT = TimeUnit.SECONDS;
+    private static final TimeUnit                DEF_TIMEOUT_UNIT = TimeUnit.MINUTES;
     private static final int                     DEF_SCAN_BATCH_SIZE = 100;
     private static final boolean                 DEF_IGNORE_TRUNCATE = true;
     private static final boolean                 DEF_TRUNCATE_AS_WARNING = false;

@@ -19,7 +19,8 @@ import com.pingcap.tidb.tipb.Error;
 
 public class SelectException extends RuntimeException {
     private final Error err;
-    public SelectException(Error err) {
+    public SelectException(Error err, String msg) {
+        super(msg);
         this.err = err;
     }
 
