@@ -6,8 +6,6 @@ os:
 
 env:
   - V=0.5.1
-git:
-  submodules: false
 
 before_install:
   - OS=linux
