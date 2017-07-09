@@ -24,12 +24,10 @@ import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
 import com.pingcap.tikv.grpc.Metapb;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.pingcap.tikv.util.KeyRangeUtils.formatByteString;
 import static java.util.Objects.requireNonNull;
 
 public class RangeSplitter {
@@ -57,6 +55,24 @@ public class RangeSplitter {
         public List<KeyRange> getRanges() {
             return ranges;
         }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("[Region:");
+            sb.append("id=" + region.getId());
+            sb.append(" start=" + formatByteString(region.getStartKey()));
+            sb.append(" end=" + formatByteString(region.getEndKey()));
+            sb.append("]");
+
+            for (KeyRange range : ranges) {
+                sb.append(String.format("Range Start: %s, Range End: %s",
+                                        formatByteString(range.getStart()),
+                                        formatByteString(range.getEnd())));
+            }
+
+            return sb.toString();
+        }
     }
     public static RangeSplitter newSplitter(RegionManager mgr) {
         return new RangeSplitter(mgr);
@@ -71,6 +87,9 @@ public class RangeSplitter {
     // both arguments represent right side of end points
     // so that empty is +INF
     private static int rightCompareTo(ByteString lhs, ByteString rhs) {
+        requireNonNull(lhs, "lhs is null");
+        requireNonNull(rhs, "rhs is null");
+
         // both infinite
         if (lhs.isEmpty() && rhs.isEmpty()) {
             return 0;
@@ -81,7 +100,8 @@ public class RangeSplitter {
         if (rhs.isEmpty()) {
             return -1;
         }
-        return lhs.asReadOnlyByteBuffer().compareTo(rhs.asReadOnlyByteBuffer());
+
+        return Comparables.wrap(lhs).compareTo(Comparables.wrap(rhs));
     }
 
     public List<RegionTask> splitRangeByRegion(List<KeyRange> keyRanges) {

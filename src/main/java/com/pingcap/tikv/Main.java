@@ -8,14 +8,18 @@ import com.pingcap.tikv.codec.TableCodec;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiConstant;
 import com.pingcap.tikv.expression.TiExpr;
-import com.pingcap.tikv.expression.scalar.NotEqual;
+import com.pingcap.tikv.expression.scalar.Equal;
+import com.pingcap.tikv.expression.scalar.IsNull;
+import com.pingcap.tikv.expression.scalar.Not;
 import com.pingcap.tikv.grpc.Coprocessor;
 import com.pingcap.tikv.meta.TiDBInfo;
 import com.pingcap.tikv.meta.TiIndexInfo;
 import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.operation.SchemaInfer;
+import com.pingcap.tikv.predicates.PredicateUtils;
 import com.pingcap.tikv.predicates.ScanBuilder;
+import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.util.RangeSplitter;
 
@@ -35,17 +39,22 @@ public class Main {
         // May need to save this reference
         Logger log = Logger.getLogger("io.grpc");
         log.setLevel(Level.WARNING);
+        PDClient client = PDClient.createRaw(cluster.getSession());
+        for (int i = 0; i < 51; i++) {
+            TiRegion r = client.getRegionByID(i);
+            r.getId();
+        }
 
         Catalog cat = cluster.getCatalog();
-        TiDBInfo db = cat.getDatabase("test");
+        TiDBInfo db = cat.getDatabase("global_temp");
         TiTableInfo table = cat.getTable(db, "item");
 
         TiIndexInfo index = TiIndexInfo.generateFakePrimaryKeyIndex(table);
 
-        List<TiExpr> exprs = ImmutableList.of();
-
-        new NotEqual(TiColumnRef.create("c1", table),
-                TiConstant.create(9L));
+        List<TiExpr> exprs = ImmutableList.of(
+                new Not(new IsNull(TiColumnRef.create("dept", table))),
+                new Equal(TiColumnRef.create("dept", table), TiConstant.create("computer"))
+        );
 
         ScanBuilder scanBuilder = new ScanBuilder();
         ScanBuilder.ScanPlan scanPlan = scanBuilder.buildScan(exprs, index, table);
@@ -54,10 +63,10 @@ public class Main {
         selReq.addRanges(scanPlan.getKeyRanges())
                 .setTableInfo(table)
                 .setIndexInfo(index)
-                .addField(TiColumnRef.create("c1", table))
-                .addField(TiColumnRef.create("c2", table))
-                .addField(TiColumnRef.create("c3", table))
-                .addField(TiColumnRef.create("c4", table))
+                .addField(TiColumnRef.create("id", table))
+                .addField(TiColumnRef.create("name", table))
+                .addField(TiColumnRef.create("quantity", table))
+                .addField(TiColumnRef.create("dept", table))
                 .setStartTs(snapshot.getVersion());
 
         if (conf.isIgnoreTruncate()) {
@@ -65,6 +74,8 @@ public class Main {
         } else if (conf.isTruncateAsWarning()) {
             selReq.setTruncateMode(TiSelectRequest.TruncateMode.TruncationAsWarning);
         }
+
+        selReq.addWhere(PredicateUtils.mergeCNFExpressions(scanPlan.getFilters()));
 
         System.out.println(exprs);
         List<RangeSplitter.RegionTask> keyWithRegionTasks =

@@ -21,21 +21,23 @@ import com.google.protobuf.ByteString;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.grpc.Kvrpcpb.KvPair;
 import com.pingcap.tikv.grpc.Metapb.Store;
-import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.operation.IndexScanIterator;
 import com.pingcap.tikv.operation.ScanIterator;
 import com.pingcap.tikv.operation.SelectIterator;
 import com.pingcap.tikv.region.RegionManager;
 import com.pingcap.tikv.region.RegionStoreClient;
+import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.row.Row;
+import com.pingcap.tikv.util.Comparables;
 import com.pingcap.tikv.util.Pair;
 import com.pingcap.tikv.util.RangeSplitter.RegionTask;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
+import static com.pingcap.tikv.util.KeyRangeUtils.makeRange;
 
 public class Snapshot {
     private final Version version;
@@ -129,18 +131,17 @@ public class Snapshot {
     // Assume keys sorted
     public List<KvPair> batchGet(List<ByteString> keys) {
         TiRegion curRegion = null;
-        Range<ByteBuffer> curKeyRange = null;
+        Range curKeyRange = null;
         Pair<TiRegion, Store> lastPair = null;
         List<ByteString> keyBuffer = new ArrayList<>();
         List<KvPair> result = new ArrayList<>(keys.size());
         for (ByteString key : keys) {
-            if (curRegion == null || !curKeyRange.contains(key.asReadOnlyByteBuffer())) {
+            if (curRegion == null || !curKeyRange.contains(Comparables.wrap(key))) {
                 Pair<TiRegion, Store> pair = regionCache.getRegionStorePairByKey(key);
                 lastPair = pair;
                 curRegion = pair.first;
-                curKeyRange = Range.closedOpen(
-                        curRegion.getStartKey().asReadOnlyByteBuffer(),
-                        curRegion.getEndKey().asReadOnlyByteBuffer());
+                curKeyRange = makeRange(curRegion.getStartKey(), curRegion.getEndKey());
+
                 try (RegionStoreClient client = RegionStoreClient.create(lastPair.first, lastPair.second, getSession(), regionCache)) {
                     List<KvPair> partialResult = client.batchGet(keyBuffer, version.getVersion());
                     // TODO: Add lock check

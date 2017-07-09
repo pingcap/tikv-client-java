@@ -19,16 +19,15 @@ package com.pingcap.tikv.row;
 
 import com.pingcap.tikv.types.DataType;
 
+import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.util.Date;
 
 /**
  * Even in case of mem-buffer-based row we can ignore field types
  * when en/decoding if we put some padding bits for fixed length
  * and use fixed length index for var-length
  */
-
 public interface Row {
     void        setNull(int pos);
     boolean     isNull(int pos);
@@ -56,6 +55,9 @@ public interface Row {
 
     void        setTimestamp(int pos, Timestamp v);
     Timestamp   getTimestamp(int pos);
+
+    void        setDate(int pos, Date v);
+    Date        getDate(int pos);
 
     void        setBytes(int pos, byte[] v);
     byte[]      getBytes(int pos);

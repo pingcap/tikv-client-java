@@ -7,7 +7,6 @@ import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
 import com.pingcap.tikv.grpc.Metapb;
-import com.pingcap.tikv.predicates.Comparables;
 import com.pingcap.tikv.types.IntegerType;
 import org.junit.Test;
 
@@ -15,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.pingcap.tikv.GrpcUtils.encodeKey;
 import static org.junit.Assert.assertEquals;
 
 
@@ -75,8 +75,8 @@ public class RangeSplitterTest {
         return new TiRegion(Metapb.Region
                 .newBuilder()
                 .setId(id)
-                .setStartKey(range.getStart())
-                .setEndKey(range.getEnd())
+                .setStartKey(encodeKey(range.getStart().toByteArray()))
+                .setEndKey(encodeKey(range.getEnd().toByteArray()))
                 .build(), null);
     }
 

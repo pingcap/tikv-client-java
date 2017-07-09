@@ -72,7 +72,8 @@ public class RegionManagerTest {
                 server.getClusterId(),
                 GrpcUtils.makeRegion(
                         regionId,
-                        startKey, endKey,
+                        GrpcUtils.encodeKey(startKey.toByteArray()),
+                        GrpcUtils.encodeKey(endKey.toByteArray()),
                         GrpcUtils.makeRegionEpoch(confVer, ver),
                         GrpcUtils.makePeer(1, 10),
                         GrpcUtils.makePeer(2, 20)
@@ -80,7 +81,6 @@ public class RegionManagerTest {
         ));
         TiRegion region = mgr.getRegionByKey(startKey);
         assertEquals(region.getId(), regionId);
-
 
         TiRegion regionToSearch = mgr.getRegionByKey(searchKey);
         assertEquals(region, regionToSearch);
@@ -107,7 +107,8 @@ public class RegionManagerTest {
                 server.getClusterId(),
                 GrpcUtils.makeRegion(
                         regionId,
-                        startKey, endKey,
+                        GrpcUtils.encodeKey(startKey.toByteArray()),
+                        GrpcUtils.encodeKey(endKey.toByteArray()),
                         GrpcUtils.makeRegionEpoch(confVer, ver),
                         GrpcUtils.makePeer(storeId, 10),
                         GrpcUtils.makePeer(storeId + 1, 20)
@@ -138,8 +139,8 @@ public class RegionManagerTest {
                 server.getClusterId(),
                 GrpcUtils.makeRegion(
                         regionId,
-                        startKey,
-                        endKey,
+                        GrpcUtils.encodeKey(startKey.toByteArray()),
+                        GrpcUtils.encodeKey(endKey.toByteArray()),
                         GrpcUtils.makeRegionEpoch(confVer, ver),
                         GrpcUtils.makePeer(1, 10),
                         GrpcUtils.makePeer(2, 20)

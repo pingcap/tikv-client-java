@@ -30,7 +30,7 @@ maven_jar(
 
 maven_jar(
     name = "com_google_instrumentation_instrumentation_api",
-    artifact = "com.google.instrumentation:instrumentation-api:0.3.0",
+    artifact = "com.google.instrumentation:instrumentation-api:0.4.2",
 )
 
 maven_jar(
@@ -105,8 +105,8 @@ maven_jar(
 
 git_repository(
     name = "org_pubref_rules_protobuf",
-    remote = "https://github.com/pubref/rules_protobuf",
-    tag = "v0.7.1",
+    remote = "https://github.com/zhexuany/rules_protobuf",
+    commit = "7d505c7",
 )
 
 load("@org_pubref_rules_protobuf//java:rules.bzl", "java_proto_repositories")
