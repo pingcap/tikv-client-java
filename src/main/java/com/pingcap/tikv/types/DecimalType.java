@@ -71,7 +71,7 @@ public class DecimalType extends DataType {
     /** read a decimal value from CodecDataInput
      * @param cdi cdi is source data.
      * */
-    public static double readDecimalFully(CodecDataInput cdi) {
+    public static BigDecimal readDecimalFully(CodecDataInput cdi) {
         if (cdi.available() < 3) {
             throw new IllegalArgumentException("insufficient bytes to read value");
         }
@@ -115,7 +115,7 @@ public class DecimalType extends DataType {
      * @return decoded unsigned long value
      */
     public static double readDouble(CodecDataInput cdi) {
-        return readDecimalFully(cdi);
+        return readDecimalFully(cdi).doubleValue();
     }
 
     /**

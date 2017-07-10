@@ -15,9 +15,11 @@
 
 package com.pingcap.tikv.codec;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 
 // TODO: We shouldn't allow empty MyDecimal
+// TODO: It seems MyDecimal to BigDecimal is very slow
 public class MyDecimal {
     // how many digits that a word has
     private final static int digitsPerWord = 9;
@@ -202,7 +204,11 @@ public class MyDecimal {
     /**
      * Returns a double value from MyDecimal instance.
      */
-    public double toDecimal() {
+    public BigDecimal toDecimal() {
+        return new BigDecimal(toString());
+    }
+
+    public double toDouble() {
         return Float.parseFloat(toString());
     }
 
