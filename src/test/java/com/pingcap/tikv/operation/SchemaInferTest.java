@@ -29,18 +29,16 @@ import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.DataTypeFactory;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.List;
 
-import static com.pingcap.tikv.types.Types.TYPE_BLOB;
-import static com.pingcap.tikv.types.Types.TYPE_NEW_DECIMAL;
-import static com.pingcap.tikv.types.Types.TYPE_VARCHAR;
+import static com.pingcap.tikv.types.Types.*;
+import static org.junit.Assert.assertEquals;
 
 public class SchemaInferTest {
     private final String table29 =
-            "{\"id\":29,\"name\":{\"O\":\"t1\",\"L\":\"t1\"},\"charset\":\"\",\"collate\":\"\",\"cols\":[{\"id\":1,\"name\":{\"O\":\"time\",\"L\":\"time\"},\"offset\":0,\"origin_default\":null,\"default\":null,\"type\":{\"Tp\":10,\"Flag\":128,\"Flen\":-1,\"Decimal\":-1,\"Charset\":\"binary\",\"Collate\":\"binary\",\"Elems\":null},\"state\":5,\"comment\":\"\"},{\"id\":2,\"name\":{\"O\":\"number\",\"L\":\"number\"},\"offset\":1,\"origin_default\":null,\"default\":null,\"type\":{\"Tp\":3,\"Flag\":128,\"Flen\":11,\"Decimal\":-1,\"Charset\":\"binary\",\"Collate\":\"binary\",\"Elems\":null},\"state\":5,\"comment\":\"\"},{\"id\":3,\"name\":{\"O\":\"name\",\"L\":\"name\"},\"offset\":2,\"origin_default\":null,\"default\":null,\"type\":{\"Tp\":15,\"Flag\":0,\"Flen\":11,\"Decimal\":-1,\"Charset\":\"utf8\",\"Collate\":\"utf8_bin\",\"Elems\":null},\"state\":5,\"comment\":\"\"}],\"index_info\":null,\"fk_info\":null,\"state\":5,\"pk_is_handle\":false,\"comment\":\"\",\"auto_inc_id\":0,\"max_col_id\":3,\"max_idx_id\":0}";
+            "{\"id\":29,\"name\":{\"O\":\"t1\",\"L\":\"t1\"},\"charset\":\"\",\"collate\":\"\",\"cols\":[{\"id\":1,\"name\":{\"O\":\"time\",\"L\":\"time\"},\"offset\":0,\"origin_default\":null,\"default\":null,\"type\":{\"Tp\":10,\"Flag\":128,\"Flen\":-1,\"Decimal\":-1,\"Charset\":\"binary\",\"Collate\":\"binary\",\"Elems\":null},\"state\":5,\"comment\":\"\"},{\"id\":2,\"name\":{\"O\":\"number\",\"L\":\"number\"},\"offset\":1,\"origin_default\":null,\"default\":null,\"type\":{\"Tp\":3,\"Flag\":128,\"Flen\":-1,\"Decimal\":-1,\"Charset\":\"binary\",\"Collate\":\"binary\",\"Elems\":null},\"state\":5,\"comment\":\"\"},{\"id\":3,\"name\":{\"O\":\"name\",\"L\":\"name\"},\"offset\":2,\"origin_default\":null,\"default\":null,\"type\":{\"Tp\":15,\"Flag\":0,\"Flen\":-1,\"Decimal\":-1,\"Charset\":\"utf8\",\"Collate\":\"utf8_bin\",\"Elems\":null},\"state\":5,\"comment\":\"\"}],\"index_info\":null,\"fk_info\":null,\"state\":5,\"pk_is_handle\":false,\"comment\":\"\",\"auto_inc_id\":0,\"max_col_id\":3,\"max_idx_id\":0}";
     private final ByteString table29Bs = ByteString.copyFromUtf8(table29);
 
     private TiTableInfo table = Catalog.parseFromJson(table29Bs, TiTableInfo.class);
@@ -56,8 +54,8 @@ public class SchemaInferTest {
         TiSelectRequest selectRequest = new TiSelectRequest();
         selectRequest.getFields().add(name);
         List<DataType> dataTypes = SchemaInfer.create(selectRequest).getTypes();
-        Assert.assertSame(1, dataTypes.size());
-        Assert.assertSame(DataTypeFactory.of(TYPE_VARCHAR), dataTypes.get(0));
+        assertEquals(1, dataTypes.size());
+        assertEquals(DataTypeFactory.of(TYPE_VARCHAR), dataTypes.get(0));
     }
 
     @Test
@@ -67,9 +65,9 @@ public class SchemaInferTest {
         TiSelectRequest selectRequest = new TiSelectRequest();
         selectRequest.addAggregate(sum);
         List<DataType> dataTypes = SchemaInfer.create(selectRequest).getTypes();
-        Assert.assertSame(2, dataTypes.size());
-        Assert.assertSame(DataTypeFactory.of(TYPE_BLOB), dataTypes.get(0));
-        Assert.assertSame(DataTypeFactory.of(TYPE_NEW_DECIMAL), dataTypes.get(1));
+        assertEquals(2, dataTypes.size());
+        assertEquals(DataTypeFactory.of(TYPE_BLOB), dataTypes.get(0));
+        assertEquals(DataTypeFactory.of(TYPE_NEW_DECIMAL), dataTypes.get(1));
     }
 
     @Test
@@ -80,9 +78,9 @@ public class SchemaInferTest {
         selectRequest.addAggregate(sum);
         selectRequest.getGroupByItems().add(complexGroupBy);
         List<DataType> dataTypes = SchemaInfer.create(selectRequest).getTypes();
-        Assert.assertSame(2, dataTypes.size());
-        Assert.assertSame(DataTypeFactory.of(TYPE_BLOB), dataTypes.get(0));
-        Assert.assertSame(DataTypeFactory.of(TYPE_NEW_DECIMAL), dataTypes.get(1));
+        assertEquals(2, dataTypes.size());
+        assertEquals(DataTypeFactory.of(TYPE_BLOB), dataTypes.get(0));
+        assertEquals(DataTypeFactory.of(TYPE_NEW_DECIMAL), dataTypes.get(1));
     }
 
     @Test
@@ -93,8 +91,8 @@ public class SchemaInferTest {
         selectRequest.addAggregate(sum);
         selectRequest.getGroupByItems().add(complexGroupBy);
         List<DataType> dataTypes = SchemaInfer.create(selectRequest).getTypes();
-        Assert.assertSame(2, dataTypes.size());
-        Assert.assertSame(DataTypeFactory.of(TYPE_BLOB), dataTypes.get(0));
-        Assert.assertSame(DataTypeFactory.of(TYPE_NEW_DECIMAL), dataTypes.get(1));
+        assertEquals(2, dataTypes.size());
+        assertEquals(DataTypeFactory.of(TYPE_BLOB), dataTypes.get(0));
+        assertEquals(DataTypeFactory.of(TYPE_NEW_DECIMAL), dataTypes.get(1));
     }
 }

@@ -85,6 +85,7 @@ public abstract class DataType implements Serializable {
        this.flag = 0;
        this.elems = ImmutableList.of();
        this.length = UNSPECIFIED_LEN;
+       this.decimal = UNSPECIFIED_LEN;
        this.collation = Collation.DEF_COLLATION_CODE;
    }
 
@@ -254,5 +255,32 @@ public abstract class DataType implements Serializable {
    @Override
    public String toString() {
        return this.getClass().getSimpleName();
+   }
+
+   @Override
+   public boolean equals(Object other) {
+       if (other instanceof DataType) {
+           DataType otherType = (DataType)other;
+           // tp implies Class is the same
+           // and that might not always hold
+           // TODO: reconsider design here
+           return tp == otherType.tp &&
+                   flag == otherType.flag &&
+                   decimal == otherType.decimal &&
+                   collation == otherType.collation &&
+                   length == otherType.length &&
+                   elems.equals(otherType.elems);
+       }
+       return false;
+   }
+
+   @Override
+   public int hashCode() {
+       return 31 * (tp == 0 ? 1 : tp) *
+               (flag == 0 ? 1 : flag) *
+               (decimal == 0 ? 1 : decimal) *
+               (collation == 0 ? 1 : collation) *
+               (length == 0 ? 1 : length) *
+               (elems.hashCode());
    }
 }

@@ -18,15 +18,12 @@
 package com.pingcap.tikv.expression;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pingcap.tidb.tipb.ColumnInfo;
 import com.pingcap.tidb.tipb.Expr;
-import com.pingcap.tidb.tipb.TableInfo;
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.expression.scalar.GreaterThan;
-import com.pingcap.tikv.meta.TiColumnInfo;
 import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.meta.TiTableInfoTest;
-import com.pingcap.tikv.types.DecimalType;
+import com.pingcap.tikv.types.RealType;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -39,7 +36,7 @@ public class TiConstantTest {
         GreaterThan g =  new GreaterThan(TiColumnRef.create("c1", tableInfo), TiConstant.create(1.12));
         Expr ge = g.toProto();
         assertEquals(2, ge.getChildrenCount());
-        double expected = DecimalType.readDecimalFully(new CodecDataInput(ge.getChildren(1).getVal()));
+        double expected = RealType.readDouble(new CodecDataInput(ge.getChildren(1).getVal()));
         assertEquals(1.12, expected, 0.00001);
     }
 }
