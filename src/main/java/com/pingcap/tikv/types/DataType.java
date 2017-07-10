@@ -57,6 +57,7 @@ public abstract class DataType implements Serializable {
     // Not Encode/Decode flag, this is used to strict mysql type
     // such as not null, timestamp
     protected int           flag;
+    protected int           decimal;
     protected int           collation;
     protected int           length;
     private   List<String>  elems;
@@ -65,6 +66,7 @@ public abstract class DataType implements Serializable {
        this.tp = holder.getTp();
        this.flag = holder.getFlag();
        this.length = holder.getFlen();
+       this.decimal = holder.getDecimal();
        this.collation = Collation.translate(holder.getCollate());
        this.elems = holder.getElems() == null ?
                ImmutableList.of() : holder.getElems();
@@ -186,7 +188,7 @@ public abstract class DataType implements Serializable {
     }
 
    public int getDecimal() {
-        return UNSPECIFIED_LEN;
+        return decimal;
     }
 
    public void setFlag(int flag) {

@@ -15,12 +15,9 @@
 
 package com.pingcap.tikv.codec;
 
-import org.apache.logging.log4j.util.Strings;
-
-import java.math.BigDecimal;
-import java.text.NumberFormat;
 import java.util.Arrays;
 
+// TODO: We shouldn't allow empty MyDecimal
 public class MyDecimal {
     // how many digits that a word has
     private final static int digitsPerWord = 9;
