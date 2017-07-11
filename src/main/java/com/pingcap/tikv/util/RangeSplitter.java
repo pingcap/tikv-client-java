@@ -60,9 +60,9 @@ public class RangeSplitter {
         public String toString() {
             StringBuilder sb = new StringBuilder();
             sb.append("[Region:");
-            sb.append("id=" + region.getId());
-            sb.append(" start=" + formatByteString(region.getStartKey()));
-            sb.append(" end=" + formatByteString(region.getEndKey()));
+            sb.append("id=").append(region.getId());
+            sb.append(" start=").append(formatByteString(region.getStartKey()));
+            sb.append(" end=").append(formatByteString(region.getEndKey()));
             sb.append("]");
 
             for (KeyRange range : ranges) {
@@ -128,7 +128,7 @@ public class RangeSplitter {
                                                .setEnd(region.getEndKey())
                                                .build();
 
-                List<KeyRange> ranges = idToRange.computeIfAbsent(region.getId(), k -> new ArrayList());
+                List<KeyRange> ranges = idToRange.computeIfAbsent(region.getId(), k -> new ArrayList<>());
                 ranges.add(cutRange);
 
                 // cut new remaining for current range
@@ -138,7 +138,7 @@ public class RangeSplitter {
                                 .build();
             } else {
                 // current range covered by region
-                List<KeyRange> ranges = idToRange.computeIfAbsent(region.getId(), k -> new ArrayList());
+                List<KeyRange> ranges = idToRange.computeIfAbsent(region.getId(), k -> new ArrayList<>());
                 ranges.add(range);
                 if (i >= keyRanges.size()) {
                     break;
