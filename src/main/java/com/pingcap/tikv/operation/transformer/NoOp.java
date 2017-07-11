@@ -27,7 +27,7 @@ import java.util.List;
  * Noop is a base type projection, it basically do nothing but copy.
  */
 public class NoOp implements Projection {
-    protected DataType targetDataType;
+    DataType targetDataType;
 
     public NoOp(DataType dataType) {
         this.targetDataType = dataType;
