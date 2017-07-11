@@ -18,10 +18,9 @@
 package com.pingcap.tikv.operation.transformer;
 
 import com.pingcap.tikv.row.Row;
-import com.pingcap.tikv.types.BytesType;
-import com.pingcap.tikv.types.DataType;
-import com.pingcap.tikv.types.DecimalType;
-import com.pingcap.tikv.types.IntegerType;
+import com.pingcap.tikv.types.*;
+
+import java.math.BigDecimal;
 
 public class Cast extends NoOp {
     public Cast(DataType type) {
@@ -39,6 +38,8 @@ public class Cast extends NoOp {
         } else if (targetDataType instanceof BytesType) {
             casted = castToString(value);
         } else if (targetDataType instanceof DecimalType) {
+            casted = castToDecimal(value);
+        } else if (targetDataType instanceof RealType) {
             casted = castToDouble(value);
         } else {
             throw new UnsupportedOperationException("only support cast to Long, Double and String");
@@ -52,6 +53,17 @@ public class Cast extends NoOp {
             return num.doubleValue();
         }
         throw new UnsupportedOperationException("can not cast un-number to double ");
+    }
+
+    public BigDecimal castToDecimal(Object obj) {
+        if (obj instanceof Number) {
+            Number num = (Number)obj;
+            return new BigDecimal(num.doubleValue());
+        } else if (obj instanceof BigDecimal) {
+            return (BigDecimal)obj;
+        }
+        throw new UnsupportedOperationException("can not cast to BigDecimal: " +
+                                                obj == null ? "null" : obj.getClass().getSimpleName());
     }
 
     public Long castToLong(Object obj) {
