@@ -33,7 +33,7 @@ public abstract class IndexScanIterator  implements Iterator<Row> {
     private final TiSelectRequest selReq;
     private final Snapshot snapshot;
 
-    protected IndexScanIterator(Snapshot snapshot, TiSelectRequest req, Iterator<Row> iter) {
+    IndexScanIterator(Snapshot snapshot, TiSelectRequest req, Iterator<Row> iter) {
         this.iter = iter;
         this.selReq = req;
         this.snapshot = snapshot;

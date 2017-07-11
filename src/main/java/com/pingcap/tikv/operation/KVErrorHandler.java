@@ -17,12 +17,11 @@
 
 package com.pingcap.tikv.operation;
 
+import com.pingcap.tikv.exception.RegionException;
 import com.pingcap.tikv.region.RegionManager;
 import com.pingcap.tikv.grpc.Errorpb;
 import com.pingcap.tikv.grpc.Kvrpcpb;
 import com.pingcap.tikv.grpc.Pdpb;
-import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
 
 import java.util.function.Function;
 
@@ -51,31 +50,31 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
                 // no need update here. just let retry take control of this.
                 this.regionManager.updateLeader(ctx.getRegionId(), ctx.getPeer().getStoreId());
                 // TODO add sleep here
-                throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE));
+                throw new RegionException(error);
             }
             if (error.hasStoreNotMatch()) {
                 this.regionManager.invalidateStore(ctx.getPeer().getStoreId());
-                throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE));
+                throw new RegionException(error);
             }
 
              // no need retry. NewRegions is returned in this response. we just need update RegionManage's region cache.
             if (error.hasStaleEpoch()) {
-                 regionManager.onRegionStale(ctx.getRegionId(), error.getStaleEpoch().getNewRegionsList());
+                regionManager.onRegionStale(ctx.getRegionId(), error.getStaleEpoch().getNewRegionsList());
                 this.regionManager.onRegionStale(ctx.getRegionId(), error.getStaleEpoch().getNewRegionsList());
-                throw new StatusRuntimeException(Status.fromCode(Status.Code.CANCELLED));
+                throw new RegionException(error);
             }
 
             if (error.hasServerIsBusy()) {
                 // TODO add some sleep here.
-                throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE));
+                throw new RegionException(error);
             }
 
             if (error.hasStaleCommand()) {
-                throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE));
+                throw new RegionException(error);
             }
 
             if (error.hasRaftEntryTooLarge()) {
-                throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE));
+                throw new RegionException(error);
             }
             // for other errors, we only drop cache here and throw a retryable exception.
             this.regionManager.invalidateRegion(ctx.getRegionId());

@@ -27,7 +27,7 @@ import static io.grpc.stub.ClientCalls.asyncBidiStreamingCall;
 
 public abstract class AbstractGrpcClient<BlockingStubT extends AbstractStub<BlockingStubT>,
         StubT extends AbstractStub<StubT>> implements AutoCloseable {
-    protected final Logger             logger = LogManager.getFormatterLogger(getClass());
+    final Logger             logger = LogManager.getFormatterLogger(getClass());
     private         TiSession          session;
     private         TiConfiguration    conf;
 

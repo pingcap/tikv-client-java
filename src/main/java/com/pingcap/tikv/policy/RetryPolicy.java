@@ -15,10 +15,9 @@
 
 package com.pingcap.tikv.policy;
 
-import com.google.common.collect.ImmutableSet;
 import com.pingcap.tikv.exception.GrpcException;
+import com.pingcap.tikv.exception.RegionException;
 import com.pingcap.tikv.operation.ErrorHandler;
-import io.grpc.Status;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -30,26 +29,8 @@ public abstract class RetryPolicy {
     // Basically a leader recheck method
     private ErrorHandler handler;
 
-    private ImmutableSet<Status.Code> unrecoverableStatus = ImmutableSet.of(
-            Status.Code.ALREADY_EXISTS, Status.Code.PERMISSION_DENIED,
-            Status.Code.INVALID_ARGUMENT, Status.Code.NOT_FOUND,
-            Status.Code.UNIMPLEMENTED, Status.Code.OUT_OF_RANGE,
-            Status.Code.UNAUTHENTICATED, Status.Code.CANCELLED
-    );
-
-    public RetryPolicy(ErrorHandler handler) {
+    RetryPolicy(ErrorHandler handler) {
         this.handler = handler;
-    }
-
-    protected abstract boolean shouldRetry(Exception e);
-
-    protected boolean checkNotLeaderException(Status status) {
-        // TODO: need a way to check this, for now all unknown exception
-        return true;
-    }
-
-    protected boolean checkNotRecoverableException(Status status) {
-        return unrecoverableStatus.contains(status.getCode());
     }
 
     public <T> T callWithRetry(Callable<T> proc, String methodName) {
@@ -64,14 +45,11 @@ public abstract class RetryPolicy {
                     handler.handle(result);
                 }
                 return result;
+            } catch (RegionException e) {
+                logger.error("Failed to do last grpc recovering now %s.", methodName);
             } catch (Exception e) {
-                // TODO retry is keep sending request to server, this is really bad behavior here. More refractory on the
-                // way
-                Status status = Status.fromThrowable(e);
-                if (checkNotRecoverableException(status) || !shouldRetry(e)) {
-                    logger.error("Failed to recover from last grpc error calling %s.", methodName);
-                    throw new GrpcException(e);
-                }
+                logger.error("Failed to recover from last grpc error calling %s.", methodName);
+                throw new GrpcException(e);
             }
         }
     }

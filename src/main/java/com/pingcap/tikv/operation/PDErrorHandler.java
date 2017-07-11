@@ -18,6 +18,8 @@
 package com.pingcap.tikv.operation;
 
 import com.pingcap.tikv.grpc.Pdpb;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 
 import java.util.function.Function;
 
@@ -33,8 +35,9 @@ public class PDErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
             return;
         }
         Pdpb.Error error = getError.apply(resp);
+        // when pd has error, simply retry this request.
         if (error != null) {
-
+            throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE));
         }
     }
 }

@@ -50,7 +50,7 @@ public class KeyRangeUtils {
                                 Comparables.wrap(endKey));
     }
 
-    public static String formatByteString(ByteString key) {
+    static String formatByteString(ByteString key) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < key.size(); i++) {
             sb.append(key.byteAt(i) & 0xff);
