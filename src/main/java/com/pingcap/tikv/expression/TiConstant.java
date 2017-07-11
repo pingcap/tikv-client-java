@@ -20,11 +20,9 @@ import com.pingcap.tidb.tipb.Expr;
 import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.meta.TiTableInfo;
-import com.pingcap.tikv.types.DataType;
-import com.pingcap.tikv.types.DataTypeFactory;
-import com.pingcap.tikv.types.DecimalType;
-import com.pingcap.tikv.types.IntegerType;
+import com.pingcap.tikv.types.*;
 
+import java.math.BigDecimal;
 import java.util.Objects;
 
 import static com.pingcap.tikv.types.Types.*;
@@ -73,10 +71,13 @@ public class TiConstant implements TiExpr {
             cdo.write(((String)value).getBytes());
         } else if (value instanceof Float) {
             builder.setTp(ExprType.Float32);
-            DecimalType.writeFloat(cdo, (Float)value);
+            RealType.writeFloat(cdo, (Float)value);
         } else if (value instanceof Double) {
             builder.setTp(ExprType.Float64);
-            DecimalType.writeDouble(cdo, (Double)value);
+            RealType.writeDouble(cdo, (Double)value);
+        } else if (value instanceof BigDecimal) {
+            builder.setTp(ExprType.MysqlDecimal);
+            DecimalType.writeDecimal(cdo, (BigDecimal)value);
         } else {
             throw new TiExpressionException("Constant type not supported.");
         }

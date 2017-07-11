@@ -19,8 +19,9 @@ package com.pingcap.tikv.types;
 
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.codec.CodecDataOutput;
-import com.pingcap.tikv.types.DecimalType;
 import org.junit.Test;
+
+import java.math.BigDecimal;
 
 import static org.junit.Assert.assertEquals;
 
@@ -38,9 +39,9 @@ public class DecimalTypeTest {
         u = DecimalType.readDouble(new CodecDataInput(cdo.toBytes()));
         assertEquals(206.0, u, 0.0001);
 
-//        cdo.reset();
-//        DecimalType.writeDouble(cdo, Double.MIN_VALUE);
-//        u = DecimalType.readDouble(new CodecDataInput(cdo.toBytes()));
-//        assertEquals(Double.MIN_VALUE, u, 0.1);
+        cdo.reset();
+        DecimalType.writeDecimal(cdo, BigDecimal.valueOf(206.0));
+        u = DecimalType.readDouble(new CodecDataInput(cdo.toBytes()));
+        assertEquals(206.0, u, 0.0001);
     }
 }
