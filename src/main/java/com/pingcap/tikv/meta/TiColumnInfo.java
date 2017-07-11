@@ -50,7 +50,7 @@ public class TiColumnInfo implements Serializable {
         this.id = id;
         this.name = name.getL();
         this.offset = offset;
-        this.type = type.toDataType();
+        this.type = DataTypeFactory.of(type);
         this.schemaState = SchemaState.fromValue(schemaState);
         this.comment = comment;
         // I don't think pk flag should be set on type
@@ -168,12 +168,6 @@ public class TiColumnInfo implements Serializable {
 
         public List<String> getElems() {
             return elems;
-        }
-
-        public DataType toDataType() {
-            DataType dataType =  DataTypeFactory.of(tp);
-            dataType.setFlag(flag);
-            return dataType;
         }
     }
 

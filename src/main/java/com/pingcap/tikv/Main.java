@@ -46,8 +46,8 @@ public class Main {
         }
 
         Catalog cat = cluster.getCatalog();
-        TiDBInfo db = cat.getDatabase("global_temp");
-        TiTableInfo table = cat.getTable(db, "item");
+        TiDBInfo db = cat.getDatabase("tpch");
+        TiTableInfo table = cat.getTable(db, "lineitem");
 
         TiIndexInfo index = TiIndexInfo.generateFakePrimaryKeyIndex(table);
 

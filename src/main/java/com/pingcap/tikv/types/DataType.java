@@ -57,6 +57,7 @@ public abstract class DataType implements Serializable {
     // Not Encode/Decode flag, this is used to strict mysql type
     // such as not null, timestamp
     protected int           flag;
+    protected int           decimal;
     protected int           collation;
     protected int           length;
     private   List<String>  elems;
@@ -65,6 +66,7 @@ public abstract class DataType implements Serializable {
        this.tp = holder.getTp();
        this.flag = holder.getFlag();
        this.length = holder.getFlen();
+       this.decimal = holder.getDecimal();
        this.collation = Collation.translate(holder.getCollate());
        this.elems = holder.getElems() == null ?
                ImmutableList.of() : holder.getElems();
@@ -83,6 +85,7 @@ public abstract class DataType implements Serializable {
        this.flag = 0;
        this.elems = ImmutableList.of();
        this.length = UNSPECIFIED_LEN;
+       this.decimal = UNSPECIFIED_LEN;
        this.collation = Collation.DEF_COLLATION_CODE;
    }
 
@@ -186,7 +189,7 @@ public abstract class DataType implements Serializable {
     }
 
    public int getDecimal() {
-        return UNSPECIFIED_LEN;
+        return decimal;
     }
 
    public void setFlag(int flag) {
@@ -252,5 +255,32 @@ public abstract class DataType implements Serializable {
    @Override
    public String toString() {
        return this.getClass().getSimpleName();
+   }
+
+   @Override
+   public boolean equals(Object other) {
+       if (other instanceof DataType) {
+           DataType otherType = (DataType)other;
+           // tp implies Class is the same
+           // and that might not always hold
+           // TODO: reconsider design here
+           return tp == otherType.tp &&
+                   flag == otherType.flag &&
+                   decimal == otherType.decimal &&
+                   collation == otherType.collation &&
+                   length == otherType.length &&
+                   elems.equals(otherType.elems);
+       }
+       return false;
+   }
+
+   @Override
+   public int hashCode() {
+       return 31 * (tp == 0 ? 1 : tp) *
+               (flag == 0 ? 1 : flag) *
+               (decimal == 0 ? 1 : decimal) *
+               (collation == 0 ? 1 : collation) *
+               (length == 0 ? 1 : length) *
+               (elems.hashCode());
    }
 }

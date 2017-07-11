@@ -24,9 +24,9 @@ import com.pingcap.tikv.codec.MyDecimal;
 import com.pingcap.tikv.meta.TiColumnInfo;
 import gnu.trove.list.array.TIntArrayList;
 
-public class DecimalType extends DataType {
+import java.math.BigDecimal;
 
-    private static final long signMask = 0x8000000000000000L;
+public class DecimalType extends DataType {
     static DecimalType of(int tp) {
        return new DecimalType(tp);
     }
@@ -65,18 +65,17 @@ public class DecimalType extends DataType {
         } else {
             throw new UnsupportedOperationException("can not cast non Number type to Double");
         }
-        writeDecimalFully(cdo, val);
+        writeDouble(cdo, val);
     }
 
     /** read a decimal value from CodecDataInput
      * @param cdi cdi is source data.
      * */
-    public static double readDecimalFully(CodecDataInput cdi) {
+    public static BigDecimal readDecimalFully(CodecDataInput cdi) {
         if (cdi.available() < 3) {
             throw new IllegalArgumentException("insufficient bytes to read value");
         }
 
-        MyDecimal dec = new MyDecimal();
         // 64 should be larger enough for avoiding unnecessary growth.
         TIntArrayList data = new TIntArrayList(64);
         int precision = cdi.readUnsignedByte();
@@ -90,6 +89,7 @@ public class DecimalType extends DataType {
             data.add(cdi.readUnsignedByte());
         }
 
+        MyDecimal dec = new MyDecimal();
         int binSize = dec.fromBin(precision, frac, data.toArray());
         cdi.mark(curPos+binSize);
         cdi.reset();
@@ -98,11 +98,9 @@ public class DecimalType extends DataType {
 
     /** write a decimal value from CodecDataInput
      * @param cdo cdo is destination data.
-     * @param lvalue is decimal value that will be written into cdo.
+     * @param dec is decimal value that will be written into cdo.
      * */
-    static void writeDecimalFully(CodecDataOutput cdo, double lvalue) {
-        MyDecimal dec = new MyDecimal();
-        dec.fromDecimal(lvalue);
+    static void writeDecimalFully(CodecDataOutput cdo, MyDecimal dec) {
         int[] data = dec.toBin(dec.precision(), dec.frac());
         cdo.writeByte(dec.precision());
         cdo.writeByte(dec.frac());
@@ -117,7 +115,18 @@ public class DecimalType extends DataType {
      * @return decoded unsigned long value
      */
     public static double readDouble(CodecDataInput cdi) {
-        return readDecimalFully(cdi);
+        return readDecimalFully(cdi).doubleValue();
+    }
+
+    /**
+     * Encoding a double value to byte buffer
+     * @param cdo For outputting data in bytes array
+     * @param val The data to encode
+     */
+    public static void writeDecimal(CodecDataOutput cdo, BigDecimal val) {
+        MyDecimal dec = new MyDecimal();
+        dec.fromString(val.toPlainString());
+        writeDecimalFully(cdo, dec);
     }
 
     /**
@@ -126,16 +135,8 @@ public class DecimalType extends DataType {
      * @param val The data to encode
      */
     public static void writeDouble(CodecDataOutput cdo, double val) {
-        writeDecimalFully(cdo, val);
+        MyDecimal dec = new MyDecimal();
+        dec.fromDecimal(val);
+        writeDecimalFully(cdo, dec);
     }
-
-    /**
-     * Encoding a float value to byte buffer
-     * @param cdo For outputting data in bytes array
-     * @param val The data to encode
-     */
-    public static void writeFloat(CodecDataOutput cdo, float val) {
-        writeDecimalFully(cdo, val);
-    }
-
 }

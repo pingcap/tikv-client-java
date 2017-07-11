@@ -101,8 +101,7 @@ public class ScanBuilder {
             ByteString startKey;
             ByteString endKey;
             if (ir.hasAccessPoints()) {
-                checkArgument(!ir.hasRange(),
-                        "Table scan must have one and only one access condition / point");
+                checkArgument(!ir.hasRange(), "Table scan must have one and only one access condition / point");
 
                 Object v = ir.getAccessPoints().get(0);
                 checkArgument(v instanceof Long, "Table scan key range must be long value");
@@ -113,7 +112,6 @@ public class ScanBuilder {
             } else if (ir.hasRange()) {
                 checkArgument(!ir.hasAccessPoints(),
                         "Table scan must have one and only one access condition / point");
-                CodecDataOutput cdo = new CodecDataOutput();
                 Range r = ir.getRange();
                 DataType type = ir.getRangeType();
                 checkArgument(type instanceof IntegerType, "Table scan key range must be long value");
