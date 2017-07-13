@@ -313,7 +313,11 @@ public class TiSelectRequest implements Serializable {
    *
    * @param column is column referred during selectReq
    */
+<<<<<<< HEAD
   public TiSelectRequest addField(TiColumnRef column) {
+=======
+  public TiSelectRequest addRequiredColumn(TiColumnRef column) {
+>>>>>>> use RegionException instead of StatusRunTimeException
     fields.add(requireNonNull(column, "columnRef is null"));
     return this;
   }
@@ -356,7 +360,7 @@ public class TiSelectRequest implements Serializable {
     StringBuilder sb = new StringBuilder();
     if (tableInfo != null) {
       sb.append(String.format("[table: %s] ", tableInfo.toString()));
-      tableInfo.toString();
+      sb.append(tableInfo.toString());
     }
 
     for (TiColumnRef ref : fields) {
