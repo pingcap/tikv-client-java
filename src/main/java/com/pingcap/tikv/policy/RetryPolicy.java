@@ -17,6 +17,7 @@ package com.pingcap.tikv.policy;
 
 import com.google.common.collect.ImmutableSet;
 import com.pingcap.tikv.exception.GrpcException;
+import com.pingcap.tikv.exception.RegionException;
 import com.pingcap.tikv.operation.ErrorHandler;
 import io.grpc.Status;
 import java.util.concurrent.Callable;
@@ -47,8 +48,8 @@ public abstract class RetryPolicy {
     return true;
   }
 
-  protected boolean checkNotRecoverableException(Status status) {
-    return unrecoverableStatus.contains(status.getCode());
+  protected boolean checkNotRecoverableException(Exception e) {
+    return e instanceof RegionException;
   }
 
   public <T> T callWithRetry(Callable<T> proc, String methodName) {
@@ -66,8 +67,7 @@ public abstract class RetryPolicy {
       } catch (Exception e) {
         // TODO retry is keep sending request to server, this is really bad behavior here. More refractory on the
         // way
-        Status status = Status.fromThrowable(e);
-        if (checkNotRecoverableException(status) || !shouldRetry(e)) {
+        if (checkNotRecoverableException(e) || !shouldRetry(e)) {
           logger.error("Failed to recover from last grpc error calling %s.", methodName);
           throw new GrpcException(e);
         }
