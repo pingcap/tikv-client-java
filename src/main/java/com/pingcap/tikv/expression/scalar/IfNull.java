@@ -22,26 +22,25 @@ import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.IntegerType;
 
 public class IfNull extends TiFunctionExpression {
-    public IfNull(TiExpr...arg) {
-        super(arg);
-    }
+  public IfNull(TiExpr... arg) {
+    super(arg);
+  }
 
-    @Override
-    protected ExprType getExprType() {
-        return ExprType.IfNull;
-    }
+  @Override
+  protected ExprType getExprType() {
+    return ExprType.IfNull;
+  }
 
-    @Override
-    public String getName() {
-        return "IfNull";
-    }
+  @Override
+  public String getName() {
+    return "IfNull";
+  }
 
-    @Override
-    protected void validateArguments(TiExpr... args) throws RuntimeException {
-    }
+  @Override
+  protected void validateArguments(TiExpr... args) throws RuntimeException {}
 
-    @Override
-    public DataType getType() {
-        return IntegerType.DEF_BOOLEAN_TYPE;
-    }
+  @Override
+  public DataType getType() {
+    return IntegerType.DEF_BOOLEAN_TYPE;
+  }
 }

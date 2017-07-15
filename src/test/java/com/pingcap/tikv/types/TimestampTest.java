@@ -17,45 +17,44 @@
 
 package com.pingcap.tikv.types;
 
-import org.junit.Test;
+import static org.junit.Assert.*;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 public class TimestampTest {
-    @Test
-    public void fromPackedLongAndToPackedLongTest() {
+  @Test
+  public void fromPackedLongAndToPackedLongTest() {
 
-        LocalDateTime time = LocalDateTime.of(1999, 12, 12, 1, 1, 1, 1000);
-        LocalDateTime time1 = TimestampType.fromPackedLong(TimestampType.toPackedLong(time));
-        assertEquals(time, time1);
+    LocalDateTime time = LocalDateTime.of(1999, 12, 12, 1, 1, 1, 1000);
+    LocalDateTime time1 = TimestampType.fromPackedLong(TimestampType.toPackedLong(time));
+    assertEquals(time, time1);
 
-        // since precision is microseconds, any nanoseconds is smaller than 1000 will be dropped.
-        time = LocalDateTime.of(1999, 12, 12, 1, 1, 1, 1);
-        time1 = TimestampType.fromPackedLong(TimestampType.toPackedLong(time));
-        assertNotEquals(time, time1);
+    // since precision is microseconds, any nanoseconds is smaller than 1000 will be dropped.
+    time = LocalDateTime.of(1999, 12, 12, 1, 1, 1, 1);
+    time1 = TimestampType.fromPackedLong(TimestampType.toPackedLong(time));
+    assertNotEquals(time, time1);
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss:SSSSSSS");
-        LocalDateTime time2 = LocalDateTime.parse("2010-10-10 10:11:11:0000000", formatter);
-        LocalDateTime time3 = TimestampType.fromPackedLong(TimestampType.toPackedLong(time2));
-        assertEquals(time2, time3);
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss:SSSSSSS");
+    LocalDateTime time2 = LocalDateTime.parse("2010-10-10 10:11:11:0000000", formatter);
+    LocalDateTime time3 = TimestampType.fromPackedLong(TimestampType.toPackedLong(time2));
+    assertEquals(time2, time3);
 
-        // when packedLong is 0, then null is returned
-        LocalDateTime time4 = TimestampType.fromPackedLong(0);
-        assertNull(time4);
+    // when packedLong is 0, then null is returned
+    LocalDateTime time4 = TimestampType.fromPackedLong(0);
+    assertNull(time4);
 
-        LocalDateTime time5 = LocalDateTime.parse("9999-12-31 23:59:59:0000000", formatter);
-        LocalDateTime time6 = TimestampType.fromPackedLong(TimestampType.toPackedLong(time5));
-        assertEquals(time5, time6);
+    LocalDateTime time5 = LocalDateTime.parse("9999-12-31 23:59:59:0000000", formatter);
+    LocalDateTime time6 = TimestampType.fromPackedLong(TimestampType.toPackedLong(time5));
+    assertEquals(time5, time6);
 
-        LocalDateTime time7 = LocalDateTime.parse("1000-01-01 00:00:00:0000000", formatter);
-        LocalDateTime time8 = TimestampType.fromPackedLong(TimestampType.toPackedLong(time7));
-        assertEquals(time7, time8);
+    LocalDateTime time7 = LocalDateTime.parse("1000-01-01 00:00:00:0000000", formatter);
+    LocalDateTime time8 = TimestampType.fromPackedLong(TimestampType.toPackedLong(time7));
+    assertEquals(time7, time8);
 
-        LocalDateTime time9 = LocalDateTime.parse("2017-01-05 23:59:59:5756010", formatter);
-        LocalDateTime time10 = TimestampType.fromPackedLong(TimestampType.toPackedLong(time9));
-        assertEquals(time9, time10);
-    }
+    LocalDateTime time9 = LocalDateTime.parse("2017-01-05 23:59:59:5756010", formatter);
+    LocalDateTime time10 = TimestampType.fromPackedLong(TimestampType.toPackedLong(time9));
+    assertEquals(time9, time10);
+  }
 }

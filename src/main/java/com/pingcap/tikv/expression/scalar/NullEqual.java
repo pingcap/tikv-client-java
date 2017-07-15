@@ -22,22 +22,22 @@ import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.IntegerType;
 
 public class NullEqual extends TiBinaryFunctionExpresson {
-    public NullEqual(TiExpr lhs, TiExpr rhs) {
-        super(lhs, rhs);
-    }
+  public NullEqual(TiExpr lhs, TiExpr rhs) {
+    super(lhs, rhs);
+  }
 
-    @Override
-    protected ExprType getExprType() {
-        return ExprType.NullEQ;
-    }
+  @Override
+  protected ExprType getExprType() {
+    return ExprType.NullEQ;
+  }
 
-    @Override
-    public String getName() {
-        return "NullEqual";
-    }
+  @Override
+  public String getName() {
+    return "NullEqual";
+  }
 
-    @Override
-    public DataType getType() {
-        return IntegerType.DEF_BOOLEAN_TYPE;
-    }
+  @Override
+  public DataType getType() {
+    return IntegerType.DEF_BOOLEAN_TYPE;
+  }
 }

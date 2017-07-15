@@ -9,22 +9,22 @@ import com.pingcap.tikv.types.Types;
 
 public class GroupConcat extends TiUnaryFunctionExpression {
 
-    public GroupConcat(TiExpr arg) {
-        super(arg);
-    }
+  public GroupConcat(TiExpr arg) {
+    super(arg);
+  }
 
-    @Override
-    protected ExprType getExprType() {
-        return ExprType.GroupConcat;
-    }
+  @Override
+  protected ExprType getExprType() {
+    return ExprType.GroupConcat;
+  }
 
-    @Override
-    public String getName() {
-        return "group_concat";
-    }
+  @Override
+  public String getName() {
+    return "group_concat";
+  }
 
-    @Override
-    public DataType getType() {
-        return DataTypeFactory.of(Types.TYPE_VARCHAR);
-    }
+  @Override
+  public DataType getType() {
+    return DataTypeFactory.of(Types.TYPE_VARCHAR);
+  }
 }

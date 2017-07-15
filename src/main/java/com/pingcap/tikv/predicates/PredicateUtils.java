@@ -15,40 +15,38 @@
 
 package com.pingcap.tikv.predicates;
 
+import static java.util.Objects.requireNonNull;
 
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.expression.TiFunctionExpression;
 import com.pingcap.tikv.expression.scalar.And;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static java.util.Objects.requireNonNull;
-
 public class PredicateUtils {
-    public static TiExpr mergeCNFExpressions(List<TiExpr> exprs) {
-        requireNonNull(exprs);
-        if (exprs.size() == 0) return null;
-        if (exprs.size() == 1) return exprs.get(0);
+  public static TiExpr mergeCNFExpressions(List<TiExpr> exprs) {
+    requireNonNull(exprs);
+    if (exprs.size() == 0) return null;
+    if (exprs.size() == 1) return exprs.get(0);
 
-        return new And(exprs.get(0), mergeCNFExpressions(exprs.subList(1, exprs.size())));
-    }
+    return new And(exprs.get(0), mergeCNFExpressions(exprs.subList(1, exprs.size())));
+  }
 
-    public static Set<TiColumnRef> extractColumnRefFromExpr(TiExpr expr) {
-        Set<TiColumnRef> columnRefs = new HashSet<>();
-        if (expr instanceof TiFunctionExpression) {
-            TiFunctionExpression tiF = (TiFunctionExpression)expr;
-            for (TiExpr arg : tiF.getArgs()) {
-                if (arg instanceof TiColumnRef) {
-                    TiColumnRef tiCR = (TiColumnRef) arg;
-                    columnRefs.add(tiCR);
-                }
-            }
-        } else if (expr instanceof TiColumnRef) {
-            columnRefs.add(((TiColumnRef)expr));
+  public static Set<TiColumnRef> extractColumnRefFromExpr(TiExpr expr) {
+    Set<TiColumnRef> columnRefs = new HashSet<>();
+    if (expr instanceof TiFunctionExpression) {
+      TiFunctionExpression tiF = (TiFunctionExpression) expr;
+      for (TiExpr arg : tiF.getArgs()) {
+        if (arg instanceof TiColumnRef) {
+          TiColumnRef tiCR = (TiColumnRef) arg;
+          columnRefs.add(tiCR);
         }
-        return columnRefs;
+      }
+    } else if (expr instanceof TiColumnRef) {
+      columnRefs.add(((TiColumnRef) expr));
     }
+    return columnRefs;
+  }
 }

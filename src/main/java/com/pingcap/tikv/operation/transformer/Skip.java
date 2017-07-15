@@ -20,22 +20,21 @@ package com.pingcap.tikv.operation.transformer;
 import com.google.common.collect.ImmutableList;
 import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.types.DataType;
-
 import java.util.List;
 
 public class Skip implements Projection {
-    public static final Skip SKIP_OP = new Skip();
+  public static final Skip SKIP_OP = new Skip();
 
-    @Override
-    public void set(Object value, Row row, int pos) {}
+  @Override
+  public void set(Object value, Row row, int pos) {}
 
-    @Override
-    public int size() {
-        return 0;
-    }
+  @Override
+  public int size() {
+    return 0;
+  }
 
-    @Override
-    public List<DataType> getTypes() {
-        return ImmutableList.of();
-    }
+  @Override
+  public List<DataType> getTypes() {
+    return ImmutableList.of();
+  }
 }

@@ -19,26 +19,24 @@ import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.expression.TiBinaryFunctionExpresson;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.types.DataType;
-import com.pingcap.tikv.types.DataTypeFactory;
-import com.pingcap.tikv.types.IntegerType;
 
 public class BitXor extends TiBinaryFunctionExpresson {
-    public BitXor(TiExpr lhs, TiExpr rhs) {
-        super(lhs, rhs);
-    }
+  public BitXor(TiExpr lhs, TiExpr rhs) {
+    super(lhs, rhs);
+  }
 
-    @Override
-    protected ExprType getExprType() {
-        return ExprType.BitXor;
-    }
+  @Override
+  protected ExprType getExprType() {
+    return ExprType.BitXor;
+  }
 
-    @Override
-    public String getName() {
-        return "BitXOr";
-    }
+  @Override
+  public String getName() {
+    return "BitXOr";
+  }
 
-    @Override
-    public DataType getType() {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public DataType getType() {
+    throw new UnsupportedOperationException();
+  }
 }

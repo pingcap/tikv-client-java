@@ -21,23 +21,23 @@ import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.types.DataType;
 
 public class Multiply extends TiBinaryFunctionExpresson {
-    public Multiply(TiExpr lhs, TiExpr rhs) {
-        super(lhs, rhs);
-    }
+  public Multiply(TiExpr lhs, TiExpr rhs) {
+    super(lhs, rhs);
+  }
 
-    @Override
-    protected ExprType getExprType() {
-        return ExprType.Mul;
-    }
+  @Override
+  protected ExprType getExprType() {
+    return ExprType.Mul;
+  }
 
-    @Override
-    public String getName() {
-        return "Multiply";
-    }
+  @Override
+  public String getName() {
+    return "Multiply";
+  }
 
-    @Override
-    public DataType getType() {
-        // TODO: Add type inference
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public DataType getType() {
+    // TODO: Add type inference
+    throw new UnsupportedOperationException();
+  }
 }

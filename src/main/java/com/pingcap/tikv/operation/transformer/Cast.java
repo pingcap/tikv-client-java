@@ -19,62 +19,61 @@ package com.pingcap.tikv.operation.transformer;
 
 import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.types.*;
-
 import java.math.BigDecimal;
 
 public class Cast extends NoOp {
-    public Cast(DataType type) {
-        super(type);
-    }
+  public Cast(DataType type) {
+    super(type);
+  }
 
-    @Override
-    public void set(Object value, Row row, int pos) {
-        Object casted;
-        if (value == null) {
-            row.set(row.fieldCount(), targetDataType, null);
-        }
-        if (targetDataType instanceof IntegerType) {
-            casted = castToLong(value);
-        } else if (targetDataType instanceof BytesType) {
-            casted = castToString(value);
-        } else if (targetDataType instanceof DecimalType) {
-            casted = castToDecimal(value);
-        } else if (targetDataType instanceof RealType) {
-            casted = castToDouble(value);
-        } else {
-            throw new UnsupportedOperationException("only support cast to Long, Double and String");
-        }
-        row.set(pos, targetDataType, casted);
+  @Override
+  public void set(Object value, Row row, int pos) {
+    Object casted;
+    if (value == null) {
+      row.set(row.fieldCount(), targetDataType, null);
     }
+    if (targetDataType instanceof IntegerType) {
+      casted = castToLong(value);
+    } else if (targetDataType instanceof BytesType) {
+      casted = castToString(value);
+    } else if (targetDataType instanceof DecimalType) {
+      casted = castToDecimal(value);
+    } else if (targetDataType instanceof RealType) {
+      casted = castToDouble(value);
+    } else {
+      throw new UnsupportedOperationException("only support cast to Long, Double and String");
+    }
+    row.set(pos, targetDataType, casted);
+  }
 
-    public Double castToDouble(Object obj) {
-        if (obj instanceof Number) {
-            Number num = (Number)obj;
-            return num.doubleValue();
-        }
-        throw new UnsupportedOperationException("can not cast un-number to double ");
+  public Double castToDouble(Object obj) {
+    if (obj instanceof Number) {
+      Number num = (Number) obj;
+      return num.doubleValue();
     }
+    throw new UnsupportedOperationException("can not cast un-number to double ");
+  }
 
-    public BigDecimal castToDecimal(Object obj) {
-        if (obj instanceof Number) {
-            Number num = (Number)obj;
-            return new BigDecimal(num.doubleValue());
-        } else if (obj instanceof BigDecimal) {
-            return (BigDecimal)obj;
-        }
-        throw new UnsupportedOperationException("can not cast to BigDecimal: " +
-                                                obj == null ? "null" : obj.getClass().getSimpleName());
+  public BigDecimal castToDecimal(Object obj) {
+    if (obj instanceof Number) {
+      Number num = (Number) obj;
+      return new BigDecimal(num.doubleValue());
+    } else if (obj instanceof BigDecimal) {
+      return (BigDecimal) obj;
     }
+    throw new UnsupportedOperationException(
+        "can not cast to BigDecimal: " + obj == null ? "null" : obj.getClass().getSimpleName());
+  }
 
-    public Long castToLong(Object obj) {
-        if (obj instanceof Number) {
-            Number num = (Number)obj;
-            return num.longValue();
-        }
-        throw new UnsupportedOperationException("can not cast un-number to long ");
+  public Long castToLong(Object obj) {
+    if (obj instanceof Number) {
+      Number num = (Number) obj;
+      return num.longValue();
     }
+    throw new UnsupportedOperationException("can not cast un-number to long ");
+  }
 
-    public String castToString(Object obj) {
-        return obj.toString();
-    }
+  public String castToString(Object obj) {
+    return obj.toString();
+  }
 }

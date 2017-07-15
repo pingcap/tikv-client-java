@@ -21,23 +21,23 @@ import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.types.DataType;
 
 public class Minus extends TiBinaryFunctionExpresson {
-    public Minus(TiExpr lhs, TiExpr rhs) {
-        super(lhs, rhs);
-    }
+  public Minus(TiExpr lhs, TiExpr rhs) {
+    super(lhs, rhs);
+  }
 
-    @Override
-    protected ExprType getExprType() {
-        return ExprType.Minus;
-    }
+  @Override
+  protected ExprType getExprType() {
+    return ExprType.Minus;
+  }
 
-    @Override
-    public String getName() {
-        return "Minus";
-    }
+  @Override
+  public String getName() {
+    return "Minus";
+  }
 
-    @Override
-    public DataType getType() {
-        // TODO: Add type inference
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public DataType getType() {
+    // TODO: Add type inference
+    throw new UnsupportedOperationException();
+  }
 }

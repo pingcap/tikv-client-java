@@ -22,26 +22,25 @@ import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.IntegerType;
 
 public class If extends TiFunctionExpression {
-    public If(TiExpr...arg) {
-        super(arg);
-    }
+  public If(TiExpr... arg) {
+    super(arg);
+  }
 
-    @Override
-    protected ExprType getExprType() {
-        return ExprType.If;
-    }
+  @Override
+  protected ExprType getExprType() {
+    return ExprType.If;
+  }
 
-    @Override
-    public String getName() {
-        return "If";
-    }
+  @Override
+  public String getName() {
+    return "If";
+  }
 
-    @Override
-    protected void validateArguments(TiExpr... args) throws RuntimeException {
-    }
+  @Override
+  protected void validateArguments(TiExpr... args) throws RuntimeException {}
 
-    @Override
-    public DataType getType() {
-        return IntegerType.DEF_BOOLEAN_TYPE;
-    }
+  @Override
+  public DataType getType() {
+    return IntegerType.DEF_BOOLEAN_TYPE;
+  }
 }

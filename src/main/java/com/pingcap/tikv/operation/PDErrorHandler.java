@@ -18,23 +18,20 @@
 package com.pingcap.tikv.operation;
 
 import com.pingcap.tikv.grpc.Pdpb;
-
 import java.util.function.Function;
 
 public class PDErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
-    private final Function<RespT, Pdpb.Error> getError;
+  private final Function<RespT, Pdpb.Error> getError;
 
-    public PDErrorHandler(Function<RespT, Pdpb.Error> errorExtractor) {
-       this.getError = errorExtractor;
+  public PDErrorHandler(Function<RespT, Pdpb.Error> errorExtractor) {
+    this.getError = errorExtractor;
+  }
+
+  public void handle(RespT resp) {
+    if (resp == null) {
+      return;
     }
-
-    public void handle(RespT resp) {
-        if(resp == null) {
-            return;
-        }
-        Pdpb.Error error = getError.apply(resp);
-        if (error != null) {
-
-        }
-    }
+    Pdpb.Error error = getError.apply(resp);
+    if (error != null) {}
+  }
 }

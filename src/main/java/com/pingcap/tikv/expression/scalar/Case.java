@@ -21,31 +21,30 @@ import com.pingcap.tikv.expression.TiFunctionExpression;
 import com.pingcap.tikv.types.DataType;
 
 public class Case extends TiFunctionExpression {
-    public Case(TiExpr...arg) {
-        super(arg);
-    }
+  public Case(TiExpr... arg) {
+    super(arg);
+  }
 
-    @Override
-    protected ExprType getExprType() {
-        return ExprType.Case;
-    }
+  @Override
+  protected ExprType getExprType() {
+    return ExprType.Case;
+  }
 
-    @Override
-    public String getName() {
-        return "Case";
-    }
+  @Override
+  public String getName() {
+    return "Case";
+  }
 
-    @Override
-    protected void validateArguments(TiExpr... args) throws RuntimeException {
+  @Override
+  protected void validateArguments(TiExpr... args) throws RuntimeException {}
 
-    }
-
-    /**
-     * For Case
-     * @return a DataType that Case expression has.
-     */
-    @Override
-    public DataType getType() {
-        throw new UnsupportedOperationException();
-    }
+  /**
+   * For Case
+   *
+   * @return a DataType that Case expression has.
+   */
+  @Override
+  public DataType getType() {
+    throw new UnsupportedOperationException();
+  }
 }

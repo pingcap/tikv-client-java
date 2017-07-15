@@ -21,22 +21,22 @@ import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.types.DataType;
 
 public class RightShift extends TiBinaryFunctionExpresson {
-    public RightShift(TiExpr lhs, TiExpr rhs) {
-        super(lhs, rhs);
-    }
+  public RightShift(TiExpr lhs, TiExpr rhs) {
+    super(lhs, rhs);
+  }
 
-    @Override
-    protected ExprType getExprType() {
-        return ExprType.RighShift;
-    }
+  @Override
+  protected ExprType getExprType() {
+    return ExprType.RighShift;
+  }
 
-    @Override
-    public String getName() {
-        return "RightShift";
-    }
+  @Override
+  public String getName() {
+    return "RightShift";
+  }
 
-    @Override
-    public DataType getType() {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public DataType getType() {
+    throw new UnsupportedOperationException();
+  }
 }

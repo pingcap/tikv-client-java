@@ -21,26 +21,25 @@ import com.pingcap.tikv.expression.TiFunctionExpression;
 import com.pingcap.tikv.types.IntegerType;
 
 public class NullIf extends TiFunctionExpression {
-    public NullIf(TiExpr...arg) {
-        super(arg);
-    }
+  public NullIf(TiExpr... arg) {
+    super(arg);
+  }
 
-    @Override
-    protected ExprType getExprType() {
-        return ExprType.NullIf;
-    }
+  @Override
+  protected ExprType getExprType() {
+    return ExprType.NullIf;
+  }
 
-    @Override
-    public String getName() {
-        return "NullIf";
-    }
+  @Override
+  public String getName() {
+    return "NullIf";
+  }
 
-    @Override
-    protected void validateArguments(TiExpr... args) throws RuntimeException {
-    }
+  @Override
+  protected void validateArguments(TiExpr... args) throws RuntimeException {}
 
-    @Override
-    public IntegerType getType() {
-        return IntegerType.DEF_BOOLEAN_TYPE;
-    }
+  @Override
+  public IntegerType getType() {
+    return IntegerType.DEF_BOOLEAN_TYPE;
+  }
 }

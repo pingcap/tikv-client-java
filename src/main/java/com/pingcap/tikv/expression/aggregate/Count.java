@@ -9,22 +9,22 @@ import com.pingcap.tikv.types.Types;
 
 public class Count extends TiFunctionExpression {
 
-    public Count(TiExpr...arg) {
-        super(arg);
-    }
+  public Count(TiExpr... arg) {
+    super(arg);
+  }
 
-    @Override
-    protected ExprType getExprType() {
-        return ExprType.Count;
-    }
+  @Override
+  protected ExprType getExprType() {
+    return ExprType.Count;
+  }
 
-    @Override
-    public String getName() {
-        return "count";
-    }
+  @Override
+  public String getName() {
+    return "count";
+  }
 
-    @Override
-    public DataType getType() {
-        return DataTypeFactory.of(Types.TYPE_LONG);
-    }
+  @Override
+  public DataType getType() {
+    return DataTypeFactory.of(Types.TYPE_LONG);
+  }
 }

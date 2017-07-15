@@ -23,35 +23,35 @@ import com.pingcap.tikv.codec.TableCodec;
 import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
 import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.row.Row;
-
 import java.util.Iterator;
 
 // A very bad implementation of Index Scanner barely made work
 // TODO: need to make it parallel and group indexes
-public class IndexScanIterator  implements Iterator<Row> {
-    private final Iterator<Row> iter;
-    private final TiSelectRequest selReq;
-    private final Snapshot snapshot;
+public class IndexScanIterator implements Iterator<Row> {
+  private final Iterator<Row> iter;
+  private final TiSelectRequest selReq;
+  private final Snapshot snapshot;
 
-    public IndexScanIterator(Snapshot snapshot, TiSelectRequest req, Iterator<Row> iter) {
-        this.iter = iter;
-        this.selReq = req;
-        this.snapshot = snapshot;
-    }
+  public IndexScanIterator(Snapshot snapshot, TiSelectRequest req, Iterator<Row> iter) {
+    this.iter = iter;
+    this.selReq = req;
+    this.snapshot = snapshot;
+  }
 
-    @Override
-    public boolean hasNext() {
-        return iter.hasNext();
-    }
+  @Override
+  public boolean hasNext() {
+    return iter.hasNext();
+  }
 
-    @Override
-    public Row next() {
-        Row r = iter.next();
-        long handle = r.getLong(0);
-        ByteString startKey = TableCodec.encodeRowKeyWithHandle(selReq.getTableInfo().getId(), handle);
-        ByteString endKey = ByteString.copyFrom(KeyUtils.prefixNext(startKey.toByteArray()));
-        selReq.resetRanges(ImmutableList.of(KeyRange.newBuilder().setStart(startKey).setEnd(endKey).build()));
-        Iterator<Row> it = snapshot.select(selReq);
-        return it.next();
-    }
+  @Override
+  public Row next() {
+    Row r = iter.next();
+    long handle = r.getLong(0);
+    ByteString startKey = TableCodec.encodeRowKeyWithHandle(selReq.getTableInfo().getId(), handle);
+    ByteString endKey = ByteString.copyFrom(KeyUtils.prefixNext(startKey.toByteArray()));
+    selReq.resetRanges(
+        ImmutableList.of(KeyRange.newBuilder().setStart(startKey).setEnd(endKey).build()));
+    Iterator<Row> it = snapshot.select(selReq);
+    return it.next();
+  }
 }

@@ -21,22 +21,22 @@ import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.types.DataType;
 
 public class Divide extends TiBinaryFunctionExpresson {
-    public Divide(TiExpr lhs, TiExpr rhs) {
-        super(lhs, rhs);
-    }
+  public Divide(TiExpr lhs, TiExpr rhs) {
+    super(lhs, rhs);
+  }
 
-    @Override
-    protected ExprType getExprType() {
-        return ExprType.Div;
-    }
+  @Override
+  protected ExprType getExprType() {
+    return ExprType.Div;
+  }
 
-    @Override
-    public String getName() {
-        return "Divide";
-    }
+  @Override
+  public String getName() {
+    return "Divide";
+  }
 
-    @Override
-    public DataType getType() {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public DataType getType() {
+    throw new UnsupportedOperationException();
+  }
 }
