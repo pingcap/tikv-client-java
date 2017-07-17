@@ -21,26 +21,27 @@ import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.types.DataType;
 
 public class Plus extends TiBinaryFunctionExpresson {
-    public Plus(TiExpr lhs, TiExpr rhs) {
-        super(lhs, rhs);
-    }
+  public Plus(TiExpr lhs, TiExpr rhs) {
+    super(lhs, rhs);
+  }
 
-    @Override
-    protected ExprType getExprType() {
-        return ExprType.Plus;
-    }
+  @Override
+  protected ExprType getExprType() {
+    return ExprType.Plus;
+  }
 
-    @Override
-    public String getName() {
-        return "Plus";
-    }
+  @Override
+  public String getName() {
+    return "Plus";
+  }
 
-    /**
-     * return left child expression's type.
-     * @return a dataType that plus results.
-     */
-    @Override
-    public DataType getType() {
-        return this.args.get(0).getType();
-    }
+  /**
+   * return left child expression's type.
+   *
+   * @return a dataType that plus results.
+   */
+  @Override
+  public DataType getType() {
+    return this.args.get(0).getType();
+  }
 }

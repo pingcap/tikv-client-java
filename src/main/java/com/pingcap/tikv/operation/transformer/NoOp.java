@@ -20,31 +20,28 @@ package com.pingcap.tikv.operation.transformer;
 import com.google.common.collect.ImmutableList;
 import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.types.DataType;
-
 import java.util.List;
 
-/**
- * Noop is a base type projection, it basically do nothing but copy.
- */
+/** Noop is a base type projection, it basically do nothing but copy. */
 public class NoOp implements Projection {
-    protected DataType targetDataType;
+  protected DataType targetDataType;
 
-    public NoOp(DataType dataType) {
-        this.targetDataType = dataType;
-    }
+  public NoOp(DataType dataType) {
+    this.targetDataType = dataType;
+  }
 
-    @Override
-    public void set(Object value, Row row, int pos) {
-        row.set(pos, targetDataType, value);
-    }
+  @Override
+  public void set(Object value, Row row, int pos) {
+    row.set(pos, targetDataType, value);
+  }
 
-    @Override
-    public int size() {
-        return 1;
-    }
+  @Override
+  public int size() {
+    return 1;
+  }
 
-    @Override
-    public List<DataType> getTypes() {
-        return ImmutableList.of(targetDataType);
-    }
+  @Override
+  public List<DataType> getTypes() {
+    return ImmutableList.of(targetDataType);
+  }
 }

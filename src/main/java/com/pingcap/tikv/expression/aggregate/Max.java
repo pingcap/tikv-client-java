@@ -7,22 +7,22 @@ import com.pingcap.tikv.types.DataType;
 
 public class Max extends TiUnaryFunctionExpression {
 
-    public Max(TiExpr arg) {
-        super(arg);
-    }
+  public Max(TiExpr arg) {
+    super(arg);
+  }
 
-    @Override
-    protected ExprType getExprType() {
-        return ExprType.Max;
-    }
+  @Override
+  protected ExprType getExprType() {
+    return ExprType.Max;
+  }
 
-    @Override
-    public String getName() {
-        return "max";
-    }
+  @Override
+  public String getName() {
+    return "max";
+  }
 
-    @Override
-    public DataType getType() {
-        return args.get(0).getType();
-    }
+  @Override
+  public DataType getType() {
+    return args.get(0).getType();
+  }
 }

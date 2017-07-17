@@ -22,22 +22,22 @@ import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.IntegerType;
 
 public class LessThan extends TiBinaryFunctionExpresson {
-    public LessThan(TiExpr lhs, TiExpr rhs) {
-        super(lhs, rhs);
-    }
+  public LessThan(TiExpr lhs, TiExpr rhs) {
+    super(lhs, rhs);
+  }
 
-    @Override
-    protected ExprType getExprType() {
-        return ExprType.LT;
-    }
+  @Override
+  protected ExprType getExprType() {
+    return ExprType.LT;
+  }
 
-    @Override
-    public String getName() {
-        return "<";
-    }
+  @Override
+  public String getName() {
+    return "<";
+  }
 
-    @Override
-    public DataType getType() {
-        return IntegerType.DEF_BOOLEAN_TYPE;
-    }
+  @Override
+  public DataType getType() {
+    return IntegerType.DEF_BOOLEAN_TYPE;
+  }
 }

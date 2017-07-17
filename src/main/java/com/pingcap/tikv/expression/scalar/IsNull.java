@@ -22,22 +22,22 @@ import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.IntegerType;
 
 public class IsNull extends TiUnaryFunctionExpression {
-    public IsNull(TiExpr arg) {
-        super(arg);
-    }
+  public IsNull(TiExpr arg) {
+    super(arg);
+  }
 
-    @Override
-    protected ExprType getExprType() {
-        return ExprType.IsNull;
-    }
+  @Override
+  protected ExprType getExprType() {
+    return ExprType.IsNull;
+  }
 
-    @Override
-    public String getName() {
-        return "IsNull";
-    }
+  @Override
+  public String getName() {
+    return "IsNull";
+  }
 
-    @Override
-    public DataType getType() {
-        return IntegerType.DEF_BOOLEAN_TYPE;
-    }
+  @Override
+  public DataType getType() {
+    return IntegerType.DEF_BOOLEAN_TYPE;
+  }
 }

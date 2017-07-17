@@ -22,22 +22,22 @@ import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.IntegerType;
 
 public class BitOr extends TiBinaryFunctionExpresson {
-    public BitOr(TiExpr lhs, TiExpr rhs) {
-        super(lhs, rhs);
-    }
+  public BitOr(TiExpr lhs, TiExpr rhs) {
+    super(lhs, rhs);
+  }
 
-    @Override
-    protected ExprType getExprType() {
-        return ExprType.BitOr;
-    }
+  @Override
+  protected ExprType getExprType() {
+    return ExprType.BitOr;
+  }
 
-    @Override
-    public String getName() {
-        return "BitOr";
-    }
+  @Override
+  public String getName() {
+    return "BitOr";
+  }
 
-    @Override
-    public DataType getType() {
-        return IntegerType.DEF_BOOLEAN_TYPE;
-    }
+  @Override
+  public DataType getType() {
+    return IntegerType.DEF_BOOLEAN_TYPE;
+  }
 }

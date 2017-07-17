@@ -22,22 +22,22 @@ import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.IntegerType;
 
 public class NotEqual extends TiBinaryFunctionExpresson {
-    public NotEqual(TiExpr lhs, TiExpr rhs) {
-        super(lhs, rhs);
-    }
+  public NotEqual(TiExpr lhs, TiExpr rhs) {
+    super(lhs, rhs);
+  }
 
-    @Override
-    protected ExprType getExprType() {
-        return ExprType.NE;
-    }
+  @Override
+  protected ExprType getExprType() {
+    return ExprType.NE;
+  }
 
-    @Override
-    public String getName() {
-        return "<>";
-    }
+  @Override
+  public String getName() {
+    return "<>";
+  }
 
-    @Override
-    public DataType getType() {
-        return IntegerType.DEF_BOOLEAN_TYPE;
-    }
+  @Override
+  public DataType getType() {
+    return IntegerType.DEF_BOOLEAN_TYPE;
+  }
 }

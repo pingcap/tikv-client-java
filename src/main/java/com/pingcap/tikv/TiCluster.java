@@ -20,40 +20,40 @@ import com.pingcap.tikv.region.RegionManager;
 
 // Should be different per session thread
 public class TiCluster implements AutoCloseable {
-    private final TiSession     session;
-    private final RegionManager regionManager;
-    private final PDClient      client;
+  private final TiSession session;
+  private final RegionManager regionManager;
+  private final PDClient client;
 
-    private TiCluster(TiConfiguration conf) {
-        this.session = TiSession.create(conf);
-        this.client = PDClient.createRaw(session);
-        this.regionManager = new RegionManager(this.client);
-    }
+  private TiCluster(TiConfiguration conf) {
+    this.session = TiSession.create(conf);
+    this.client = PDClient.createRaw(session);
+    this.regionManager = new RegionManager(this.client);
+  }
 
-    public static TiCluster getCluster(TiConfiguration conf) {
-        return new TiCluster(conf);
-    }
+  public static TiCluster getCluster(TiConfiguration conf) {
+    return new TiCluster(conf);
+  }
 
-    public Snapshot createSnapshot() {
-        return new Snapshot(regionManager, session);
-    }
+  public Snapshot createSnapshot() {
+    return new Snapshot(regionManager, session);
+  }
 
-    public Catalog getCatalog() {
-        return new Catalog(createSnapshot());
-    }
+  public Catalog getCatalog() {
+    return new Catalog(createSnapshot());
+  }
 
-    public TiSession getSession() {
-        return session;
-    }
+  public TiSession getSession() {
+    return session;
+  }
 
-    public RegionManager getRegionManager() {
-        return regionManager;
-    }
+  public RegionManager getRegionManager() {
+    return regionManager;
+  }
 
-    @Override
-    public void close() throws Exception {
-        if (client != null) {
-            client.close();
-        }
+  @Override
+  public void close() throws Exception {
+    if (client != null) {
+      client.close();
     }
+  }
 }

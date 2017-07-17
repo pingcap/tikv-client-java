@@ -20,25 +20,24 @@ import com.pingcap.tikv.expression.TiBinaryFunctionExpresson;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.IntegerType;
-import com.pingcap.tikv.types.Types;
 
 public class BitAnd extends TiBinaryFunctionExpresson {
-    public BitAnd(TiExpr lhs, TiExpr rhs) {
-        super(lhs, rhs);
-    }
+  public BitAnd(TiExpr lhs, TiExpr rhs) {
+    super(lhs, rhs);
+  }
 
-    @Override
-    protected ExprType getExprType() {
-        return ExprType.BitAnd;
-    }
+  @Override
+  protected ExprType getExprType() {
+    return ExprType.BitAnd;
+  }
 
-    @Override
-    public String getName() {
-        return "BitAnd";
-    }
+  @Override
+  public String getName() {
+    return "BitAnd";
+  }
 
-    @Override
-    public DataType getType() {
-        return IntegerType.DEF_BOOLEAN_TYPE;
-    }
+  @Override
+  public DataType getType() {
+    return IntegerType.DEF_BOOLEAN_TYPE;
+  }
 }

@@ -17,39 +17,38 @@
 
 package com.pingcap.tikv.operation.transformer;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.ImmutableList;
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.types.DataType;
-
 import java.util.List;
 
-import static java.util.Objects.requireNonNull;
-
 public class MultiKeyDecoder implements Projection {
-    public MultiKeyDecoder(List<DataType> dataTypes) {
-        this.resultTypes = requireNonNull(dataTypes).toArray(new DataType[0]);
+  public MultiKeyDecoder(List<DataType> dataTypes) {
+    this.resultTypes = requireNonNull(dataTypes).toArray(new DataType[0]);
+  }
+
+  private DataType[] resultTypes;
+
+  @Override
+  public void set(Object value, Row row, int pos) {
+    byte[] rowData = (byte[]) value;
+    CodecDataInput cdi = new CodecDataInput(rowData);
+
+    for (int i = 0; i < resultTypes.length; i++) {
+      resultTypes[i].decodeValueToRow(cdi, row, i + pos);
     }
+  }
 
-    private DataType[] resultTypes;
+  @Override
+  public int size() {
+    return resultTypes.length;
+  }
 
-    @Override
-    public void set(Object value, Row row, int pos) {
-        byte[] rowData = (byte[]) value;
-        CodecDataInput cdi = new CodecDataInput(rowData);
-
-        for(int i = 0; i < resultTypes.length; i++) {
-            resultTypes[i].decodeValueToRow(cdi, row, i + pos);
-        }
-    }
-
-    @Override
-    public int size() {
-        return resultTypes.length;
-    }
-
-    @Override
-    public List<DataType> getTypes() {
-        return ImmutableList.copyOf(resultTypes);
-    }
+  @Override
+  public List<DataType> getTypes() {
+    return ImmutableList.copyOf(resultTypes);
+  }
 }

@@ -17,11 +17,10 @@
 
 package com.pingcap.tikv.row;
 
-
 import com.pingcap.tikv.codec.CodecDataInput;
 
 public class RowReaderFactory {
-    public static RowReader createRowReader(CodecDataInput cdi) {
-        return new DefaultRowReader(cdi);
-    }
+  public static RowReader createRowReader(CodecDataInput cdi) {
+    return new DefaultRowReader(cdi);
+  }
 }

@@ -15,64 +15,58 @@
 
 package com.pingcap.tikv;
 
-
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.grpc.Metapb.Store;
 import com.pingcap.tikv.meta.TiTimestamp;
 import com.pingcap.tikv.region.TiRegion;
-
 import java.util.concurrent.Future;
 
-/**
- * Readonly PD client including only reading related interface
- * Supposed for TiDB-like use cases
- */
+/** Readonly PD client including only reading related interface Supposed for TiDB-like use cases */
 public interface ReadOnlyPDClient {
-    /**
-     * <p>Get Timestamp from Placement Driver</p>
-     *
-     * @return a timestamp object
-     */
-    TiTimestamp getTimestamp();
+  /**
+   * Get Timestamp from Placement Driver
+   *
+   * @return a timestamp object
+   */
+  TiTimestamp getTimestamp();
 
-    /**
-     * <p>Get Region from PD by key specified</p>
-     *
-     * @param key key in bytes for locating a region
-     * @return the region whose startKey and endKey range covers the given key
-     */
-    TiRegion getRegionByKey(ByteString key);
-    Future<TiRegion> getRegionByKeyAsync(ByteString key);
+  /**
+   * Get Region from PD by key specified
+   *
+   * @param key key in bytes for locating a region
+   * @return the region whose startKey and endKey range covers the given key
+   */
+  TiRegion getRegionByKey(ByteString key);
 
-    /**
-     * <p>Get Region by Region Id</p>
-     *
-     * @param id Region Id
-     * @return the region corresponding to the given Id
-     */
-    TiRegion getRegionByID(long id);
-    Future<TiRegion> getRegionByIDAsync(long id);
+  Future<TiRegion> getRegionByKeyAsync(ByteString key);
 
-    /**
-     * <p>Get Store by StoreId</p>
-     *
-     * @param storeId StoreId
-     * @return the Store corresponding to the given Id
-     */
-    Store getStore(long storeId);
-    Future<Store> getStoreAsync(long storeId);
+  /**
+   * Get Region by Region Id
+   *
+   * @param id Region Id
+   * @return the region corresponding to the given Id
+   */
+  TiRegion getRegionByID(long id);
 
-    /**
-     * <p>Close underlining resources</p>
-     *
-     * @throws InterruptedException
-     */
-    void close() throws InterruptedException;
+  Future<TiRegion> getRegionByIDAsync(long id);
 
-    /**
-     * <p>Get associated session</p>
-     *
-     * * @return the session associated to client
-     */
-    TiSession getSession();
+  /**
+   * Get Store by StoreId
+   *
+   * @param storeId StoreId
+   * @return the Store corresponding to the given Id
+   */
+  Store getStore(long storeId);
+
+  Future<Store> getStoreAsync(long storeId);
+
+  /**
+   * Close underlining resources
+   *
+   * @throws InterruptedException
+   */
+  void close() throws InterruptedException;
+
+  /** Get associated session * @return the session associated to client */
+  TiSession getSession();
 }

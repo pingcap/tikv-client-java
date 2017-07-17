@@ -21,27 +21,25 @@ import com.pingcap.tikv.expression.TiFunctionExpression;
 import com.pingcap.tikv.types.DataType;
 
 public class Coalesce extends TiFunctionExpression {
-    public Coalesce(TiExpr...args) {
-        super(args);
-    }
+  public Coalesce(TiExpr... args) {
+    super(args);
+  }
 
-    @Override
-    protected ExprType getExprType() {
-        return ExprType.Coalesce;
-    }
+  @Override
+  protected ExprType getExprType() {
+    return ExprType.Coalesce;
+  }
 
-    @Override
-    public String getName() {
-        return "Coalesce";
-    }
+  @Override
+  public String getName() {
+    return "Coalesce";
+  }
 
-    @Override
-    protected void validateArguments(TiExpr... args) throws RuntimeException {
+  @Override
+  protected void validateArguments(TiExpr... args) throws RuntimeException {}
 
-    }
-
-    @Override
-    public DataType getType() {
-        throw new UnsupportedOperationException();
-    }
+  @Override
+  public DataType getType() {
+    throw new UnsupportedOperationException();
+  }
 }

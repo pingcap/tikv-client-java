@@ -17,56 +17,56 @@
 
 package com.pingcap.tikv.types;
 
+import static com.pingcap.tikv.types.TimestampType.fromPackedLong;
+import static com.pingcap.tikv.types.TimestampType.toPackedLong;
+
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.codec.InvalidCodecFormatException;
 import com.pingcap.tikv.meta.TiColumnInfo;
-
 import java.sql.Date;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
-import static com.pingcap.tikv.types.TimestampType.fromPackedLong;
-import static com.pingcap.tikv.types.TimestampType.toPackedLong;
-
 public class DateType extends DataType {
-    static DateType of(int tp) {
-        return new DateType(tp);
-    }
+  static DateType of(int tp) {
+    return new DateType(tp);
+  }
 
-    private DateType(int tp) {
-        super(tp);
-    }
+  private DateType(int tp) {
+    super(tp);
+  }
 
-    @Override
-    public Object decodeNotNull(int flag, CodecDataInput cdi) {
-        if (flag == UVARINT_FLAG) {
-            // read packedUint
-            LocalDateTime localDateTime = fromPackedLong(IntegerType.readUVarLong(cdi));
-            if (localDateTime == null) {
-                return null;
-            }
-            //TODO revisit this later.
-            return new Date(localDateTime.getYear(), localDateTime.getMonthValue(), localDateTime.getDayOfMonth());
-        } else {
-            throw new InvalidCodecFormatException("Invalid Flag type for DateType: " + flag);
-        }
+  @Override
+  public Object decodeNotNull(int flag, CodecDataInput cdi) {
+    if (flag == UVARINT_FLAG) {
+      // read packedUint
+      LocalDateTime localDateTime = fromPackedLong(IntegerType.readUVarLong(cdi));
+      if (localDateTime == null) {
+        return null;
+      }
+      //TODO revisit this later.
+      return new Date(
+          localDateTime.getYear(), localDateTime.getMonthValue(), localDateTime.getDayOfMonth());
+    } else {
+      throw new InvalidCodecFormatException("Invalid Flag type for DateType: " + flag);
     }
+  }
 
-    @Override
-    public void encodeNotNull(CodecDataOutput cdo, EncodeType encodeType, Object value) {
-        Date in;
-        // TODO, is LocalDateTime enough here?
-        if (value instanceof Date) {
-             in = (Date)value;
-        } else {
-            throw new UnsupportedOperationException("Can not cast Object to LocalDateTime ");
-        }
-        long val =  toPackedLong(LocalDateTime.of(in.toLocalDate(), LocalTime.of(0, 0, 0)));
-        IntegerType.writeULong(cdo, val);
+  @Override
+  public void encodeNotNull(CodecDataOutput cdo, EncodeType encodeType, Object value) {
+    Date in;
+    // TODO, is LocalDateTime enough here?
+    if (value instanceof Date) {
+      in = (Date) value;
+    } else {
+      throw new UnsupportedOperationException("Can not cast Object to LocalDateTime ");
     }
+    long val = toPackedLong(LocalDateTime.of(in.toLocalDate(), LocalTime.of(0, 0, 0)));
+    IntegerType.writeULong(cdo, val);
+  }
 
-    DateType(TiColumnInfo.InternalTypeHolder holder) {
-        super(holder);
-    }
+  DateType(TiColumnInfo.InternalTypeHolder holder) {
+    super(holder);
+  }
 }

@@ -18,30 +18,26 @@ package com.pingcap.tikv.meta;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-/**
- * This class is mapping TiDB's CIStr/
- * For internal use only.
- */
+/** This class is mapping TiDB's CIStr/ For internal use only. */
 class CIStr {
-    private final String o; // original
-    private final String l;
+  private final String o; // original
+  private final String l;
 
-    @JsonCreator
-    public CIStr(@JsonProperty("O")String o,
-                 @JsonProperty("L")String l) {
-        this.o = o;
-        this.l = l;
-    }
+  @JsonCreator
+  public CIStr(@JsonProperty("O") String o, @JsonProperty("L") String l) {
+    this.o = o;
+    this.l = l;
+  }
 
-    public static CIStr newCIStr(String str) {
-        return new CIStr(str, str.toLowerCase());
-    }
+  public static CIStr newCIStr(String str) {
+    return new CIStr(str, str.toLowerCase());
+  }
 
-    public String getO() {
-        return o;
-    }
+  public String getO() {
+    return o;
+  }
 
-    public String getL() {
-        return l;
-    }
+  public String getL() {
+    return l;
+  }
 }

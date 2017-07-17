@@ -17,6 +17,8 @@
 
 package com.pingcap.tikv.expression;
 
+import static org.junit.Assert.assertEquals;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pingcap.tidb.tipb.Expr;
 import com.pingcap.tikv.codec.CodecDataInput;
@@ -26,17 +28,15 @@ import com.pingcap.tikv.meta.TiTableInfoTest;
 import com.pingcap.tikv.types.RealType;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-
 public class TiConstantTest {
-    @Test
-    public void greaterThanTest () throws Exception{
-        ObjectMapper mapper = new ObjectMapper();
-        TiTableInfo tableInfo = mapper.readValue(TiTableInfoTest.tableJson, TiTableInfo.class);
-        GreaterThan g =  new GreaterThan(TiColumnRef.create("c1", tableInfo), TiConstant.create(1.12));
-        Expr ge = g.toProto();
-        assertEquals(2, ge.getChildrenCount());
-        double expected = RealType.readDouble(new CodecDataInput(ge.getChildren(1).getVal()));
-        assertEquals(1.12, expected, 0.00001);
-    }
+  @Test
+  public void greaterThanTest() throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+    TiTableInfo tableInfo = mapper.readValue(TiTableInfoTest.tableJson, TiTableInfo.class);
+    GreaterThan g = new GreaterThan(TiColumnRef.create("c1", tableInfo), TiConstant.create(1.12));
+    Expr ge = g.toProto();
+    assertEquals(2, ge.getChildrenCount());
+    double expected = RealType.readDouble(new CodecDataInput(ge.getChildren(1).getVal()));
+    assertEquals(1.12, expected, 0.00001);
+  }
 }

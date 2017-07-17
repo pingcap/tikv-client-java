@@ -7,25 +7,24 @@ import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.DataTypeFactory;
 import com.pingcap.tikv.types.Types;
 
-
 public class Sum extends TiUnaryFunctionExpression {
 
-    public Sum(TiExpr arg) {
-        super(arg);
-    }
+  public Sum(TiExpr arg) {
+    super(arg);
+  }
 
-    @Override
-    protected ExprType getExprType() {
-        return ExprType.Sum;
-    }
+  @Override
+  protected ExprType getExprType() {
+    return ExprType.Sum;
+  }
 
-    @Override
-    public DataType getType() {
-        return DataTypeFactory.of(Types.TYPE_NEW_DECIMAL);
-    }
+  @Override
+  public DataType getType() {
+    return DataTypeFactory.of(Types.TYPE_NEW_DECIMAL);
+  }
 
-    @Override
-    public String getName() {
-        return "sum";
-    }
+  @Override
+  public String getName() {
+    return "sum";
+  }
 }

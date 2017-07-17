@@ -15,12 +15,12 @@
 
 package com.pingcap.tikv.exception;
 
-
 public class CastingException extends RuntimeException {
-    public CastingException(Exception e) {
-        super(e);
-    }
-    public CastingException(String msg) {
-        super(msg);
-    }
+  public CastingException(Exception e) {
+    super(e);
+  }
+
+  public CastingException(String msg) {
+    super(msg);
+  }
 }

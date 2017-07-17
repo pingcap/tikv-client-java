@@ -15,95 +15,91 @@
 
 package com.pingcap.tikv.expression;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
 
 import com.google.common.collect.ImmutableList;
 import com.pingcap.tidb.tipb.Expr;
 import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.meta.TiTableInfo;
-
 import java.util.List;
-import java.util.stream.Collectors;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.Objects.requireNonNull;
 
 public abstract class TiFunctionExpression implements TiExpr {
 
-    protected final List<TiExpr> args;
+  protected final List<TiExpr> args;
 
-    protected TiFunctionExpression(TiExpr... args) {
-        this.args = ImmutableList.copyOf(args);
-        validateArguments(args);
+  protected TiFunctionExpression(TiExpr... args) {
+    this.args = ImmutableList.copyOf(args);
+    validateArguments(args);
+  }
+
+  protected abstract ExprType getExprType();
+
+  public TiExpr getArg(int i) {
+    checkArgument(i < args.size(), "Index out of bound for TiExpression Arguments");
+    return args.get(i);
+  }
+
+  public int getArgSize() {
+    return args.size();
+  }
+
+  public List<TiExpr> getArgs() {
+    return args;
+  }
+
+  @Override
+  public Expr toProto() {
+    Expr.Builder builder = Expr.newBuilder();
+
+    builder.setTp(getExprType());
+
+    for (TiExpr arg : args) {
+      builder.addChildren(arg.toProto());
     }
 
-    protected abstract ExprType getExprType();
+    return builder.build();
+  }
 
-    public TiExpr getArg(int i) {
-        checkArgument(i < args.size(), "Index out of bound for TiExpression Arguments");
-        return args.get(i);
+  public abstract String getName();
+
+  protected void validateArguments(TiExpr... args) throws RuntimeException {
+    requireNonNull(args, "Expressions cannot be null");
+    for (TiExpr expr : args) {
+      requireNonNull(expr, "Expressions cannot be null.");
     }
+  }
 
-    public int getArgSize() {
-        return args.size();
-    }
-
-    public List<TiExpr> getArgs() {
-        return args;
-    }
-
-    @Override
-    public Expr toProto() {
-        Expr.Builder builder = Expr.newBuilder();
-
-        builder.setTp(getExprType());
-
-        for (TiExpr arg : args) {
-            builder.addChildren(arg.toProto());
+  @Override
+  public boolean equals(Object other) {
+    if (other == null) return false;
+    if (this.getClass().equals(other.getClass())) {
+      TiFunctionExpression func = (TiFunctionExpression) other;
+      for (int i = 0; i < func.getArgSize(); i++) {
+        TiExpr arg = func.getArg(i);
+        if (!getArg(i).equals(arg)) {
+          return false;
         }
-
-        return builder.build();
+      }
+      return true;
     }
+    return false;
+  }
 
-    public abstract String getName();
-
-    protected void validateArguments(TiExpr... args) throws RuntimeException {
-        requireNonNull(args, "Expressions cannot be null");
-        for (TiExpr expr : args) {
-            requireNonNull(expr, "Expressions cannot be null.");
-        }
+  @Override
+  public int hashCode() {
+    int hash = 31 * getClass().hashCode();
+    for (TiExpr arg : args) {
+      hash *= arg.hashCode();
     }
+    return hash;
+  }
 
-
-    @Override
-    public boolean equals(Object other) {
-        if (other == null) return false;
-        if (this.getClass().equals(other.getClass())) {
-            TiFunctionExpression func = (TiFunctionExpression)other;
-            for (int i = 0; i < func.getArgSize(); i++) {
-                TiExpr arg = func.getArg(i);
-                if (!getArg(i).equals(arg)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        return false;
+  @Override
+  public TiFunctionExpression bind(TiTableInfo table) {
+    for (TiExpr arg : args) {
+      arg.bind(table);
     }
-
-    @Override
-    public int hashCode() {
-        int hash = 31 * getClass().hashCode();
-        for (TiExpr arg : args) {
-            hash *= arg.hashCode();
-        }
-        return hash;
-    }
-
-    @Override
-    public TiFunctionExpression bind(TiTableInfo table) {
-        for (TiExpr arg : args) {
-            arg.bind(table);
-        }
-        return this;
-    }
+    return this;
+  }
 }

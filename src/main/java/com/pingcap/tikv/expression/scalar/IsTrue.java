@@ -22,27 +22,27 @@ import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.IntegerType;
 
 public class IsTrue extends TiUnaryFunctionExpression {
-    public IsTrue(TiExpr arg) {
-        super(arg);
-    }
+  public IsTrue(TiExpr arg) {
+    super(arg);
+  }
 
-    @Override
-    protected ExprType getExprType() {
-        return ExprType.IsTruth;
-    }
+  @Override
+  protected ExprType getExprType() {
+    return ExprType.IsTruth;
+  }
 
-    @Override
-    public String getName() {
-        return "IsTrue";
-    }
+  @Override
+  public String getName() {
+    return "IsTrue";
+  }
 
-    @Override
-    public DataType getType() {
-        return IntegerType.DEF_BOOLEAN_TYPE;
-    }
+  @Override
+  public DataType getType() {
+    return IntegerType.DEF_BOOLEAN_TYPE;
+  }
 
-    @Override
-    protected void validateArguments(TiExpr... args) throws RuntimeException {
-        super.validateArguments();
-    }
+  @Override
+  protected void validateArguments(TiExpr... args) throws RuntimeException {
+    super.validateArguments();
+  }
 }

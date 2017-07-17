@@ -20,5 +20,5 @@ package com.pingcap.tikv.row;
 import com.pingcap.tikv.types.DataType;
 
 public interface RowReader {
-    Row readRow(DataType[] dataTypes);
+  Row readRow(DataType[] dataTypes);
 }
