@@ -17,9 +17,7 @@ package com.pingcap.tikv.util;
 
 import com.google.protobuf.ByteString;
 
-/**
- * Created by wolf4j on 17-7-17.
- */
+
 public class Bucket{
     public  long        count;
     public  long        repeats;

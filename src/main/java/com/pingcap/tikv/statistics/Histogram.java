@@ -40,10 +40,6 @@ import java.util.Iterator;
 import java.util.List;
 
 
-/**
- * Created by rxl on 17-7-13.
- *
- */
 public class Histogram {
 
     private final long distinctValueOfNumber = 0;
