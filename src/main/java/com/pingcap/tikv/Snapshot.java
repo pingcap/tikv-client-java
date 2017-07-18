@@ -88,15 +88,9 @@ public class Snapshot {
     return new SelectIterator(selReq, getSession(), regionCache, false);
   }
 
-<<<<<<< HEAD
-  public Iterator<Row> selectByIndex(TiSelectRequest selReq) {
-    Iterator<Row> iter = new SelectIterator(selReq, getSession(), regionCache, true);
-    return new IndexScanIterator(this, selReq, iter);
-=======
   public Iterator<Row> selectByIndex(TiSelectRequest selReq, boolean singleRead) {
     Iterator<Row> iter = new SelectIterator(selReq, getSession(), regionCache, true);
     return new IndexScanIterator(this, selReq, iter, singleRead);
->>>>>>> use RegionException instead of StatusRunTimeException
   }
 
   /**

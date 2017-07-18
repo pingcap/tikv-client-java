@@ -63,10 +63,10 @@ public class Main {
         .addRanges(scanPlan.getKeyRanges())
         .setTableInfo(table)
         .setIndexInfo(index)
-        .addField(TiColumnRef.create("id", table))
-        .addField(TiColumnRef.create("name", table))
-        .addField(TiColumnRef.create("quantity", table))
-        .addField(TiColumnRef.create("dept", table))
+        .addRequiredColumn(TiColumnRef.create("id", table))
+        .addRequiredColumn(TiColumnRef.create("name", table))
+        .addRequiredColumn(TiColumnRef.create("quantity", table))
+        .addRequiredColumn(TiColumnRef.create("dept", table))
         .setStartTs(snapshot.getVersion());
 
     if (conf.isIgnoreTruncate()) {
@@ -106,10 +106,10 @@ public class Main {
     selReq.addRanges(
         ImmutableList.of(
             Coprocessor.KeyRange.newBuilder().setStart(startKey).setEnd(endKey).build()));
-    selReq.addField(TiColumnRef.create("c1", table));
-    selReq.addField(TiColumnRef.create("c2", table));
-    selReq.addField(TiColumnRef.create("c3", table));
-    selReq.addField(TiColumnRef.create("c4", table));
+    selReq.addRequiredColumn(TiColumnRef.create("c1", table));
+    selReq.addRequiredColumn(TiColumnRef.create("c2", table));
+    selReq.addRequiredColumn(TiColumnRef.create("c3", table));
+    selReq.addRequiredColumn(TiColumnRef.create("c4", table));
     if (filters != null) {
       filters.stream().forEach(selReq::addWhere);
     }
