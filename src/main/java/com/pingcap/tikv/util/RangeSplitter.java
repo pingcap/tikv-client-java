@@ -21,8 +21,8 @@ import static java.util.Objects.requireNonNull;
 
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
-import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
-import com.pingcap.tikv.grpc.Metapb;
+import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
+import com.pingcap.tikv.kvproto.Metapb;
 import com.pingcap.tikv.region.RegionManager;
 import com.pingcap.tikv.region.TiRegion;
 import java.io.Serializable;

@@ -23,7 +23,7 @@ import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.codec.KeyUtils;
 import com.pingcap.tikv.exception.TiClientInternalException;
-import com.pingcap.tikv.grpc.Kvrpcpb;
+import com.pingcap.tikv.kvproto.Kvrpcpb;
 import com.pingcap.tikv.types.BytesType;
 import com.pingcap.tikv.types.IntegerType;
 import com.pingcap.tikv.util.Pair;

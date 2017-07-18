@@ -11,7 +11,7 @@ import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.expression.scalar.Equal;
 import com.pingcap.tikv.expression.scalar.IsNull;
 import com.pingcap.tikv.expression.scalar.Not;
-import com.pingcap.tikv.grpc.Coprocessor;
+import com.pingcap.tikv.kvproto.Coprocessor;
 import com.pingcap.tikv.meta.TiDBInfo;
 import com.pingcap.tikv.meta.TiIndexInfo;
 import com.pingcap.tikv.meta.TiSelectRequest;

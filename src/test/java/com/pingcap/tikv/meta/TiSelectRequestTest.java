@@ -30,7 +30,7 @@ import com.pingcap.tikv.expression.scalar.Divide;
 import com.pingcap.tikv.expression.scalar.LessEqual;
 import com.pingcap.tikv.expression.scalar.Minus;
 import com.pingcap.tikv.expression.scalar.Plus;
-import com.pingcap.tikv.grpc.Coprocessor;
+import com.pingcap.tikv.kvproto.Coprocessor;
 import com.pingcap.tikv.types.DataTypeFactory;
 import com.pingcap.tikv.types.Types;
 import java.io.ByteArrayInputStream;

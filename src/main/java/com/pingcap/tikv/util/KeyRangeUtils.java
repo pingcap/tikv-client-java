@@ -17,7 +17,7 @@ package com.pingcap.tikv.util;
 
 import com.google.common.collect.Range;
 import com.google.protobuf.ByteString;
-import com.pingcap.tikv.grpc.Coprocessor;
+import com.pingcap.tikv.kvproto.Coprocessor;
 
 public class KeyRangeUtils {
   public static Range toRange(Coprocessor.KeyRange range) {

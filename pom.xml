@@ -18,9 +18,13 @@
         <junit.version>4.12</junit.version>
         <log4j.version>2.8.1</log4j.version>
         <grpc.version>1.4.0</grpc.version>
+        <tipb.version>0.1.0</tipb.version>
+        <kvproto.version>0.1.0</kvproto.version>
         <powermock.version>1.6.6</powermock.version>
         <jackson.version>2.6.6</jackson.version>
+        <trove4j.version>3.0.1</trove4j.version>
     </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
@@ -36,7 +40,7 @@
         <dependency>
             <groupId>net.sf.trove4j</groupId>
             <artifactId>trove4j</artifactId>
-            <version>3.0.1</version>
+            <version>${trove4j.version}</version>
         </dependency>
         <!-- grpc dependencies -->
         <dependency>
@@ -53,6 +57,16 @@
             <groupId>io.grpc</groupId>
             <artifactId>grpc-stub</artifactId>
             <version>${grpc.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.pingcap.tipb</groupId>
+            <artifactId>tipb</artifactId>
+            <version>${tipb.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.pingcap.tikv</groupId>
+            <artifactId>kvproto</artifactId>
+            <version>${kvproto.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -116,26 +130,6 @@
             </extension>
         </extensions>
         <plugins>
-            <!-- Compile gRPC proto files -->
-            <plugin>
-                <groupId>org.xolstice.maven.plugins</groupId>
-                <artifactId>protobuf-maven-plugin</artifactId>
-                <version>0.5.0</version>
-                <configuration>
-                    <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}
-                    </protocArtifact>
-                    <pluginId>grpc-java</pluginId>
-                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:1.4.0:exe:${os.detected.classifier}</pluginArtifact>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>compile</goal>
-                            <goal>compile-custom</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
             <!-- Resource Plug-in -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -216,6 +210,28 @@
                         <phase>package</phase>
                         <goals>
                             <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>git submodule update</id>
+                        <phase>initialize</phase>
+                        <configuration>
+                            <executable>git</executable>
+                            <arguments>
+                                <argument>submodule</argument>
+                                <argument>update</argument>
+                                <argument>--init</argument>
+                                <argument>--recursive</argument>
+                            </arguments>
+                        </configuration>
+                        <goals>
+                            <goal>exec</goal>
                         </goals>
                     </execution>
                 </executions>

@@ -19,10 +19,10 @@ package com.pingcap.tikv.region;
 
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.codec.CodecDataInput;
-import com.pingcap.tikv.grpc.Kvrpcpb;
-import com.pingcap.tikv.grpc.Metapb;
-import com.pingcap.tikv.grpc.Metapb.Peer;
-import com.pingcap.tikv.grpc.Metapb.Region;
+import com.pingcap.tikv.kvproto.Kvrpcpb;
+import com.pingcap.tikv.kvproto.Metapb;
+import com.pingcap.tikv.kvproto.Metapb.Peer;
+import com.pingcap.tikv.kvproto.Metapb.Region;
 import com.pingcap.tikv.types.BytesType;
 import java.io.Serializable;
 import java.util.HashSet;
