@@ -214,28 +214,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>git submodule update</id>
-                        <phase>initialize</phase>
-                        <configuration>
-                            <executable>git</executable>
-                            <arguments>
-                                <argument>submodule</argument>
-                                <argument>update</argument>
-                                <argument>--init</argument>
-                                <argument>--recursive</argument>
-                            </arguments>
-                        </configuration>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
             <!--- Needs to shade Protobuf 3 since other projects might use other version -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
