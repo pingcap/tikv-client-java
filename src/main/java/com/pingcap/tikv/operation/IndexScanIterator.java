@@ -69,7 +69,7 @@ public class IndexScanIterator implements Iterator<Row> {
       }
 
       ByteString startKey = TableCodec.encodeRowKeyWithHandle(selReq.getTableInfo().getId(), startKeys.get(0));
-      ByteString endKey = ByteString.copyFrom(KeyUtils.prefixNext(startKey.toByteArray()));
+      ByteString endKey = TableCodec.encodeRowKeyWithHandle(selReq.getTableInfo().getId(), end);
       newKeyRanges.add(KeyRange.newBuilder().setStart(startKey).setEnd(endKey).build());
     }
     return newKeyRanges;
