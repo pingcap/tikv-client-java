@@ -32,10 +32,13 @@ import com.pingcap.tikv.operation.SchemaInfer;
 import com.pingcap.tikv.predicates.PredicateUtils;
 import com.pingcap.tikv.predicates.ScanBuilder;
 import com.pingcap.tikv.row.Row;
+import com.pingcap.tikv.types.DataTypeFactory;
+import com.pingcap.tikv.types.Types;
 import com.pingcap.tikv.util.Bucket;
 import com.pingcap.tikv.util.Comparables;
 import com.pingcap.tikv.util.RangeSplitter;
 
+import java.lang.reflect.Type;
 import java.util.Iterator;
 import java.util.List;
 
@@ -90,7 +93,6 @@ public class Histogram {
 
         selReq.addWhere(PredicateUtils.mergeCNFExpressions(scanPlan.getFilters()));
 
-        System.out.println(firstAnd);
 
         List<RangeSplitter.RegionTask> keyWithRegionTasks =
                 RangeSplitter.newSplitter(cluster.getRegionManager())
@@ -107,7 +109,10 @@ public class Histogram {
                 if(isIndex == 1) {
                     Bucket.lowerBound = Comparables.wrap(row.getLong(3));
                 }else {
-
+                    Bucket.lowerBound = (Comparable<ByteString>)
+                            row.get(row.getInteger(3), DataTypeFactory.of(Types.TYPE_BLOB));
+                    Bucket.upperBound = (Comparable<ByteString>)
+                            row.get(row.getInteger(4), DataTypeFactory.of(Types.TYPE_BLOB));
                 }
                 for (int i = 0; i < row.fieldCount(); i++) {
                     Object val = row.get(i, schemaInfer.getType(i));
