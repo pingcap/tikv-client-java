@@ -22,16 +22,15 @@ import com.pingcap.tikv.predicates.ScanBuilder;
 import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.util.RangeSplitter;
-
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-
 public class Main {
 
-    private static TiConfiguration conf = TiConfiguration.createDefault(ImmutableList.of("127.0.0.1:" + 2379));
+    private static TiConfiguration conf =
+            TiConfiguration.createDefault(ImmutableList.of("127.0.0.1:" + 2379));
     private static TiCluster cluster = TiCluster.getCluster(conf);
     private static Snapshot snapshot = cluster.createSnapshot();
 
@@ -51,16 +50,17 @@ public class Main {
 
         TiIndexInfo index = TiIndexInfo.generateFakePrimaryKeyIndex(table);
 
-        List<TiExpr> exprs = ImmutableList.of(
-                new Not(new IsNull(TiColumnRef.create("dept", table))),
-                new Equal(TiColumnRef.create("dept", table), TiConstant.create("computer"))
-        );
+        List<TiExpr> exprs =
+                ImmutableList.of(
+                        new Not(new IsNull(TiColumnRef.create("dept", table))),
+                        new Equal(TiColumnRef.create("dept", table), TiConstant.create("computer")));
 
         ScanBuilder scanBuilder = new ScanBuilder();
         ScanBuilder.ScanPlan scanPlan = scanBuilder.buildScan(exprs, index, table);
 
         TiSelectRequest selReq = new TiSelectRequest();
-        selReq.addRanges(scanPlan.getKeyRanges())
+        selReq
+                .addRanges(scanPlan.getKeyRanges())
                 .setTableInfo(table)
                 .setIndexInfo(index)
                 .addField(TiColumnRef.create("id", table))
@@ -80,7 +80,7 @@ public class Main {
         System.out.println(exprs);
         List<RangeSplitter.RegionTask> keyWithRegionTasks =
                 RangeSplitter.newSplitter(cluster.getRegionManager())
-                .splitRangeByRegion(selReq.getRanges());
+                        .splitRangeByRegion(selReq.getRanges());
         for (RangeSplitter.RegionTask task : keyWithRegionTasks) {
             Iterator<Row> it = snapshot.select(selReq, task);
 
@@ -103,7 +103,9 @@ public class Main {
         ByteString endKey = ByteString.copyFrom(KeyUtils.prefixNext(startKey.toByteArray()));
 
         TiSelectRequest selReq = new TiSelectRequest();
-        selReq.addRanges(ImmutableList.of(Coprocessor.KeyRange.newBuilder().setStart(startKey).setEnd(endKey).build()));
+        selReq.addRanges(
+                ImmutableList.of(
+                        Coprocessor.KeyRange.newBuilder().setStart(startKey).setEnd(endKey).build()));
         selReq.addField(TiColumnRef.create("c1", table));
         selReq.addField(TiColumnRef.create("c2", table));
         selReq.addField(TiColumnRef.create("c3", table));
