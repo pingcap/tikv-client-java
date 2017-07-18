@@ -24,9 +24,9 @@ import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
 import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.util.Comparables;
+import gnu.trove.list.array.TLongArrayList;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 // A very bad implementation of Index Scanner barely made work
 // TODO: need to make it parallel and group indexes
@@ -49,27 +49,28 @@ public class IndexScanIterator implements Iterator<Row> {
     return iter.hasNext();
   }
 
-  private List<KeyRange> mergeKeyRangeList(List<KeyRange> keyRangeList) {
-    // sort key ranges according to its start key in order to do further merge.
+  private List<KeyRange> mergeKeyRangeList(TLongArrayList handles) {
     List<KeyRange> newKeyRanges = new LinkedList<>();
-    keyRangeList.sort((a, b) -> Comparables.wrap(a.getStart()).compareTo(b.getStart()));
-    for(int i = 0; i < keyRangeList.size() - 1; i++) {
-        KeyRange a = keyRangeList.get(i);
-        KeyRange b = keyRangeList.get(i + 1);
-        // since keyRangeList is already sorted. when a's end is larger or equal to b's start
-        // a and b are two keys can be merged since a's start is always smaller or equal to b's start.
-        // e.g.
-        // [1, 2) and [2, 3)
-        // [1, 4) and [2, 3)
-        if(Comparables.wrap(a.getEnd()).compareTo(b.getStart()) >= 0) {
-          ByteString largerEnd;
-          if (Comparables.wrap(a.getEnd()).compareTo(b.getEnd()) >= 0) {
-            largerEnd = a.getEnd();
-          } else {
-            largerEnd = b.getEnd();
-          }
-          newKeyRanges.add(KeyRange.newBuilder().setStart(a.getStart()).setEnd(largerEnd).build());
-        }
+    // sort handles first
+    handles.sort();
+    // merge all discrete key ranges.
+    // e.g.
+    // original key range is [1, 2), [2, 3), [3, 4)
+    // after merge, the result is [1, 4)
+    // original key range is [1, 2), [3, 4), [4, 5)
+    // after merge, the result is [1, 2), [3, 5)
+    TLongArrayList startKeys = new TLongArrayList(64);
+    for(int i = 0; i < handles.size() - 1; i++) {
+      startKeys.add(handles.get(i));
+      long nextStart = handles.get(i+1);
+      long end = handles.get(i) + 1;
+      if(nextStart <= end) {
+        continue;
+      }
+
+      ByteString startKey = TableCodec.encodeRowKeyWithHandle(selReq.getTableInfo().getId(), startKeys.get(0));
+      ByteString endKey = ByteString.copyFrom(KeyUtils.prefixNext(startKey.toByteArray()));
+      newKeyRanges.add(KeyRange.newBuilder().setStart(startKey).setEnd(endKey).build());
     }
     return newKeyRanges;
   }
@@ -77,19 +78,13 @@ public class IndexScanIterator implements Iterator<Row> {
   private Iterator<Row> doubleRead() {
     // first read of double read's result are handles.
     // This is actually keys of our second read.
-    List<KeyRange> keyRangeList = new LinkedList<>();
+    TLongArrayList handles = new TLongArrayList(64);
     while(iter.hasNext()) {
       Row r = iter.next();
-      long handle = r.getLong(0);
-      // in order to improve the speed of second read, we merge key if necessary.
-      // [1, 3), [3, 4) will be [1, 4) after merge
-      // [1, 2), [3, 4) will remain as same since they do not share any intersection.
-      ByteString startKey = TableCodec.encodeRowKeyWithHandle(selReq.getTableInfo().getId(), handle);
-      ByteString endKey = ByteString.copyFrom(KeyUtils.prefixNext(startKey.toByteArray()));
-      keyRangeList.add(KeyRange.newBuilder().setStart(startKey).setEnd(endKey).build());
+      handles.add(r.getLong(0));
     }
 
-    selReq.resetRanges(mergeKeyRangeList(keyRangeList));
+    selReq.resetRanges(mergeKeyRangeList(handles));
     return snapshot.select(selReq);
   }
 
