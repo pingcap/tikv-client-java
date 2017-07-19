@@ -13,20 +13,14 @@
  * limitations under the License.
  */
 
-package com.pingcap.tikv.util;
+package com.pingcap.tikv.statistics;
 
-import com.google.protobuf.ByteString;
+import org.junit.Test;
 
-public class Bucket {
-  public long count;
-  public long repeats;
-  public Comparable<ByteString> lowerBound;
-  public Comparable<ByteString> upperBound;
 
-  public Bucket(Comparable<ByteString> lowerBound, Comparable<ByteString> upperBound) {
-    this.lowerBound = lowerBound;
-    this.upperBound = upperBound;
-  }
+public class Histogram {
+    @Test
+    public void histogramFromStorage(){
 
-  public Bucket() {}
+    }
 }
