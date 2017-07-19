@@ -45,6 +45,5 @@ bazel-*
 ###ime
 .ensime
 .ensime_cache/
-scripts/format.sh
 scripts/pd/
 scripts/tikv/
