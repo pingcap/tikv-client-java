@@ -89,7 +89,7 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub>
         GetRegionRequest.newBuilder().setHeader(header).setRegionKey(encodedKey).build();
 
     PDErrorHandler<GetRegionResponse> handler =
-        new PDErrorHandler<>(r -> r.getHeader().hasError() ? r.getHeader().getError() : null);
+        new PDErrorHandler<>(r -> r.getHeader().hasError() ? r.getHeader().getError() : null, this);
 
     GetRegionResponse resp = callWithRetry(PDGrpc.METHOD_GET_REGION, request, handler);
     return new TiRegion(resp.getRegion(), resp.getLeader());
@@ -103,7 +103,7 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub>
         GetRegionRequest.newBuilder().setHeader(header).setRegionKey(key).build();
 
     PDErrorHandler<GetRegionResponse> handler =
-        new PDErrorHandler<>(r -> r.getHeader().hasError() ? r.getHeader().getError() : null);
+        new PDErrorHandler<>(r -> r.getHeader().hasError() ? r.getHeader().getError() : null, this);
     callAsyncWithRetry(PDGrpc.METHOD_GET_REGION, request, responseObserver, handler);
     return responseObserver.getFuture();
   }
@@ -113,7 +113,7 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub>
     GetRegionByIDRequest request =
         GetRegionByIDRequest.newBuilder().setHeader(header).setRegionId(id).build();
     PDErrorHandler<GetRegionResponse> handler =
-        new PDErrorHandler<>(r -> r.getHeader().hasError() ? r.getHeader().getError() : null);
+        new PDErrorHandler<>(r -> r.getHeader().hasError() ? r.getHeader().getError() : null, this);
     GetRegionResponse resp = callWithRetry(PDGrpc.METHOD_GET_REGION_BY_ID, request, handler);
     // Instead of using default leader instance, explicitly set no leader to null
     return new TiRegion(resp.getRegion(), resp.getLeader());
@@ -127,7 +127,7 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub>
     GetRegionByIDRequest request =
         GetRegionByIDRequest.newBuilder().setHeader(header).setRegionId(id).build();
     PDErrorHandler<GetRegionResponse> handler =
-        new PDErrorHandler<>(r -> r.getHeader().hasError() ? r.getHeader().getError() : null);
+        new PDErrorHandler<>(r -> r.getHeader().hasError() ? r.getHeader().getError() : null, this);
     callAsyncWithRetry(PDGrpc.METHOD_GET_REGION_BY_ID, request, responseObserver, handler);
     return responseObserver.getFuture();
   }
@@ -137,7 +137,7 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub>
     GetStoreRequest request =
         GetStoreRequest.newBuilder().setHeader(header).setStoreId(storeId).build();
     PDErrorHandler<GetStoreResponse> handler =
-        new PDErrorHandler<>(r -> r.getHeader().hasError() ? r.getHeader().getError() : null);
+        new PDErrorHandler<>(r -> r.getHeader().hasError() ? r.getHeader().getError() : null, this);
     GetStoreResponse resp = callWithRetry(PDGrpc.METHOD_GET_STORE, request, handler);
     Store store = resp.getStore();
     if (store.getState() == Metapb.StoreState.Tombstone) {
@@ -161,7 +161,7 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub>
     GetStoreRequest request =
         GetStoreRequest.newBuilder().setHeader(header).setStoreId(storeId).build();
     PDErrorHandler<GetStoreResponse> handler =
-        new PDErrorHandler<>(r -> r.getHeader().hasError() ? r.getHeader().getError() : null);
+        new PDErrorHandler<>(r -> r.getHeader().hasError() ? r.getHeader().getError() : null, this);
     callAsyncWithRetry(PDGrpc.METHOD_GET_STORE, request, responseObserver, handler);
     return responseObserver.getFuture();
   }
@@ -237,7 +237,7 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub>
         .build();
   }
 
-  private GetMembersResponse getMembers() {
+  public GetMembersResponse getMembers() {
     List<HostAndPort> pdAddrs = getConf().getPdAddrs();
     checkArgument(pdAddrs.size() > 0, "No PD address specified.");
     for (HostAndPort url : pdAddrs) {
@@ -258,7 +258,7 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub>
     return null;
   }
 
-  private void updateLeader(GetMembersResponse resp) {
+  public void updateLeader(GetMembersResponse resp) {
     String leaderUrlStr = "URL Not Set";
     try {
       long ts = System.nanoTime();

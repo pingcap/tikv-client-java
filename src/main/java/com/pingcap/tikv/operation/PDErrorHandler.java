@@ -17,14 +17,17 @@
 
 package com.pingcap.tikv.operation;
 
+import com.pingcap.tikv.PDClient;
 import com.pingcap.tikv.grpc.Pdpb;
+
 import java.util.function.Function;
 
 public class PDErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
   private final Function<RespT, Pdpb.Error> getError;
-
-  public PDErrorHandler(Function<RespT, Pdpb.Error> errorExtractor) {
+  private final PDClient client;
+  public PDErrorHandler(Function<RespT, Pdpb.Error> errorExtractor, PDClient client) {
     this.getError = errorExtractor;
+    this.client = client;
   }
 
   public void handle(RespT resp) {
@@ -32,6 +35,8 @@ public class PDErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
       return;
     }
     Pdpb.Error error = getError.apply(resp);
-    if (error != null) {}
+    if (error != null) {
+      client.updateLeader(client.getMembers());
+    }
   }
 }
