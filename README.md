@@ -1,13 +1,13 @@
 ## Ti-Client in Java [Under Construction]
 
-NOTES: For now it works with only TiKV branch disksing/grpc instead of official release.
+NOTES: For now it works only with the disksing/grpc branch of TiKV instead of the official release.
 
 A Java client for [TiDB](https://github.com/pingcap/tidb)/[TiKV](https://github.com/pingcap/tikv). 
-It suppose to:
+It is supposed to:
 + Communicate via [gRPC](http://www.grpc.io/)
 + Talk to Placement Driver searching for a region
-+ Talk to TiKV reading / writing data the format/encoding as a real TiDB.
-+ Talk Coprocessor for calculation pushdown
++ Talk to TiKV reading/writing data with the format/encoding as a real TiDB.
++ Talk to Coprocessor for calculation pushdown
 
 ## How to build
 
@@ -16,7 +16,7 @@ The following command can install dependencies for you.
 mvn package
 ```
 
-Alternatively, you can use bazel for much faster build.
+Alternatively, you can use `bazel` for much faster build.
 
 Making a uber jar:
 ```
@@ -33,7 +33,7 @@ make test
 ```
 
 this project is designed to hook with `pd` and `tikv` which you can find in `PingCap` github page.
-For the sake of saving your and our time, we submoudle these already. The following command can download them.
+For the sake of saving your and our time, we've submoudled these already. Run the following command to download them.
 ```
 git submodule update --init --recursive
 ```
