@@ -1,6 +1,6 @@
 ## Ti-Client in Java [Under Construction]
 
-NOTES: For now it works only with the disksing/grpc branch of TiKV instead of the official release.
+NOTES: For now it works only with the disksing/grpc branch of TiKV instead of the official release one.
 
 A Java client for [TiDB](https://github.com/pingcap/tidb)/[TiKV](https://github.com/pingcap/tikv). 
 It is supposed to:
