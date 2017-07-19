@@ -11,6 +11,7 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 package com.pingcap.tikv.statistics;
 
@@ -38,15 +39,23 @@ import com.pingcap.tikv.util.Bucket;
 import com.pingcap.tikv.util.Comparables;
 import com.pingcap.tikv.util.RangeSplitter;
 
-import java.lang.reflect.Type;
 import java.util.Iterator;
 import java.util.List;
 
-
 public class Histogram {
 
-    private final long distinctValueOfNumber = 0;
-    public Bucket[] buckets;
+    private final String DBNAME="mysql"; //the name of database
+    private final String Table="stats_buckets"; //the name of table
+    private final String Table_ID="table_id"; //the ID of table
+    private final String IS_Index="is_index"; // whether or not have an index
+    private final String Hist_ID="hist_id";   //Column ID for each histogram
+    private final String Bucket_ID="bucket_id"; //the ID of bucket
+    private final String COUNT="count";       //the total number of bucket
+    private final String REPEATS="repeats"; //repeats values in histogram
+    private final String Lower_Bound="lower_bound"; //lower bound of histogram
+    private final String Upper_Bound="upper_bound"; //upper bound of histogram
+    private final long distinctValueOfNumber = 0; // Number of distinct values.
+    public Bucket[] buckets ;
 
     private static TiConfiguration conf = TiConfiguration.createDefault(ImmutableList.of("127.0.0.1:" + 2379));
     private static TiCluster cluster = TiCluster.getCluster(conf);
@@ -55,34 +64,47 @@ public class Histogram {
     // histogramFromStorage from the storage to histogram.
     public void histogramFromStorage(long tableID,long isIndex,long colID){
         Catalog cat = cluster.getCatalog();
-        TiDBInfo db = cat.getDatabase("mysql");
-        TiTableInfo table = cat.getTable(db, "stats_buckets");
+        TiDBInfo db = cat.getDatabase(DBNAME);
+        TiTableInfo table = cat.getTable(db, Table);
         TiIndexInfo index = TiIndexInfo.generateFakePrimaryKeyIndex(table);
 
-
-        //"select bucket_id, count, repeats, lower_bound, upper_bound from mysql.x
-    // where table_id = %d and is_index = %d and hist_id = %d", tableID, isIndex, colID
+        /*
+            select bucket_id, count, repeats, lower_bound, upper_bound from mysql.x
+            where table_id = %d and is_index = %d and hist_id = %d", tableID, isIndex, colID
+         */
         List<TiExpr> firstAnd = ImmutableList.of(
-                new Equal(TiColumnRef.create("table_id", table), TiConstant.create(tableID)),
-                new Equal(TiColumnRef.create("is_index", table), TiConstant.create(isIndex)),
-                new Equal(TiColumnRef.create("hist_id", table), TiConstant.create(colID))
+                new Equal(TiColumnRef.create(Table_ID, table), TiConstant.create(tableID)),
+                new Equal(TiColumnRef.create(IS_Index, table), TiConstant.create(isIndex)),
+                new Equal(TiColumnRef.create(Hist_ID, table), TiConstant.create(colID))
         );
 
         ScanBuilder scanBuilder = new ScanBuilder();
         ScanBuilder.ScanPlan scanPlan = scanBuilder.buildScan(firstAnd, index, table);
 
+        /*
+        mysql> select * from mysql.stats_buckets;
+            +----------+----------+---------+-----------+-------+---------+-------------+-------------+
+            | table_id | is_index | hist_id | bucket_id | count | repeats | upper_bound | lower_bound |
+            +----------+----------+---------+-----------+-------+---------+-------------+-------------+
+            |       25 |        0 |       1 |         0 |     3 |       3 | 1           | 1           |
+            |       25 |        0 |       1 |         1 |     1 |       1 | 2           | 2           |
+            |       25 |        0 |       1 |         2 |     3 |       3 | 4           | 4           |
+            |       25 |        0 |       1 |         3 |     1 |       1 | 5           | 5           |
+            +----------+----------+---------+-----------+-------+---------+-------------+-------------+
+            7 rows in set (0.01 sec)
+         */
         TiSelectRequest selReq = new TiSelectRequest();
         selReq.addRanges(scanPlan.getKeyRanges())
                 .setTableInfo(table)
                 .setIndexInfo(index)
-                .addField(TiColumnRef.create("table_id", table))
-                .addField(TiColumnRef.create("is_index", table))
-                .addField(TiColumnRef.create("hist_id", table))
-                .addField(TiColumnRef.create("bucket_id", table))
-                .addField(TiColumnRef.create("count", table))
-                .addField(TiColumnRef.create("repeats", table))
-                .addField(TiColumnRef.create("lower_bound", table))
-                .addField(TiColumnRef.create("upper_bound",table))
+                .addField(TiColumnRef.create(Table_ID, table))
+                .addField(TiColumnRef.create(IS_Index, table))
+                .addField(TiColumnRef.create(Hist_ID, table))
+                .addField(TiColumnRef.create(Bucket_ID, table))
+                .addField(TiColumnRef.create(COUNT, table))
+                .addField(TiColumnRef.create(REPEATS, table))
+                .addField(TiColumnRef.create(Lower_Bound, table))
+                .addField(TiColumnRef.create(Upper_Bound,table))
                 .setStartTs(snapshot.getVersion());
 
         if (conf.isIgnoreTruncate()) {
@@ -107,11 +129,11 @@ public class Histogram {
                 long count = row.getLong(1);
                 long repeats = row.getLong(2);
                 if(isIndex == 1) {
-                    Bucket.lowerBound = Comparables.wrap(row.getLong(3));
+                    Comparable<ByteString> lowerBound = Comparables.wrap(row.getLong(3));
                 }else {
-                    Bucket.lowerBound = (Comparable<ByteString>)
+                    Comparable<ByteString> lowerBound = (Comparable<ByteString>)
                             row.get(row.getInteger(3), DataTypeFactory.of(Types.TYPE_BLOB));
-                    Bucket.upperBound = (Comparable<ByteString>)
+                    Comparable<ByteString> upperBound = (Comparable<ByteString>)
                             row.get(row.getInteger(4), DataTypeFactory.of(Types.TYPE_BLOB));
                 }
                 for (int i = 0; i < row.fieldCount(); i++) {
@@ -122,13 +144,14 @@ public class Histogram {
     }
 
     // equalRowCount estimates the row count where the column equals to value.
-    public float equalRowCount(ByteString values){
-        int index = Bucket.lowerBound.compareTo(values);
+    private float equalRowCount(ByteString values){
+        Bucket bucket=new Bucket();
+        int index = bucket.lowerBound.compareTo(values);
         if (index == buckets.length){
             return 0;
         }
         Comparable comparable = Comparables.wrap(values);
-        float c = comparable.compareTo(Bucket.lowerBound);
+        float c = comparable.compareTo(bucket.lowerBound);
         if (c < 0){
             return 0;
         }
@@ -136,7 +159,7 @@ public class Histogram {
     }
 
     // greaterRowCount estimates the row count where the column greater than value.
-    public float greaterRowCount(ByteString values){
+    private float greaterRowCount(ByteString values){
         float lessCount = lessRowCount(values);
         float equalCount = equalRowCount(values);
         float greaterCount;
@@ -155,8 +178,9 @@ public class Histogram {
     }
 
     // lessRowCount estimates the row count where the column less than value.
-    public float lessRowCount(ByteString values){
-          int index = Bucket.lowerBound.compareTo(values);
+    private float lessRowCount(ByteString values){
+          Bucket bucket=new Bucket();
+          int index = bucket.lowerBound.compareTo(values);
           if (index == buckets.length){
               return 0;
           }
@@ -167,7 +191,7 @@ public class Histogram {
           }
           float lessThanBucketValueCount = currentCount - buckets[index].repeats;
           Comparable comparable = Comparables.wrap(values);
-          float c = comparable.compareTo(Bucket.lowerBound);
+          float c = comparable.compareTo(bucket.lowerBound);
             if (c <= 0){
                 return previousCount;
             }
@@ -191,18 +215,18 @@ public class Histogram {
        return lessCountB - lessCountA;
     }
 
-    public float totalRowCount(){
+    private float totalRowCount(){
         if (0 == buckets.length){
             return 0;
         }
         return (buckets[buckets.length-1].count);
     }
 
-    public float bucketRowCount(){
+    private float bucketRowCount(){
         return totalRowCount()/buckets.length;
     }
 
-    public float inBucketBetweenCount(){
+    private float inBucketBetweenCount(){
         // TODO: Make this estimation more accurate using uniform spread assumption.
         return bucketRowCount()/3+1;
     }

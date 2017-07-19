@@ -17,10 +17,9 @@ package com.pingcap.tikv.util;
 
 import com.google.protobuf.ByteString;
 
-
 public class Bucket{
     public  long        count;
     public  long        repeats;
-    public static Comparable<ByteString> lowerBound;
-    public static Comparable<ByteString> upperBound;
+    public  Comparable<ByteString> lowerBound;
+    public  Comparable<ByteString> upperBound;
 }
