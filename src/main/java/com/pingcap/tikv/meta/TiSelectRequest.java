@@ -25,7 +25,7 @@ import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.expression.TiByItem;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiExpr;
-import com.pingcap.tikv.grpc.Coprocessor.KeyRange;
+import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.util.Pair;
 import java.io.Serializable;

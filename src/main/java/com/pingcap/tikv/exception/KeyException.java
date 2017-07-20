@@ -15,7 +15,7 @@
 
 package com.pingcap.tikv.exception;
 
-import com.pingcap.tikv.grpc.Kvrpcpb;
+import com.pingcap.tikv.kvproto.Kvrpcpb;
 
 public class KeyException extends RuntimeException {
   private final Kvrpcpb.KeyError keyErr;

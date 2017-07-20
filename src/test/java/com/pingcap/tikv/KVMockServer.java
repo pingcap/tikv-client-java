@@ -20,12 +20,12 @@ import com.google.protobuf.ByteString;
 import com.pingcap.tidb.tipb.Chunk;
 import com.pingcap.tidb.tipb.SelectRequest;
 import com.pingcap.tidb.tipb.SelectResponse;
-import com.pingcap.tikv.grpc.Coprocessor;
-import com.pingcap.tikv.grpc.Errorpb;
-import com.pingcap.tikv.grpc.Errorpb.Error;
-import com.pingcap.tikv.grpc.Kvrpcpb;
-import com.pingcap.tikv.grpc.Kvrpcpb.Context;
-import com.pingcap.tikv.grpc.TikvGrpc;
+import com.pingcap.tikv.kvproto.Coprocessor;
+import com.pingcap.tikv.kvproto.Errorpb;
+import com.pingcap.tikv.kvproto.Errorpb.Error;
+import com.pingcap.tikv.kvproto.Kvrpcpb;
+import com.pingcap.tikv.kvproto.Kvrpcpb.Context;
+import com.pingcap.tikv.kvproto.TikvGrpc;
 import com.pingcap.tikv.region.TiRegion;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
@@ -79,8 +79,8 @@ public class KVMockServer extends TikvGrpc.TikvImplBase {
 
   @Override
   public void rawGet(
-      com.pingcap.tikv.grpc.Kvrpcpb.RawGetRequest request,
-      io.grpc.stub.StreamObserver<com.pingcap.tikv.grpc.Kvrpcpb.RawGetResponse> responseObserver) {
+      com.pingcap.tikv.kvproto.Kvrpcpb.RawGetRequest request,
+      io.grpc.stub.StreamObserver<com.pingcap.tikv.kvproto.Kvrpcpb.RawGetResponse> responseObserver) {
     try {
       verifyContext(request.getContext());
       ByteString key = request.getKey();
@@ -104,8 +104,8 @@ public class KVMockServer extends TikvGrpc.TikvImplBase {
 
   /** */
   public void rawPut(
-      com.pingcap.tikv.grpc.Kvrpcpb.RawPutRequest request,
-      io.grpc.stub.StreamObserver<com.pingcap.tikv.grpc.Kvrpcpb.RawPutResponse> responseObserver) {
+      com.pingcap.tikv.kvproto.Kvrpcpb.RawPutRequest request,
+      io.grpc.stub.StreamObserver<com.pingcap.tikv.kvproto.Kvrpcpb.RawPutResponse> responseObserver) {
     try {
       verifyContext(request.getContext());
       ByteString key = request.getKey();
@@ -149,8 +149,8 @@ public class KVMockServer extends TikvGrpc.TikvImplBase {
 
   /** */
   public void rawDelete(
-      com.pingcap.tikv.grpc.Kvrpcpb.RawDeleteRequest request,
-      io.grpc.stub.StreamObserver<com.pingcap.tikv.grpc.Kvrpcpb.RawDeleteResponse>
+      com.pingcap.tikv.kvproto.Kvrpcpb.RawDeleteRequest request,
+      io.grpc.stub.StreamObserver<com.pingcap.tikv.kvproto.Kvrpcpb.RawDeleteResponse>
           responseObserver) {
     try {
       verifyContext(request.getContext());
@@ -175,8 +175,8 @@ public class KVMockServer extends TikvGrpc.TikvImplBase {
 
   @Override
   public void kvGet(
-      com.pingcap.tikv.grpc.Kvrpcpb.GetRequest request,
-      io.grpc.stub.StreamObserver<com.pingcap.tikv.grpc.Kvrpcpb.GetResponse> responseObserver) {
+      com.pingcap.tikv.kvproto.Kvrpcpb.GetRequest request,
+      io.grpc.stub.StreamObserver<com.pingcap.tikv.kvproto.Kvrpcpb.GetResponse> responseObserver) {
     try {
       verifyContext(request.getContext());
       if (request.getVersion() == 0) {
@@ -207,8 +207,8 @@ public class KVMockServer extends TikvGrpc.TikvImplBase {
 
   @Override
   public void kvScan(
-      com.pingcap.tikv.grpc.Kvrpcpb.ScanRequest request,
-      io.grpc.stub.StreamObserver<com.pingcap.tikv.grpc.Kvrpcpb.ScanResponse> responseObserver) {
+      com.pingcap.tikv.kvproto.Kvrpcpb.ScanRequest request,
+      io.grpc.stub.StreamObserver<com.pingcap.tikv.kvproto.Kvrpcpb.ScanResponse> responseObserver) {
     try {
       verifyContext(request.getContext());
       if (request.getVersion() == 0) {
@@ -247,8 +247,8 @@ public class KVMockServer extends TikvGrpc.TikvImplBase {
 
   @Override
   public void kvBatchGet(
-      com.pingcap.tikv.grpc.Kvrpcpb.BatchGetRequest request,
-      io.grpc.stub.StreamObserver<com.pingcap.tikv.grpc.Kvrpcpb.BatchGetResponse>
+      com.pingcap.tikv.kvproto.Kvrpcpb.BatchGetRequest request,
+      io.grpc.stub.StreamObserver<com.pingcap.tikv.kvproto.Kvrpcpb.BatchGetResponse>
           responseObserver) {
     try {
       verifyContext(request.getContext());
@@ -283,8 +283,8 @@ public class KVMockServer extends TikvGrpc.TikvImplBase {
 
   @Override
   public void coprocessor(
-      com.pingcap.tikv.grpc.Coprocessor.Request requestWrap,
-      io.grpc.stub.StreamObserver<com.pingcap.tikv.grpc.Coprocessor.Response> responseObserver) {
+      com.pingcap.tikv.kvproto.Coprocessor.Request requestWrap,
+      io.grpc.stub.StreamObserver<com.pingcap.tikv.kvproto.Coprocessor.Response> responseObserver) {
     try {
       verifyContext(requestWrap.getContext());
 

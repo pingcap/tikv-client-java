@@ -18,8 +18,7 @@
 package com.pingcap.tikv.operation;
 
 import com.pingcap.tikv.PDClient;
-import com.pingcap.tikv.grpc.Pdpb;
-
+import com.pingcap.tikv.kvproto.Pdpb;
 import java.util.function.Function;
 
 public class PDErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {

@@ -17,9 +17,9 @@
 
 package com.pingcap.tikv.operation;
 
-import com.pingcap.tikv.grpc.Errorpb;
-import com.pingcap.tikv.grpc.Kvrpcpb;
-import com.pingcap.tikv.grpc.Pdpb;
+import com.pingcap.tikv.kvproto.Errorpb;
+import com.pingcap.tikv.kvproto.Kvrpcpb;
+import com.pingcap.tikv.kvproto.Pdpb;
 import com.pingcap.tikv.region.RegionManager;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;

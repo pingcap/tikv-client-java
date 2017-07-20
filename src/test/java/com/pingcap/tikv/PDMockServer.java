@@ -15,8 +15,8 @@
 
 package com.pingcap.tikv;
 
-import com.pingcap.tikv.grpc.PDGrpc;
-import com.pingcap.tikv.grpc.Pdpb.*;
+import com.pingcap.tikv.kvproto.PDGrpc;
+import com.pingcap.tikv.kvproto.Pdpb.*;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.Status;

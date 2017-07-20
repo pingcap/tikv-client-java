@@ -15,7 +15,7 @@
 
 package com.pingcap.tikv.exception;
 
-import com.pingcap.tikv.grpc.Errorpb.Error;
+import com.pingcap.tikv.kvproto.Errorpb.Error;
 
 public class RegionException extends RuntimeException {
   private final Error regionErr;

@@ -18,8 +18,8 @@ package com.pingcap.tikv;
 import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.codec.CodecDataOutput;
-import com.pingcap.tikv.grpc.Metapb.*;
-import com.pingcap.tikv.grpc.Pdpb.*;
+import com.pingcap.tikv.kvproto.Metapb.*;
+import com.pingcap.tikv.kvproto.Pdpb.*;
 import com.pingcap.tikv.types.BytesType;
 import java.util.Arrays;
 
