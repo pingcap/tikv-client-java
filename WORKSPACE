@@ -103,16 +103,6 @@ maven_jar(
    artifact = "net.sf.trove4j:trove4j:3.0.1",
 )
 
-maven_jar(
-   name = "com_pingcap_tipb",
-   artifact = "com.pingcap.tipb:tipb:0.1.0",
-)
-
-maven_jar(
-   name = "com_pingcap_tikv",
-   artifact = "com.pingcap.tikv:kvproto:0.1.0",
-)
-
 git_repository(
     name = "org_pubref_rules_protobuf",
     remote = "https://github.com/zhexuany/rules_protobuf",

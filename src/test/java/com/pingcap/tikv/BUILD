@@ -12,8 +12,6 @@ junit_suite_test(
         "@com_fasterxml_jackson_core_jackson_annotations//jar",
         "@com_fasterxml_jackson_core_jackson_core//jar",
         "@com_fasterxml_jackson_core_jackson_databind//jar",
-        "@com_pingcap_tipb//jar",
-        "@com_pingcap_tikv//jar",
 
         "@org_pubref_rules_protobuf//java:grpc_compiletime_deps",
         "@org_pubref_rules_protobuf//java:netty_runtime_deps",
