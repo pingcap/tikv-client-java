@@ -29,4 +29,36 @@ public class Bucket {
   }
 
   public Bucket() {}
+
+  public long getCount() {
+    return count;
+  }
+
+  public void setCount(long count) {
+    this.count = count;
+  }
+
+  public long getRepeats() {
+    return repeats;
+  }
+
+  public void setRepeats(long repeats) {
+    this.repeats = repeats;
+  }
+
+  public Comparable<ByteString> getLowerBound() {
+    return lowerBound;
+  }
+
+  public void setLowerBound(Comparable<ByteString> lowerBound) {
+    this.lowerBound = lowerBound;
+  }
+
+  public Comparable<ByteString> getUpperBound() {
+    return upperBound;
+  }
+
+  public void setUpperBound(Comparable<ByteString> upperBound) {
+    this.upperBound = upperBound;
+  }
 }

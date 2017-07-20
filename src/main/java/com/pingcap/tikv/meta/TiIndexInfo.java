@@ -43,7 +43,7 @@ public class TiIndexInfo implements Serializable {
     public TiIndexInfo(@JsonProperty("id")long                       id,
                        @JsonProperty("idx_name")CIStr                name,
                        @JsonProperty("tbl_name")CIStr                tableName,
-                       @JsonProperty("idx_cols")List<TiIndexColumn>    indexColumns,
+                       @JsonProperty("idx_cols")List<TiIndexColumn>  indexColumns,
                        @JsonProperty("is_unique")boolean             isUnique,
                        @JsonProperty("is_primary")boolean            isPrimary,
                        @JsonProperty("state")int                     schemaState,
