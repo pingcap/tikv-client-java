@@ -22,3 +22,28 @@ java_import(
     name = "shaded_scalding",
     jars = ["shaded_args.jar"]
 )
+
+filegroup(
+    name = "protos",
+    srcs = glob([
+        "kvproto/proto/*.proto",
+	"kvproto/_vendor/src/github.com/gogo/protobuf/gogoproto/*.proto",
+	"tipb/proto/*.proto",
+    ]),
+)
+
+load("@org_pubref_rules_protobuf//java:rules.bzl", "java_proto_library")
+
+java_proto_library(
+    name = "java",
+    imports = [
+        "external/com_github_google_protobuf/src",
+        "kvproto/proto",
+	"kvproto/_vendor/src/github.com/gogo/protobuf",
+	"tipb/proto",
+    ],
+    inputs = ["@com_github_google_protobuf//:well_known_protos"],
+    protos = [":protos"],
+    verbose = 0,  # 0=no output, 1=show protoc command, 2+ more...
+    with_grpc = True,
+)

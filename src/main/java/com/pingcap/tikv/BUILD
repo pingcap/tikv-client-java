@@ -6,7 +6,7 @@ java_library(
         ["**/*.java"],
     ),
     deps = [
-        "//src/main/proto:java",
+        "//:java",
         "@com_fasterxml_jackson_core_jackson_annotations//jar",
         "@com_fasterxml_jackson_core_jackson_core//jar",
         "@com_fasterxml_jackson_core_jackson_databind//jar",
