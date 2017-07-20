@@ -15,21 +15,15 @@
 
 package com.pingcap.tikv.operation;
 
-import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.Snapshot;
-import com.pingcap.tikv.codec.KeyUtils;
 import com.pingcap.tikv.codec.TableCodec;
 import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
 import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.row.Row;
-import com.pingcap.tikv.util.Comparables;
 import gnu.trove.list.array.TLongArrayList;
-
 import java.util.*;
 
-// A very bad implementation of Index Scanner barely made work
-// TODO: need to make it parallel and group indexes
 public class IndexScanIterator implements Iterator<Row> {
   private final Iterator<Row> iter;
   private final TiSelectRequest selReq;
@@ -60,15 +54,16 @@ public class IndexScanIterator implements Iterator<Row> {
     // original key range is [1, 2), [3, 4), [4, 5)
     // after merge, the result is [1, 2), [3, 5)
     TLongArrayList startKeys = new TLongArrayList(64);
-    for(int i = 0; i < handles.size() - 1; i++) {
+    for (int i = 0; i < handles.size() - 1; i++) {
       startKeys.add(handles.get(i));
-      long nextStart = handles.get(i+1);
+      long nextStart = handles.get(i + 1);
       long end = handles.get(i) + 1;
-      if(nextStart <= end) {
+      if (nextStart <= end) {
         continue;
       }
 
-      ByteString startKey = TableCodec.encodeRowKeyWithHandle(selReq.getTableInfo().getId(), startKeys.get(0));
+      ByteString startKey =
+          TableCodec.encodeRowKeyWithHandle(selReq.getTableInfo().getId(), startKeys.get(0));
       ByteString endKey = TableCodec.encodeRowKeyWithHandle(selReq.getTableInfo().getId(), end);
       newKeyRanges.add(KeyRange.newBuilder().setStart(startKey).setEnd(endKey).build());
     }
@@ -79,7 +74,7 @@ public class IndexScanIterator implements Iterator<Row> {
     // first read of double read's result are handles.
     // This is actually keys of our second read.
     TLongArrayList handles = new TLongArrayList(64);
-    while(iter.hasNext()) {
+    while (iter.hasNext()) {
       Row r = iter.next();
       handles.add(r.getLong(0));
     }
