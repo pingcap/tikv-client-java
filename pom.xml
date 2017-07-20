@@ -135,7 +135,7 @@
                             <resource>
                                <directory>${basedir}/kvproto/_vendor/src/github.com/gogo/protobuf</directory>
                                <includes>
-                                    <include>gogoproto</include>
+                                    <include>**/gogoproto/**</include>
                                </includes>
                             </resource>
                             <resource>
@@ -269,6 +269,8 @@
                                 <argument>update</argument>
                                 <argument>--init</argument>
                                 <argument>--recursive</argument>
+                                <argument>--remote</argument>
+                                <argument>--merge</argument>
                             </arguments>
                         </configuration>
                         <phase>initialize</phase>
