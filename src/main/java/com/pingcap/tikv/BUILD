@@ -6,6 +6,7 @@ java_library(
         ["**/*.java"],
     ),
     deps = [
+        "//src/main/proto:java",
         "@com_fasterxml_jackson_core_jackson_annotations//jar",
         "@com_fasterxml_jackson_core_jackson_core//jar",
         "@com_fasterxml_jackson_core_jackson_databind//jar",
@@ -14,8 +15,6 @@ java_library(
         "@com_google_errorprone_error_prone_annotations//jar",
         "@com_google_guava_guava//jar",
         "@com_google_protobuf_protobuf_java//jar",
-        "@com_pingcap_tipb//jar",
-        "@com_pingcap_tikv//jar",
         # the following are defined in rules_protobuf
         "@org_pubref_rules_protobuf//java:grpc_compiletime_deps",
         "@org_pubref_rules_protobuf//java:netty_runtime_deps",
