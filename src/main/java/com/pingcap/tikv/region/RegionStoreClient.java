@@ -58,7 +58,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
   private final int ReqTypeSelect = 101;
   private final int ReqTypeIndex = 102;
 
-  private static final int MAX_MSG_SIZE = 67108864;
+  private static final int MAX_MSG_SIZE = 134217728;
   private static final int MAX_DEADLINE = 10;
   private static final TimeUnit DEF_DEADLINE_UNIT = TimeUnit.MINUTES;
 
