@@ -14,7 +14,7 @@ The following command can install dependencies for you.
 mvn package
 ```
 
-Alternatively, you can use `bazel` for much faster build.
+Alternatively, you can use `bazel` for much faster build. When you try this approach, you should run `git submodule update --init --recursive` before you build project.
 
 Making a uber jar:
 ```
