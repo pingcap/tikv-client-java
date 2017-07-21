@@ -45,16 +45,16 @@ import java.util.List;
 
 public class Histogram {
 
-  private final String dbName = "mysql"; //the name of database
-  private final String tableName = "stats_buckets"; //the name of table
-  private final String tableId = "table_id"; //the ID of table
-  private final String isIndex = "is_index"; // whether or not have an index
-  private final String histId = "hist_id"; //Column ID for each histogram
-  private final String bucketId = "bucket_id"; //the ID of bucket
-  private final String count = "count"; //the total number of bucket
-  private final String repeats = "repeats"; //repeats values in histogram
-  private final String lowerBound = "lower_bound"; //lower bound of histogram
-  private final String upperBound = "upper_bound"; //upper bound of histogram
+  private final String DB_NAME = "mysql"; //the name of database
+  private final String TABLE_NAME = "stats_buckets"; //the name of table
+  private final String TABLE_ID = "table_id"; //the ID of table
+  private final String IS_INDEX = "is_index"; // whether or not have an index
+  private final String HIST_ID = "hist_id"; //Column ID for each histogram
+  private final String BUCKET_ID = "bucket_id"; //the ID of bucket
+  private final String COUNT = "count"; //the total number of bucket
+  private final String REPEATS = "repeats"; //repeats values in histogram
+  private final String LOWER_BOUND = "lower_bound"; //lower bound of histogram
+  private final String UPPER_BOUND = "upper_bound"; //upper bound of histogram
 
   //Histogram
   public long numberOfDistinctValue; // Number of distinct values.
@@ -66,17 +66,18 @@ public class Histogram {
   private static Snapshot snapshot = cluster.createSnapshot();
 
   // histogramFromStorage from the storage to histogram.
-  public Histogram histogramFromStorage(long tableID, long is_index, long colID,long numberOfDistinctValue) {
+  public Histogram histogramFromStorage(
+      long tableID, long isIndex, long colID, long numberOfDistinctValue) {
     Catalog cat = cluster.getCatalog();
-    TiDBInfo db = cat.getDatabase(dbName);
-    TiTableInfo table = cat.getTable(db, tableName);
+    TiDBInfo db = cat.getDatabase(DB_NAME);
+    TiTableInfo table = cat.getTable(db, TABLE_NAME);
     TiIndexInfo index = TiIndexInfo.generateFakePrimaryKeyIndex(table);
 
     List<TiExpr> firstAnd =
         ImmutableList.of(
-            new Equal(TiColumnRef.create(tableId, table), TiConstant.create(tableID)),
-            new Equal(TiColumnRef.create(isIndex, table), TiConstant.create(is_index)),
-            new Equal(TiColumnRef.create(histId, table), TiConstant.create(colID)));
+            new Equal(TiColumnRef.create(TABLE_ID, table), TiConstant.create(tableID)),
+            new Equal(TiColumnRef.create(IS_INDEX, table), TiConstant.create(isIndex)),
+            new Equal(TiColumnRef.create(HIST_ID, table), TiConstant.create(colID)));
     ScanBuilder scanBuilder = new ScanBuilder();
     ScanBuilder.ScanPlan scanPlan = scanBuilder.buildScan(firstAnd, index, table);
     TiSelectRequest selReq = new TiSelectRequest();
@@ -84,14 +85,14 @@ public class Histogram {
         .addRanges(scanPlan.getKeyRanges())
         .setTableInfo(table)
         .setIndexInfo(index)
-        .addField(TiColumnRef.create(tableId, table))
-        .addField(TiColumnRef.create(isIndex, table))
-        .addField(TiColumnRef.create(histId, table))
-        .addField(TiColumnRef.create(bucketId, table))
-        .addField(TiColumnRef.create(count, table))
-        .addField(TiColumnRef.create(repeats, table))
-        .addField(TiColumnRef.create(lowerBound, table))
-        .addField(TiColumnRef.create(upperBound, table))
+        .addField(TiColumnRef.create(TABLE_ID, table))
+        .addField(TiColumnRef.create(IS_INDEX, table))
+        .addField(TiColumnRef.create(HIST_ID, table))
+        .addField(TiColumnRef.create(BUCKET_ID, table))
+        .addField(TiColumnRef.create(COUNT, table))
+        .addField(TiColumnRef.create(REPEATS, table))
+        .addField(TiColumnRef.create(LOWER_BOUND, table))
+        .addField(TiColumnRef.create(UPPER_BOUND, table))
         .setStartTs(snapshot.getVersion());
 
     if (conf.isIgnoreTruncate()) {
@@ -106,30 +107,28 @@ public class Histogram {
             .splitRangeByRegion(selReq.getRanges());
     for (RangeSplitter.RegionTask worker : keyWithRegionTasks) {
       Iterator<Row> it = snapshot.select(selReq, worker);
-      Bucket bucket=new Bucket();
+      Bucket bucket = new Bucket();
       while (it.hasNext()) {
         SchemaInfer schemaInfer = SchemaInfer.create(selReq);
         Row row = it.next();
         long buckID = row.getLong(0);
         long count = row.getLong(1);
         long repeats = row.getLong(2);
-        if (is_index == 1) {
+        if (isIndex == 1) {
           bucket.lowerBound = Comparables.wrap(row.getLong(3));
           bucket.upperBound = Comparables.wrap(row.getLong(4));
         } else {
           bucket.lowerBound =
-              (Comparable<ByteString>)
-                  row.get(3, DataTypeFactory.of(Types.TYPE_BLOB));
+              (Comparable<ByteString>) row.get(3, DataTypeFactory.of(Types.TYPE_BLOB));
           bucket.upperBound =
-              (Comparable<ByteString>)
-                  row.get(4, DataTypeFactory.of(Types.TYPE_BLOB));
+              (Comparable<ByteString>) row.get(4, DataTypeFactory.of(Types.TYPE_BLOB));
         }
         for (int i = 0; i < row.fieldCount(); i++) {
           Object val = row.get(i, schemaInfer.getType(i));
         }
       }
     }
-    return histogramFromStorage(tableID,is_index,colID,numberOfDistinctValue);
+    return histogramFromStorage(tableID, isIndex, colID, numberOfDistinctValue);
   }
 
   // equalRowCount estimates the row count where the column equals to value.
