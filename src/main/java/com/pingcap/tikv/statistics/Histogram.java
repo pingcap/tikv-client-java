@@ -56,6 +56,8 @@ public class Histogram {
   private final String lowerBound = "lower_bound"; //lower bound of histogram
   private final String upperBound = "upper_bound"; //upper bound of histogram
 
+  //Histogram
+  public long numberOfDistinctValue; // Number of distinct values.
   public Bucket[] buckets;
 
   private static TiConfiguration conf =
@@ -64,20 +66,19 @@ public class Histogram {
   private static Snapshot snapshot = cluster.createSnapshot();
 
   // histogramFromStorage from the storage to histogram.
-  public Histogram histogramFromStorage(long tableID, long is_index, long colID,long distinctValueOfNumber) {
+  public Histogram histogramFromStorage(long tableID, long is_index, long colID,long numberOfDistinctValue) {
     Catalog cat = cluster.getCatalog();
     TiDBInfo db = cat.getDatabase(dbName);
     TiTableInfo table = cat.getTable(db, tableName);
     TiIndexInfo index = TiIndexInfo.generateFakePrimaryKeyIndex(table);
+
     List<TiExpr> firstAnd =
         ImmutableList.of(
             new Equal(TiColumnRef.create(tableId, table), TiConstant.create(tableID)),
             new Equal(TiColumnRef.create(isIndex, table), TiConstant.create(is_index)),
             new Equal(TiColumnRef.create(histId, table), TiConstant.create(colID)));
-
     ScanBuilder scanBuilder = new ScanBuilder();
     ScanBuilder.ScanPlan scanPlan = scanBuilder.buildScan(firstAnd, index, table);
-
     TiSelectRequest selReq = new TiSelectRequest();
     selReq
         .addRanges(scanPlan.getKeyRanges())
@@ -98,7 +99,6 @@ public class Histogram {
     } else if (conf.isTruncateAsWarning()) {
       selReq.setTruncateMode(TiSelectRequest.TruncateMode.TruncationAsWarning);
     }
-
     selReq.addWhere(PredicateUtils.mergeCNFExpressions(scanPlan.getFilters()));
 
     List<RangeSplitter.RegionTask> keyWithRegionTasks =
@@ -108,8 +108,8 @@ public class Histogram {
       Iterator<Row> it = snapshot.select(selReq, worker);
       Bucket bucket=new Bucket();
       while (it.hasNext()) {
-        Row row = it.next();
         SchemaInfer schemaInfer = SchemaInfer.create(selReq);
+        Row row = it.next();
         long buckID = row.getLong(0);
         long count = row.getLong(1);
         long repeats = row.getLong(2);
@@ -129,11 +129,12 @@ public class Histogram {
         }
       }
     }
-    return null;
+    return histogramFromStorage(tableID,is_index,colID,numberOfDistinctValue);
   }
 
   // equalRowCount estimates the row count where the column equals to value.
   public float equalRowCount(ByteString values) {
+    Histogram hg = new Histogram();
     Bucket bucket = new Bucket();
     int index = bucket.lowerBound.compareTo(values);
     if (index == buckets.length) {
@@ -144,7 +145,7 @@ public class Histogram {
     if (c < 0) {
       return 0;
     }
-    return totalRowCount() ;
+    return totalRowCount() / hg.numberOfDistinctValue;
   }
 
   // greaterRowCount estimates the row count where the column greater than value.
