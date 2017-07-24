@@ -50,7 +50,7 @@ public class RealType extends DataType {
       // u = ^u
       u = ~u;
     }
-    return Float.intBitsToFloat((int) u);
+    return Double.longBitsToDouble(u);
   }
 
   RealType(TiColumnInfo.InternalTypeHolder holder) {
