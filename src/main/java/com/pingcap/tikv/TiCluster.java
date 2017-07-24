@@ -35,8 +35,12 @@ public class TiCluster implements AutoCloseable {
     return new TiCluster(conf);
   }
 
+  public TiTimestamp getTimestamp() {
+    return client.getTimestamp();
+  }
+
   public Snapshot createSnapshot() {
-    return new Snapshot(client.getTimestamp(), regionManager, session);
+    return new Snapshot(getTimestamp(), regionManager, session);
   }
 
   public Snapshot createSnapshot(TiTimestamp ts) {
