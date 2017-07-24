@@ -20,6 +20,7 @@ import static com.pingcap.tikv.util.KeyRangeUtils.formatByteString;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.net.HostAndPort;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
 import com.pingcap.tikv.kvproto.Metapb;
@@ -33,11 +34,17 @@ public class RangeSplitter {
     private final TiRegion region;
     private final Metapb.Store store;
     private final List<KeyRange> ranges;
+    private final String host;
 
     public RegionTask(TiRegion region, Metapb.Store store, List<KeyRange> ranges) {
       this.region = region;
       this.store = store;
       this.ranges = ranges;
+      String host = null;
+      try {
+        host = HostAndPort.fromString(store.getAddress()).getHostText();
+      } catch (Exception e) {}
+      this.host = host;
     }
 
     public TiRegion getRegion() {
@@ -50,6 +57,10 @@ public class RangeSplitter {
 
     public List<KeyRange> getRanges() {
       return ranges;
+    }
+
+    public String getHost() {
+      return host;
     }
 
     @Override

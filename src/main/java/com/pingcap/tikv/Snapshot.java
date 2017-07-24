@@ -24,6 +24,7 @@ import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.kvproto.Kvrpcpb.KvPair;
 import com.pingcap.tikv.kvproto.Metapb.Store;
 import com.pingcap.tikv.meta.TiSelectRequest;
+import com.pingcap.tikv.meta.TiTimestamp;
 import com.pingcap.tikv.operation.IndexScanIterator;
 import com.pingcap.tikv.operation.ScanIterator;
 import com.pingcap.tikv.operation.SelectIterator;
@@ -39,21 +40,16 @@ import java.util.Iterator;
 import java.util.List;
 
 public class Snapshot {
-  private final Version version;
+  private final TiTimestamp timestamp;
   private final RegionManager regionCache;
   private final TiSession session;
-  private static final int EPOCH_SHIFT_BITS = 18;
   private final TiConfiguration conf;
 
-  public Snapshot(Version version, RegionManager regionCache, TiSession session) {
-    this.version = version;
+  public Snapshot(TiTimestamp timestamp, RegionManager regionCache, TiSession session) {
+    this.timestamp = timestamp;
     this.regionCache = regionCache;
     this.session = session;
     this.conf = session.getConf();
-  }
-
-  public Snapshot(RegionManager regionCache, TiSession session) {
-    this(Version.getCurrentTSAsVersion(), regionCache, session);
   }
 
   public TiSession getSession() {
@@ -61,7 +57,11 @@ public class Snapshot {
   }
 
   public long getVersion() {
-    return version.getVersion();
+    return timestamp.getVersion();
+  }
+
+  public TiTimestamp getTimestamp() {
+    return timestamp;
   }
 
   public byte[] get(byte[] key) {
@@ -75,7 +75,7 @@ public class Snapshot {
     RegionStoreClient client =
         RegionStoreClient.create(pair.first, pair.second, getSession(), regionCache);
     // TODO: Need to deal with lock error after grpc stable
-    return client.get(key, version.getVersion());
+    return client.get(key, timestamp.getVersion());
   }
 
   /**
@@ -121,7 +121,7 @@ public class Snapshot {
 
   public Iterator<KvPair> scan(ByteString startKey) {
     return new ScanIterator(
-        startKey, conf.getScanBatchSize(), null, session, regionCache, version.getVersion());
+        startKey, conf.getScanBatchSize(), null, session, regionCache, timestamp.getVersion());
   }
 
   // TODO: Need faster implementation, say concurrent version
@@ -141,7 +141,7 @@ public class Snapshot {
 
         try (RegionStoreClient client =
             RegionStoreClient.create(lastPair.first, lastPair.second, getSession(), regionCache)) {
-          List<KvPair> partialResult = client.batchGet(keyBuffer, version.getVersion());
+          List<KvPair> partialResult = client.batchGet(keyBuffer, timestamp.getVersion());
           // TODO: Add lock check
           result.addAll(partialResult);
         } catch (Exception e) {
@@ -152,22 +152,5 @@ public class Snapshot {
       }
     }
     return result;
-  }
-
-  public static class Version {
-    public static Version getCurrentTSAsVersion() {
-      long t = System.currentTimeMillis() << EPOCH_SHIFT_BITS;
-      return new Version(t);
-    }
-
-    private final long version;
-
-    private Version(long ts) {
-      version = ts;
-    }
-
-    public long getVersion() {
-      return version;
-    }
   }
 }
