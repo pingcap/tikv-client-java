@@ -61,14 +61,8 @@ public class RealType extends DataType {
     } else {
       throw new UnsupportedOperationException("Can not cast Un-number to Float");
     }
-    long bits = Double.doubleToLongBits(val);
-    if (bits > 0) {
-      bits |= signMask;
-    } else {
-      // u = ^u;
-      bits = ~bits;
-    }
-    IntegerType.writeULong(cdo, bits);
+
+    IntegerType.writeULong(cdo, encodeDoubleToCmpLong(val));
   }
 
   /**
