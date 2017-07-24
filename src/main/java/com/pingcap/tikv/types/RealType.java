@@ -39,18 +39,7 @@ public class RealType extends DataType {
     if (flag != FLOATING_FLAG) {
       throw new InvalidCodecFormatException("Invalid Flag type for float type: " + flag);
     }
-    long u = IntegerType.readULong(cdi);
-    if ((u & signMask) > 0) {
-      // origin u &= ^signMask in golang
-      // ^ is known as bitwise complement.
-      // is m ^ x  with m = "all bits set to 1" for unsigned x
-      // and  m = -1 for signed x
-      u &= ~signMask;
-    } else {
-      // u = ^u
-      u = ~u;
-    }
-    return Double.longBitsToDouble(u);
+    return readDouble(cdi);
   }
 
   RealType(TiColumnInfo.InternalTypeHolder holder) {
@@ -66,13 +55,13 @@ public class RealType extends DataType {
    */
   @Override
   public void encodeNotNull(CodecDataOutput cdo, EncodeType encodeType, Object value) {
-    float val;
-    if (value instanceof Float) {
-      val = (Float) value;
+    double val;
+    if (value instanceof Double) {
+      val = (Double) value;
     } else {
       throw new UnsupportedOperationException("Can not cast Un-number to Float");
     }
-    long bits = Float.floatToIntBits(val);
+    long bits = Double.doubleToLongBits(val);
     if (bits > 0) {
       bits |= signMask;
     } else {

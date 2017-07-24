@@ -19,6 +19,7 @@ package com.pingcap.tikv.types;
 
 import static org.junit.Assert.*;
 
+import com.google.common.primitives.UnsignedLong;
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import org.junit.Test;
@@ -89,5 +90,23 @@ public class RealTypeTest {
     cdi = new CodecDataInput(data);
     u = RealType.readDouble(cdi);
     assertEquals(-99.199, u, 0.0001);
+  }
+
+  @Test
+  public void negativeLongTest() throws Exception {
+    CodecDataOutput cdo = new CodecDataOutput();
+    IntegerType.writeULong(cdo, UnsignedLong.valueOf("13831004815617530266").longValue());
+    double u = RealType.readDouble(new CodecDataInput(cdo.toBytes()));
+    assertEquals(1.1, u, 0.001);
+
+    cdo.reset();
+    IntegerType.writeULong(cdo, UnsignedLong.valueOf("13835508415244900762").longValue());
+    u = RealType.readDouble(new CodecDataInput(cdo.toBytes()));
+    assertEquals(2.2, u, 0.001);
+
+    cdo.reset();
+    IntegerType.writeULong(cdo, UnsignedLong.valueOf("13837985394932580352").longValue());
+    u = RealType.readDouble(new CodecDataInput(cdo.toBytes()));
+    assertEquals(3.3, u, 0.001);
   }
 }
