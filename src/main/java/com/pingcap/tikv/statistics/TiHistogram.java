@@ -139,7 +139,7 @@ public class TiHistogram {
     if (c < 0) {
       return 0;
     }
-    return totalRowCount() ;
+    return totalRowCount() / histogram.numberOfDistinctValue ;
   }
 
   // greaterRowCount estimates the row count where the column greater than value.
