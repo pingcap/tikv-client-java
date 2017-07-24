@@ -30,7 +30,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class Catalog {
-  protected static final Logger logger = LogManager.getFormatterLogger(Catalog.class);
+  private static final Logger logger = LogManager.getFormatterLogger(Catalog.class);
   private static ByteString KEY_DB = ByteString.copyFromUtf8("DBs");
   private static ByteString KEY_TABLE = ByteString.copyFromUtf8("Table");
 
