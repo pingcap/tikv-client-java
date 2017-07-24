@@ -25,22 +25,25 @@ import gnu.trove.list.array.TLongArrayList;
 import java.util.*;
 
 public class IndexScanIterator implements Iterator<Row> {
-  private final Iterator<Row> iter;
+  private Iterator<Row> iter;
   private final TiSelectRequest selReq;
   private final Snapshot snapshot;
-  private final boolean singleRead;
 
   public IndexScanIterator(
       Snapshot snapshot, TiSelectRequest req, Iterator<Row> iter, boolean singleRead) {
     this.iter = iter;
     this.selReq = req;
     this.snapshot = snapshot;
-    this.singleRead = singleRead;
+    if(singleRead) {
+      this.iter = singleRead();
+    } else {
+      this.iter = doubleRead();
+    }
   }
 
   @Override
   public boolean hasNext() {
-    return iter.hasNext();
+    return  iter.hasNext();
   }
 
   private List<KeyRange> mergeKeyRangeList(TLongArrayList handles) {
@@ -62,8 +65,7 @@ public class IndexScanIterator implements Iterator<Row> {
         continue;
       }
 
-      ByteString startKey =
-          TableCodec.encodeRowKeyWithHandle(selReq.getTableInfo().getId(), startKeys.get(0));
+      ByteString startKey = TableCodec.encodeRowKeyWithHandle(selReq.getTableInfo().getId(), startKeys.get(0));
       ByteString endKey = TableCodec.encodeRowKeyWithHandle(selReq.getTableInfo().getId(), end);
       newKeyRanges.add(KeyRange.newBuilder().setStart(startKey).setEnd(endKey).build());
     }
@@ -89,9 +91,6 @@ public class IndexScanIterator implements Iterator<Row> {
 
   @Override
   public Row next() {
-    if (!singleRead) {
-      return doubleRead().next();
-    }
-    return singleRead().next();
+      return iter.next();
   }
 }
