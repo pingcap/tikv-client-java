@@ -42,8 +42,8 @@ public class Main {
 //    TiIndexInfo index = TiIndexInfo.generateFakePrimaryKeyIndex(table);
     List<TiExpr> exprs =
         ImmutableList.of(
-            new Equal(TiColumnRef.create("c_name", table), TiConstant.create("Customer#000000001"))
-//            new NotEqual(TiColumnRef.create("c_address", table), TiConstant.create("test"))
+            new Equal(TiColumnRef.create("c_name", table), TiConstant.create("Customer#000000001")),
+            new NotEqual(TiColumnRef.create("c_address", table), TiConstant.create("test"))
         );
 
     ScanBuilder scanBuilder = new ScanBuilder();
@@ -55,7 +55,7 @@ public class Main {
         .setTableInfo(table)
         .setIndexInfo(index)
         .addRequiredColumn(TiColumnRef.create("c_name", table))
-//        .addRequiredColumn(TiColumnRef.create("c_address", table))
+        .addRequiredColumn(TiColumnRef.create("c_address", table))
         .setStartTs(snapshot.getVersion());
 
     if (conf.isIgnoreTruncate()) {
@@ -64,14 +64,14 @@ public class Main {
       selReq.setTruncateMode(TiSelectRequest.TruncateMode.TruncationAsWarning);
     }
 
-//    selReq.addWhere(PredicateUtils.mergeCNFExpressions(scanPlan.getFilters()));
-    selReq.addWhere(exprs.get(0));
+    selReq.addWhere(PredicateUtils.mergeCNFExpressions(scanPlan.getFilters()));
+//    selReq.addWhere(exprs.get(0));
     List<RangeSplitter.RegionTask> keyWithRegionTasks =
         RangeSplitter.newSplitter(cluster.getRegionManager())
             .splitRangeByRegion(selReq.getRanges());
     for (RangeSplitter.RegionTask task : keyWithRegionTasks) {
 //      Iterator<Row> it = snapshot.select(selReq, task);
-      Iterator<Row> it = snapshot.selectByIndex(selReq, task, true);
+      Iterator<Row> it = snapshot.selectByIndex(selReq, task, false);
 
       while (it.hasNext()) {
         Row r = it.next();

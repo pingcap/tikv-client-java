@@ -17,6 +17,7 @@ package com.pingcap.tikv.operation;
 
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.Snapshot;
+import com.pingcap.tikv.codec.KeyUtils;
 import com.pingcap.tikv.codec.TableCodec;
 import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
 import com.pingcap.tikv.meta.TiSelectRequest;
@@ -48,6 +49,13 @@ public class IndexScanIterator implements Iterator<Row> {
 
   private List<KeyRange> mergeKeyRangeList(TLongArrayList handles) {
     List<KeyRange> newKeyRanges = new LinkedList<>();
+    // guard. only allow handles size larger than 2 pursues further.
+    if (handles.size() < 2) {
+      ByteString startKey = TableCodec.encodeRowKeyWithHandle(selReq.getTableInfo().getId(), handles.get(0));
+      ByteString endKey = KeyUtils.getNextKeyInByteOrder(startKey);
+      newKeyRanges.add(KeyRange.newBuilder().setStart(startKey).setEnd(endKey).build());
+      return newKeyRanges;
+    }
     // sort handles first
     handles.sort();
     // merge all discrete key ranges.
