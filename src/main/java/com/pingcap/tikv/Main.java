@@ -6,11 +6,13 @@ import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiConstant;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.expression.scalar.Equal;
+import com.pingcap.tikv.expression.scalar.NotEqual;
 import com.pingcap.tikv.meta.TiDBInfo;
 import com.pingcap.tikv.meta.TiIndexInfo;
 import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.operation.SchemaInfer;
+import com.pingcap.tikv.predicates.PredicateUtils;
 import com.pingcap.tikv.predicates.ScanBuilder;
 import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.row.Row;
@@ -31,11 +33,6 @@ public class Main {
     // May need to save this reference
     Logger log = Logger.getLogger("io.grpc");
     log.setLevel(Level.WARNING);
-    PDClient client = PDClient.createRaw(cluster.getSession());
-    for (int i = 0; i < 51; i++) {
-      TiRegion r = client.getRegionByID(i);
-      r.getId();
-    }
 
     Catalog cat = cluster.getCatalog();
     TiDBInfo db = cat.getDatabase("tpch");
@@ -45,7 +42,8 @@ public class Main {
 //    TiIndexInfo index = TiIndexInfo.generateFakePrimaryKeyIndex(table);
     List<TiExpr> exprs =
         ImmutableList.of(
-                new Equal(TiColumnRef.create("c_name", table), TiConstant.create("Customer#000000001"))
+            new Equal(TiColumnRef.create("c_name", table), TiConstant.create("Customer#000000001"))
+//            new NotEqual(TiColumnRef.create("c_address", table), TiConstant.create("test"))
         );
 
     ScanBuilder scanBuilder = new ScanBuilder();
@@ -66,13 +64,14 @@ public class Main {
       selReq.setTruncateMode(TiSelectRequest.TruncateMode.TruncationAsWarning);
     }
 
-//    selReq.addWhere(PredicateUtils.mergeCNFExpressions(scanPlan.getTableFilters()));
+//    selReq.addWhere(PredicateUtils.mergeCNFExpressions(scanPlan.getFilters()));
     selReq.addWhere(exprs.get(0));
     List<RangeSplitter.RegionTask> keyWithRegionTasks =
         RangeSplitter.newSplitter(cluster.getRegionManager())
             .splitRangeByRegion(selReq.getRanges());
     for (RangeSplitter.RegionTask task : keyWithRegionTasks) {
-      Iterator<Row> it = snapshot.selectByIndex(selReq, task, false);
+//      Iterator<Row> it = snapshot.select(selReq, task);
+      Iterator<Row> it = snapshot.selectByIndex(selReq, task, true);
 
       while (it.hasNext()) {
         Row r = it.next();
@@ -85,5 +84,6 @@ public class Main {
         System.out.print("\n");
       }
     }
+    System.out.println("done");
   }
 }
