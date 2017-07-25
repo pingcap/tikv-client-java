@@ -54,9 +54,7 @@ public class ChunkIterator implements Iterator<ByteString> {
       bufOffset += c.getRowsMeta(metaIndex++).getLength();
       if (metaIndex >= c.getRowsMetaCount()) {
         // seek for next non-empty chunk
-        while (chunkIndex <= chunks.size() && chunks.get(chunkIndex).getRowsMetaCount() == 0) {
-          chunkIndex += 1;
-        }
+        while (++chunkIndex < chunks.size() && chunks.get(chunkIndex).getRowsMetaCount() == 0);
         if (chunkIndex >= chunks.size()) {
           eof = true;
           return;
