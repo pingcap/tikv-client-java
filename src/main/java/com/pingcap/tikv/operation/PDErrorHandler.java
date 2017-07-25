@@ -24,6 +24,7 @@ import java.util.function.Function;
 public class PDErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
   private final Function<RespT, Pdpb.Error> getError;
   private final PDClient client;
+
   public PDErrorHandler(Function<RespT, Pdpb.Error> errorExtractor, PDClient client) {
     this.getError = errorExtractor;
     this.client = client;
