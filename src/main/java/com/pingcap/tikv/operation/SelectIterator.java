@@ -77,6 +77,7 @@ public class SelectIterator implements Iterator<Row> {
     try {
       client = RegionStoreClient.create(region, store, session, regionManager);
       SelectResponse resp = client.coprocess(req.buildScan(indexScan), ranges);
+      // if resp is null, then indicates eof.
       if (resp == null) {
         eof = true;
         return null;
@@ -106,7 +107,6 @@ public class SelectIterator implements Iterator<Row> {
 
     RegionTask regionTask = regionTasks.get(index++);
     List<Chunk> chunks = createClientAndSendReq(regionTask, this.tiReq, this.regionManager);
-
     if(chunks == null) {
       return false;
     }
