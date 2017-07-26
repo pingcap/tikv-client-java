@@ -80,8 +80,7 @@ public class KVMockServer extends TikvGrpc.TikvImplBase {
   @Override
   public void rawGet(
       com.pingcap.tikv.kvproto.Kvrpcpb.RawGetRequest request,
-      io.grpc.stub.StreamObserver<com.pingcap.tikv.kvproto.Kvrpcpb.RawGetResponse>
-          responseObserver) {
+      io.grpc.stub.StreamObserver<com.pingcap.tikv.kvproto.Kvrpcpb.RawGetResponse> responseObserver) {
     try {
       verifyContext(request.getContext());
       ByteString key = request.getKey();
@@ -106,8 +105,7 @@ public class KVMockServer extends TikvGrpc.TikvImplBase {
   /** */
   public void rawPut(
       com.pingcap.tikv.kvproto.Kvrpcpb.RawPutRequest request,
-      io.grpc.stub.StreamObserver<com.pingcap.tikv.kvproto.Kvrpcpb.RawPutResponse>
-          responseObserver) {
+      io.grpc.stub.StreamObserver<com.pingcap.tikv.kvproto.Kvrpcpb.RawPutResponse> responseObserver) {
     try {
       verifyContext(request.getContext());
       ByteString key = request.getKey();

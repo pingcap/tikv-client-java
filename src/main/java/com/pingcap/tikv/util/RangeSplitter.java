@@ -43,8 +43,7 @@ public class RangeSplitter {
       String host = null;
       try {
         host = HostAndPort.fromString(store.getAddress()).getHostText();
-      } catch (Exception e) {
-      }
+      } catch (Exception e) {}
       this.host = host;
     }
 
