@@ -295,7 +295,7 @@ public class TiSelectRequest implements Serializable {
    * @param byItem is a TiByItem
    * @return a SelectBuilder
    */
-  TiSelectRequest addGroupByItem(TiByItem byItem) {
+  public TiSelectRequest addGroupByItem(TiByItem byItem) {
     groupByItems.add(requireNonNull(byItem, "byItem is null"));
     return this;
   }

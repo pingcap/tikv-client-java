@@ -36,7 +36,7 @@ public class TiConfiguration {
   private boolean truncateAsWarning = DEF_TRUNCATE_AS_WARNING;
   private List<HostAndPort> pdAddrs = new ArrayList<>();
 
-  static TiConfiguration createDefault(List<String> pdAddrs) {
+  public static TiConfiguration createDefault(List<String> pdAddrs) {
     TiConfiguration conf = new TiConfiguration();
     conf.pdAddrs =
         ImmutableList.copyOf(

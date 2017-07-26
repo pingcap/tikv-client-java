@@ -31,7 +31,7 @@ public class TiCluster implements AutoCloseable {
     this.regionManager = new RegionManager(this.client);
   }
 
-  static TiCluster getCluster(TiConfiguration conf) {
+  public static TiCluster getCluster(TiConfiguration conf) {
     return new TiCluster(conf);
   }
 
@@ -47,7 +47,7 @@ public class TiCluster implements AutoCloseable {
     return new Snapshot(ts, regionManager, session);
   }
 
-  Catalog getCatalog() {
+  public Catalog getCatalog() {
     return new Catalog(createSnapshot());
   }
 
@@ -55,7 +55,7 @@ public class TiCluster implements AutoCloseable {
     return session;
   }
 
-  RegionManager getRegionManager() {
+  public RegionManager getRegionManager() {
     return regionManager;
   }
 
