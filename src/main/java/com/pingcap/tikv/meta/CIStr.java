@@ -24,12 +24,12 @@ class CIStr {
   private final String l;
 
   @JsonCreator
-  public CIStr(@JsonProperty("O") String o, @JsonProperty("L") String l) {
+  private CIStr(@JsonProperty("O") String o, @JsonProperty("L") String l) {
     this.o = o;
     this.l = l;
   }
 
-  public static CIStr newCIStr(String str) {
+  static CIStr newCIStr(String str) {
     return new CIStr(str, str.toLowerCase());
   }
 

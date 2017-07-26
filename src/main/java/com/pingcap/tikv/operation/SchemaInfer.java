@@ -113,6 +113,6 @@ public class SchemaInfer {
   }
 
   public RowTransformer getRowTransformer() {
-    return rt;
+    return this.rt;
   }
 }

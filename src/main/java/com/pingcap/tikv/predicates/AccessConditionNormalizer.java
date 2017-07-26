@@ -30,7 +30,7 @@ public class AccessConditionNormalizer {
    * is an expression can be turn into access point or range
    *
    * @param expr expression to test
-   * @return
+   * @return false if such expression is not validated.
    */
   public static boolean validate(TiExpr expr) {
     if (expr instanceof TiFunctionExpression) {
@@ -81,11 +81,11 @@ public class AccessConditionNormalizer {
   }
 
   public static class NormalizedCondition {
-    public final TiColumnRef columnRef;
-    public final List<TiConstant> constantVals;
+    final TiColumnRef columnRef;
+    final List<TiConstant> constantVals;
     public final TiFunctionExpression condition;
 
-    public NormalizedCondition(
+    NormalizedCondition(
         TiColumnRef columnRef, List<TiConstant> constantVals, TiFunctionExpression condition) {
       this.columnRef = columnRef;
       this.constantVals = constantVals;
@@ -93,7 +93,7 @@ public class AccessConditionNormalizer {
     }
   }
 
-  public static NormalizedCondition normalize(TiExpr expr) {
+  static NormalizedCondition normalize(TiExpr expr) {
     if (!validate(expr)) {
       throw new TiClientInternalException("Not a valid access condition expression: " + expr);
     }

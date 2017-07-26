@@ -110,6 +110,7 @@ public class ScanIterator implements Iterator<Kvrpcpb.KvPair> {
     return true;
   }
 
+  @SuppressWarnings("unchecked")
   private boolean contains(ByteString key) {
     return keyRange.contains(Comparables.wrap(key));
   }

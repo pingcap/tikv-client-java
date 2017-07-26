@@ -23,7 +23,7 @@ import com.pingcap.tikv.policy.RetryPolicy;
  * slaves for read only purpose
  */
 public class TiSession {
-  public static final RetryPolicy.Builder DEF_RETRY_POLICY_BUILDER = new RetryNTimes.Builder(3);
+  private static final RetryPolicy.Builder DEF_RETRY_POLICY_BUILDER = new RetryNTimes.Builder(3);
 
   private TiConfiguration conf;
   private RetryPolicy.Builder retryPolicyBuilder = DEF_RETRY_POLICY_BUILDER;
@@ -40,7 +40,7 @@ public class TiSession {
     return new TiSession(conf);
   }
 
-  public RetryPolicy.Builder getRetryPolicyBuilder() {
+  RetryPolicy.Builder getRetryPolicyBuilder() {
     return retryPolicyBuilder;
   }
 }

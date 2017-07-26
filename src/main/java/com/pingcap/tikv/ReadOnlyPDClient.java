@@ -63,7 +63,6 @@ public interface ReadOnlyPDClient {
   /**
    * Close underlining resources
    *
-   * @throws InterruptedException
    */
   void close() throws InterruptedException;
 

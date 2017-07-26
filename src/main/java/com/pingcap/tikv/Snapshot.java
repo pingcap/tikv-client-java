@@ -126,10 +126,11 @@ public class Snapshot {
 
   // TODO: Need faster implementation, say concurrent version
   // Assume keys sorted
+  @SuppressWarnings("unchecked")
   public List<KvPair> batchGet(List<ByteString> keys) {
     TiRegion curRegion = null;
     Range curKeyRange = null;
-    Pair<TiRegion, Store> lastPair = null;
+    Pair<TiRegion, Store> lastPair;
     List<ByteString> keyBuffer = new ArrayList<>();
     List<KvPair> result = new ArrayList<>(keys.size());
     for (ByteString key : keys) {

@@ -180,6 +180,7 @@ public class SelectIterator implements Iterator<Row> {
       bufOffset += c.getRowsMeta(metaIndex++).getLength();
       if (metaIndex >= c.getRowsMetaCount()) {
         // seek for next non-empty chunk
+        //noinspection StatementWithEmptyBody
         while (++chunkIndex < chunks.size() && chunks.get(chunkIndex).getRowsMetaCount() == 0) {;
         }
         if (chunkIndex >= chunks.size()) {
