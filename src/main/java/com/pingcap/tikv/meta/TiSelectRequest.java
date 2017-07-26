@@ -313,7 +313,7 @@ public class TiSelectRequest implements Serializable {
    *
    * @param column is column referred during selectReq
    */
-  public TiSelectRequest addField(TiColumnRef column) {
+  public TiSelectRequest addRequiredColumn(TiColumnRef column) {
     fields.add(requireNonNull(column, "columnRef is null"));
     return this;
   }

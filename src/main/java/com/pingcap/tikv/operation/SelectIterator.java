@@ -21,6 +21,7 @@ import com.pingcap.tidb.tipb.Chunk;
 import com.pingcap.tidb.tipb.SelectResponse;
 import com.pingcap.tikv.TiSession;
 import com.pingcap.tikv.codec.CodecDataInput;
+import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
 import com.pingcap.tikv.kvproto.Metapb.Store;
@@ -33,6 +34,7 @@ import com.pingcap.tikv.row.RowReader;
 import com.pingcap.tikv.row.RowReaderFactory;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.DataTypeFactory;
+import com.pingcap.tikv.types.IntegerType;
 import com.pingcap.tikv.types.Types;
 import com.pingcap.tikv.util.RangeSplitter;
 import com.pingcap.tikv.util.RangeSplitter.RegionTask;
@@ -61,7 +63,7 @@ public class SelectIterator implements Iterator<Row> {
     this.rangeToRegions = null;
     this.readNextRegionFn =
         rangeToRegions -> {
-          chunkIterator = new ChunkIterator(chunks);
+          chunkIterator = new ChunkIterator(chunks, false);
           return true;
         };
     indexScan = false;
@@ -98,7 +100,7 @@ public class SelectIterator implements Iterator<Row> {
               eof = true;
               return false;
             }
-            chunkIterator = new ChunkIterator(resp.getChunksList());
+            chunkIterator = new ChunkIterator(resp.getChunksList(), indexScan);
           } catch (Exception e) {
             eof = true;
             throw new TiClientInternalException("Error Closing Store client.", e);
@@ -138,7 +140,6 @@ public class SelectIterator implements Iterator<Row> {
     if (hasNext()) {
       ByteString rowData = chunkIterator.next();
       RowReader reader = RowReaderFactory.createRowReader(new CodecDataInput(rowData));
-      // TODO: Make sure if only handle returned
       if (indexScan) {
         return reader.readRow(handleTypes);
       } else {
@@ -155,10 +156,12 @@ public class SelectIterator implements Iterator<Row> {
     private int metaIndex;
     private int bufOffset;
     private boolean eof;
+    private boolean indexScan;
 
-    ChunkIterator(List<Chunk> chunks) {
+    ChunkIterator(List<Chunk> chunks, boolean indexScan) {
       // Read and then advance semantics
       this.chunks = chunks;
+      this.indexScan = indexScan;
       chunkIndex = 0;
       metaIndex = 0;
       bufOffset = 0;
@@ -199,8 +202,16 @@ public class SelectIterator implements Iterator<Row> {
       if (endOffset > Integer.MAX_VALUE) {
         throw new TiClientInternalException("Offset exceeded MAX_INT.");
       }
-      ByteString rowData = c.getRowsData();
-      ByteString result = rowData.substring(bufOffset, (int) endOffset);
+      ByteString result;
+      if (indexScan) {
+        CodecDataOutput cdo = new CodecDataOutput();
+        IntegerType.writeLongFull(cdo, c.getRowsMeta(metaIndex).getHandle(), true);
+        result = cdo.toByteString();
+      } else {
+        ByteString rowData = c.getRowsData();
+        result = rowData.substring(bufOffset, (int) endOffset);
+      }
+
       advance();
       return result;
     }

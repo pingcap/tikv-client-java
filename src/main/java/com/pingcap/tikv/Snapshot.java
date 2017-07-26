@@ -88,9 +88,9 @@ public class Snapshot {
     return new SelectIterator(selReq, getSession(), regionCache, false);
   }
 
-  public Iterator<Row> selectByIndex(TiSelectRequest selReq) {
+  public Iterator<Row> selectByIndex(TiSelectRequest selReq, boolean singleRead) {
     Iterator<Row> iter = new SelectIterator(selReq, getSession(), regionCache, true);
-    return new IndexScanIterator(this, selReq, iter);
+    return new IndexScanIterator(this, selReq, iter, singleRead);
   }
 
   /**
@@ -113,10 +113,10 @@ public class Snapshot {
    * @param task RegionTask of the coprocessor request to send
    * @return Row iterator to iterate over resulting rows
    */
-  public Iterator<Row> selectByIndex(TiSelectRequest req, RegionTask task) {
+  public Iterator<Row> selectByIndex(TiSelectRequest req, RegionTask task, boolean singleRead) {
     Iterator<Row> iter =
         new SelectIterator(req, ImmutableList.of(task), getSession(), regionCache, true);
-    return new IndexScanIterator(this, req, iter);
+    return new IndexScanIterator(this, req, iter, singleRead);
   }
 
   public Iterator<KvPair> scan(ByteString startKey) {
