@@ -73,7 +73,7 @@ public class DataTypeFactory {
           .put(TYPE_DATETIME, TimestampType::new)
           .put(TYPE_TIMESTAMP, TimestampType::new)
           .put(TYPE_NEW_DATE, TimestampType::new)
-          .put(TYPE_DATE, TimestampType::new)
+          .put(TYPE_DATE, DateType::new)
           .put(TYPE_VARCHAR, BytesType::new)
           .put(TYPE_JSON, BytesType::new)
           .put(TYPE_ENUM, BytesType::new)
