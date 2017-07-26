@@ -27,6 +27,6 @@ public class Pair<F, S> implements Serializable {
   }
 
   public static <F, S> Pair<F, S> create(F f, S s) {
-    return new Pair(f, s);
+    return new Pair<>(f, s);
   }
 }

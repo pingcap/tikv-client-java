@@ -41,7 +41,7 @@ public class RangeBuilder {
    * @param rangeType type of the range
    * @return Index Range for scan
    */
-  public static List<IndexRange> exprsToIndexRanges(
+  List<IndexRange> exprsToIndexRanges(
       List<TiExpr> accessPoints,
       List<DataType> accessPointsTypes,
       List<TiExpr> accessConditions,
@@ -63,7 +63,7 @@ public class RangeBuilder {
    * @param types index column types
    * @return access points for each index
    */
-  public static List<IndexRange> exprsToPoints(List<TiExpr> accessPoints, List<DataType> types) {
+  List<IndexRange> exprsToPoints(List<TiExpr> accessPoints, List<DataType> types) {
     requireNonNull(accessPoints, "accessPoints cannot be null");
     requireNonNull(types, "Types cannot be null");
     checkArgument(
@@ -111,7 +111,8 @@ public class RangeBuilder {
    * @param type index column type
    * @return access ranges
    */
-  public static List<Range> exprToRanges(List<TiExpr> accessConditions, DataType type) {
+  @SuppressWarnings("unchecked")
+  static List<Range> exprToRanges(List<TiExpr> accessConditions, DataType type) {
     if (accessConditions == null || accessConditions.size() == 0) {
       return ImmutableList.of();
     }
@@ -146,7 +147,7 @@ public class RangeBuilder {
     return ImmutableList.copyOf(ranges.asRanges());
   }
 
-  public static List<IndexRange> appendRanges(
+  static List<IndexRange> appendRanges(
       List<IndexRange> indexRanges, List<Range> ranges, DataType rangeType) {
     requireNonNull(ranges);
     List<IndexRange> resultRanges = new ArrayList<>();
@@ -225,15 +226,15 @@ public class RangeBuilder {
       return result;
     }
 
-    public List<Object> getAccessPoints() {
+    List<Object> getAccessPoints() {
       return accessPoints;
     }
 
-    public boolean hasAccessPoints() {
+    boolean hasAccessPoints() {
       return accessPoints != null && accessPoints.size() != 0;
     }
 
-    public boolean hasRange() {
+    boolean hasRange() {
       return range != null;
     }
 
@@ -245,7 +246,7 @@ public class RangeBuilder {
       return types;
     }
 
-    public DataType getRangeType() {
+    DataType getRangeType() {
       return rangeType;
     }
   }

@@ -36,14 +36,14 @@ public class RangeSplitter {
     private final List<KeyRange> ranges;
     private final String host;
 
-    public RegionTask(TiRegion region, Metapb.Store store, List<KeyRange> ranges) {
+    RegionTask(TiRegion region, Metapb.Store store, List<KeyRange> ranges) {
       this.region = region;
       this.store = store;
       this.ranges = ranges;
       String host = null;
       try {
         host = HostAndPort.fromString(store.getAddress()).getHostText();
-      } catch (Exception e) {}
+      } catch (Exception ignored) {}
       this.host = host;
     }
 

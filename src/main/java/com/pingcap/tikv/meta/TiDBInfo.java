@@ -63,7 +63,7 @@ public class TiDBInfo {
     return tables;
   }
 
-  public SchemaState getSchemaState() {
+  SchemaState getSchemaState() {
     return schemaState;
   }
 }

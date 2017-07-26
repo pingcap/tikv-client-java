@@ -35,7 +35,8 @@ public class TiColumnInfo implements Serializable {
   private final String comment;
   private final boolean isPrimaryKey;
 
-  @VisibleForTesting public static final int PK_MASK = 0x2;
+  @VisibleForTesting
+  private static final int PK_MASK = 0x2;
 
   @JsonCreator
   public TiColumnInfo(
@@ -95,7 +96,7 @@ public class TiColumnInfo implements Serializable {
     return comment;
   }
 
-  public boolean isPrimaryKey() {
+  boolean isPrimaryKey() {
     return isPrimaryKey;
   }
 
@@ -170,7 +171,7 @@ public class TiColumnInfo implements Serializable {
     }
   }
 
-  public TiIndexColumn toIndexColumn() {
+  TiIndexColumn toIndexColumn() {
     return new TiIndexColumn(CIStr.newCIStr(getName()), getOffset(), type.getLength());
   }
 
@@ -178,7 +179,7 @@ public class TiColumnInfo implements Serializable {
     return toProtoBuilder(table).build();
   }
 
-  public ColumnInfo.Builder toProtoBuilder(TiTableInfo table) {
+  ColumnInfo.Builder toProtoBuilder(TiTableInfo table) {
     return ColumnInfo.newBuilder()
         .setColumnId(id)
         .setTp(type.getTypeCode())

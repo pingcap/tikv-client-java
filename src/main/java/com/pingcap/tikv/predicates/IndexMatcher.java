@@ -58,10 +58,8 @@ public class IndexMatcher {
     try {
       if (expr instanceof And || expr instanceof Or) {
         // If we pick eq only, AND is not allowed
-        if (matchEqualTestOnly && expr instanceof And) {
-          return false;
-        }
-        return match(expr.getArg(0)) && match(expr.getArg(1));
+        return !matchEqualTestOnly || !(expr instanceof And) && match(expr.getArg(0)) && match(
+            expr.getArg(1));
       } else {
         if (matchEqualTestOnly) {
           if (!(expr instanceof Equal) && !(expr instanceof In)) {

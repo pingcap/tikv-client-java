@@ -26,7 +26,7 @@ public class TiIndexColumn implements Serializable {
   private int length;
 
   @JsonCreator
-  public TiIndexColumn(
+  TiIndexColumn(
       @JsonProperty("name") CIStr name,
       @JsonProperty("offset") int offset,
       @JsonProperty("length") int length) {

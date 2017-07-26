@@ -111,8 +111,4 @@ public class SchemaInfer {
   public List<DataType> getTypes() {
     return types;
   }
-
-  public RowTransformer getRowTransformer() {
-    return rt;
-  }
 }
