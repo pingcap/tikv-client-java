@@ -78,15 +78,7 @@ public class TiSelectRequest implements Serializable {
     }
   }
 
-  public SelectRequest buildScan(boolean idxScan) {
-    if(idxScan)  {
-      return buildIndexScan();
-    } else {
-      return buildTableScan();
-    }
-  }
-
-  private SelectRequest buildIndexScan() {
+  public SelectRequest buildIndexScan() {
     checkArgument(startTs != 0, "timestamp is 0");
     SelectRequest.Builder builder = SelectRequest.newBuilder();
     if (indexInfo == null) {
@@ -100,7 +92,7 @@ public class TiSelectRequest implements Serializable {
         .build();
   }
 
-  private SelectRequest buildTableScan() {
+  public SelectRequest buildTableScan() {
     checkArgument(startTs != 0, "timestamp is 0");
     SelectRequest.Builder builder = SelectRequest.newBuilder();
     getFields().forEach(expr -> builder.addFields(expr.toProto()));

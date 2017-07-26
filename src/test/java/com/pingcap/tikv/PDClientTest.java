@@ -48,7 +48,7 @@ public class PDClientTest {
     server.stop();
   }
 
-  private PDClient createClient() {
+  public PDClient createClient() {
     server.addGetMemberResp(
         GrpcUtils.makeGetMembersResponse(
             server.getClusterId(),
