@@ -46,8 +46,9 @@ public class DateType extends DataType {
         return null;
       }
       //TODO revisit this later.
-      return new Date(
-          localDateTime.getYear(), localDateTime.getMonthValue(), localDateTime.getDayOfMonth());
+      return new Date(localDateTime.getYear() - 1900,
+                            localDateTime.getMonthValue() - 1,
+                            localDateTime.getDayOfMonth());
     } else {
       throw new InvalidCodecFormatException("Invalid Flag type for DateType: " + flag);
     }
