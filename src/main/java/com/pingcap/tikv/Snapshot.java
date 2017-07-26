@@ -153,21 +153,4 @@ public class Snapshot {
     }
     return result;
   }
-
-  public static class Version {
-    static Version getCurrentTSAsVersion() {
-      long t = System.currentTimeMillis() << EPOCH_SHIFT_BITS;
-      return new Version(t);
-    }
-
-    private final long version;
-
-    private Version(long ts) {
-      version = ts;
-    }
-
-    public long getVersion() {
-      return version;
-    }
-  }
 }
