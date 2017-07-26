@@ -45,29 +45,32 @@ public class Main {
     }
 
     Catalog cat = cluster.getCatalog();
-    TiDBInfo db = cat.getDatabase("tpch");
-    TiTableInfo table = cat.getTable(db, "lineitem");
+    TiDBInfo db = cat.getDatabase("mysql");
+    TiTableInfo table = cat.getTable(db, "stats_buckets");
 
     TiIndexInfo index = TiIndexInfo.generateFakePrimaryKeyIndex(table);
 
     List<TiExpr> exprs =
-        ImmutableList.of(
-            new Not(new IsNull(TiColumnRef.create("dept", table))),
-            new Equal(TiColumnRef.create("dept", table), TiConstant.create("computer")));
-
+            ImmutableList.of(
+                    new Equal(TiColumnRef.create("table_id", table), TiConstant.create(27)),
+                    new Equal(TiColumnRef.create("is_index", table), TiConstant.create(0)),
+                    new Equal(TiColumnRef.create("hist_id", table), TiConstant.create(1)));
     ScanBuilder scanBuilder = new ScanBuilder();
     ScanBuilder.ScanPlan scanPlan = scanBuilder.buildScan(exprs, index, table);
 
     TiSelectRequest selReq = new TiSelectRequest();
     selReq
-        .addRanges(scanPlan.getKeyRanges())
-        .setTableInfo(table)
-        .setIndexInfo(index)
-        .addField(TiColumnRef.create("id", table))
-        .addField(TiColumnRef.create("name", table))
-        .addField(TiColumnRef.create("quantity", table))
-        .addField(TiColumnRef.create("dept", table))
-        .setStartTs(snapshot.getVersion());
+            .addRanges(scanPlan.getKeyRanges())
+            .setTableInfo(table)
+            .addField(TiColumnRef.create("table_id", table))
+            .addField(TiColumnRef.create("is_index", table))
+            .addField(TiColumnRef.create("hist_id", table))
+            .addField(TiColumnRef.create("bucket_id", table))
+            .addField(TiColumnRef.create("count", table))
+            .addField(TiColumnRef.create("repeats", table))
+            .addField(TiColumnRef.create("lower_bound", table))
+            .addField(TiColumnRef.create("upper_bound", table))
+            .setStartTs(snapshot.getVersion());
 
     if (conf.isIgnoreTruncate()) {
       selReq.setTruncateMode(TiSelectRequest.TruncateMode.IgnoreTruncation);
