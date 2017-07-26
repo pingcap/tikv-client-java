@@ -180,7 +180,6 @@ public class TiTableInfoTest {
     TiTableInfo tableInfo = mapper.readValue(tableJson, TiTableInfo.class);
     assertEquals("test", tableInfo.getName());
     assertEquals(4, tableInfo.getColumns().size());
-    assertEquals(4, tableInfo.getColumns().size());
     assertEquals("c1", tableInfo.getColumns().get(0).getName());
     assertEquals(IntegerType.class, tableInfo.getColumns().get(0).getType().getClass());
     assertEquals("c2", tableInfo.getColumns().get(1).getName());
