@@ -15,7 +15,6 @@
 
 package com.pingcap.tikv.operation;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.ByteString;
 import com.pingcap.tidb.tipb.Chunk;
 import com.pingcap.tidb.tipb.SelectResponse;
@@ -39,78 +38,62 @@ import com.pingcap.tikv.util.RangeSplitter.RegionTask;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.function.Function;
 
 public class SelectIterator implements Iterator<Row> {
   protected final TiSession session;
-  private final List<RegionTask> rangeToRegions;
+  private final List<RegionTask> regionTasks;
 
   private ChunkIterator chunkIterator;
   protected int index = 0;
   private boolean eof = false;
-  private Function<List<RegionTask>, Boolean> readNextRegionFn;
   private SchemaInfer schemaInfer;
   private final boolean indexScan;
+  private TiSelectRequest tiReq;
+  private RegionManager regionManager;
   private static final DataType[] handleTypes =
       new DataType[] {DataTypeFactory.of(Types.TYPE_LONG)};
 
-  @VisibleForTesting
-  public SelectIterator(List<Chunk> chunks, TiSelectRequest req) {
-    this.session = null;
+  public SelectIterator(
+      TiSelectRequest req,
+      List<RegionTask> regionTasks,
+      TiSession session,
+      RegionManager regionManager,
+      boolean indexScan) {
+    this.regionTasks = regionTasks;
+    this.tiReq = req;
+    this.session = session;
     this.schemaInfer = SchemaInfer.create(req);
-    this.rangeToRegions = null;
-    this.readNextRegionFn =
-        rangeToRegions -> {
-          chunkIterator = new ChunkIterator(chunks);
-          return true;
-        };
-    indexScan = false;
+    this.indexScan = indexScan;
+    this.regionManager = regionManager;
+  }
+
+  private List<Chunk> createClientAndSendReq(RegionTask regionTask,
+      TiSelectRequest req, RegionManager regionManager) {
+    List<KeyRange> ranges = regionTask.getRanges();
+    TiRegion region = regionTask.getRegion();
+    Store store = regionTask.getStore();
+
+    RegionStoreClient client;
+    try {
+      client = RegionStoreClient.create(region, store, session, regionManager);
+      SelectResponse resp = client.coprocess(req.buildScan(indexScan), ranges);
+      // if resp is null, then indicates eof.
+      if (resp == null) {
+        eof = true;
+        return null;
+      }
+      return resp.getChunksList();
+    } catch (Exception e) {
+      throw new TiClientInternalException("Error Closing Store client.", e);
+    }
   }
 
   public SelectIterator(
       TiSelectRequest req,
-      List<RegionTask> rangeToRegionsIn,
       TiSession session,
-      RegionManager regionManager,
+      RegionManager rm,
       boolean indexScan) {
-    this.rangeToRegions = rangeToRegionsIn;
-    this.session = session;
-    this.schemaInfer = SchemaInfer.create(req);
-    this.indexScan = indexScan;
-    this.readNextRegionFn =
-        (rangeToRegions) -> {
-          if (eof || index >= rangeToRegions.size()) {
-            return false;
-          }
-
-          RegionTask regionTask = rangeToRegions.get(index++);
-
-          List<KeyRange> ranges = regionTask.getRanges();
-          TiRegion region = regionTask.getRegion();
-          Store store = regionTask.getStore();
-
-          RegionStoreClient client;
-          try {
-            client = RegionStoreClient.create(region, store, session, regionManager);
-            SelectResponse resp =
-                client.coprocess(indexScan ? req.buildIndexScan() : req.buildTableScan(), ranges);
-            if (resp == null) {
-              eof = true;
-              return false;
-            }
-            chunkIterator = new ChunkIterator(resp.getChunksList());
-          } catch (Exception e) {
-            eof = true;
-            throw new TiClientInternalException("Error Closing Store client.", e);
-          }
-          return true;
-        };
-  }
-
-  public SelectIterator(
-      TiSelectRequest req, TiSession session, RegionManager rm, boolean indexScan) {
-    this(
-        req,
+    this(req,
         RangeSplitter.newSplitter(rm).splitRangeByRegion(req.getRanges()),
         session,
         rm,
@@ -118,7 +101,17 @@ public class SelectIterator implements Iterator<Row> {
   }
 
   private boolean readNextRegion() {
-    return this.readNextRegionFn.apply(rangeToRegions);
+    if (eof || index >= regionTasks.size()) {
+            return false;
+    }
+
+    RegionTask regionTask = regionTasks.get(index++);
+    List<Chunk> chunks = createClientAndSendReq(regionTask, this.tiReq, this.regionManager);
+    if(chunks == null) {
+      return false;
+    }
+    chunkIterator = new ChunkIterator(chunks);
+    return true;
   }
 
   @Override
@@ -146,62 +139,6 @@ public class SelectIterator implements Iterator<Row> {
       }
     } else {
       throw new NoSuchElementException();
-    }
-  }
-
-  private static class ChunkIterator implements Iterator<ByteString> {
-    private final List<Chunk> chunks;
-    private int chunkIndex;
-    private int metaIndex;
-    private int bufOffset;
-    private boolean eof;
-
-    ChunkIterator(List<Chunk> chunks) {
-      // Read and then advance semantics
-      this.chunks = chunks;
-      chunkIndex = 0;
-      metaIndex = 0;
-      bufOffset = 0;
-      if (chunks.size() == 0
-          || chunks.get(0).getRowsMetaCount() == 0
-          || chunks.get(0).getRowsData().size() == 0) {
-        eof = true;
-      }
-    }
-
-    @Override
-    public boolean hasNext() {
-      return !eof;
-    }
-
-    private void advance() {
-      if (eof) return;
-      Chunk c = chunks.get(chunkIndex);
-      bufOffset += c.getRowsMeta(metaIndex++).getLength();
-      if (metaIndex >= c.getRowsMetaCount()) {
-        // seek for next non-empty chunk
-        while (++chunkIndex < chunks.size() && chunks.get(chunkIndex).getRowsMetaCount() == 0) {;
-        }
-        if (chunkIndex >= chunks.size()) {
-          eof = true;
-          return;
-        }
-        metaIndex = 0;
-        bufOffset = 0;
-      }
-    }
-
-    @Override
-    public ByteString next() {
-      Chunk c = chunks.get(chunkIndex);
-      long endOffset = c.getRowsMeta(metaIndex).getLength() + bufOffset;
-      if (endOffset > Integer.MAX_VALUE) {
-        throw new TiClientInternalException("Offset exceeded MAX_INT.");
-      }
-      ByteString rowData = c.getRowsData();
-      ByteString result = rowData.substring(bufOffset, (int) endOffset);
-      advance();
-      return result;
     }
   }
 }

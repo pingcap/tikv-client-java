@@ -117,7 +117,7 @@ public class PDMockServer extends PDGrpc.PDImplBase {
     }
   }
 
-  int start(long clusterId) throws IOException {
+  void start(long clusterId) throws IOException {
     try (ServerSocket s = new ServerSocket(0)) {
       port = s.getLocalPort();
     }
@@ -125,7 +125,6 @@ public class PDMockServer extends PDGrpc.PDImplBase {
     server = ServerBuilder.forPort(port).addService(this).build().start();
 
     Runtime.getRuntime().addShutdownHook(new Thread(PDMockServer.this::stop));
-    return port;
   }
 
   void stop() {

@@ -227,7 +227,7 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub>
     }
 
     void close() {
-      channel.isShutdown();
+      channel.shutdown();
     }
   }
 

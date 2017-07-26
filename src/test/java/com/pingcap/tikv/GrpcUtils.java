@@ -24,15 +24,15 @@ import com.pingcap.tikv.types.BytesType;
 import java.util.Arrays;
 
 public class GrpcUtils {
-  public static ResponseHeader makeDefaultHeader(long clusterId) {
+  private static ResponseHeader makeDefaultHeader(long clusterId) {
     return ResponseHeader.newBuilder().setClusterId(clusterId).build();
   }
 
-  public static Member makeMember(long memberId, String... urls) {
+  static Member makeMember(long memberId, String... urls) {
     return Member.newBuilder().setMemberId(memberId).addAllClientUrls(Arrays.asList(urls)).build();
   }
 
-  public static GetMembersResponse makeGetMembersResponse(long clusterId, Member... members) {
+  static GetMembersResponse makeGetMembersResponse(long clusterId, Member... members) {
     return GetMembersResponse.newBuilder()
         .setHeader(makeDefaultHeader(clusterId))
         .setLeader(members[0])
@@ -40,7 +40,7 @@ public class GrpcUtils {
         .build();
   }
 
-  public static TsoResponse makeTsoResponse(long clusterId, long physical, long logical) {
+  static TsoResponse makeTsoResponse(long clusterId, long physical, long logical) {
     Timestamp ts = Timestamp.newBuilder().setPhysical(physical).setLogical(logical).build();
     return TsoResponse.newBuilder()
         .setHeader(makeDefaultHeader(clusterId))
@@ -49,7 +49,7 @@ public class GrpcUtils {
         .build();
   }
 
-  public static Peer makePeer(long id, long storeId) {
+  static Peer makePeer(long id, long storeId) {
     return Peer.newBuilder().setStoreId(storeId).setId(id).build();
   }
 
@@ -59,11 +59,11 @@ public class GrpcUtils {
     return cdo.toByteString();
   }
 
-  public static RegionEpoch makeRegionEpoch(long confVer, long ver) {
+  static RegionEpoch makeRegionEpoch(long confVer, long ver) {
     return RegionEpoch.newBuilder().setConfVer(confVer).setVersion(ver).build();
   }
 
-  public static Region makeRegion(
+  static Region makeRegion(
       long id, ByteString startKey, ByteString endKey, RegionEpoch re, Peer... peers) {
     return Region.newBuilder()
         .setId(id)
@@ -74,7 +74,7 @@ public class GrpcUtils {
         .build();
   }
 
-  public static GetRegionResponse makeGetRegionResponse(long clusterId, Region region) {
+  static GetRegionResponse makeGetRegionResponse(long clusterId, Region region) {
     return GetRegionResponse.newBuilder()
         .setHeader(makeDefaultHeader(clusterId))
         .setRegion(region)
@@ -82,11 +82,11 @@ public class GrpcUtils {
         .build();
   }
 
-  public static StoreLabel makeStoreLabel(String key, String value) {
+  static StoreLabel makeStoreLabel(String key, String value) {
     return StoreLabel.newBuilder().setKey(key).setValue(value).build();
   }
 
-  public static Store makeStore(long id, String address, StoreState state, StoreLabel... labels) {
+  static Store makeStore(long id, String address, StoreState state, StoreLabel... labels) {
     return Store.newBuilder()
         .setId(id)
         .setAddress(address)
@@ -95,7 +95,7 @@ public class GrpcUtils {
         .build();
   }
 
-  public static GetStoreResponse makeGetStoreResponse(long clusterId, Store store) {
+  static GetStoreResponse makeGetStoreResponse(long clusterId, Store store) {
     return GetStoreResponse.newBuilder()
         .setHeader(makeDefaultHeader(clusterId))
         .setStore(store)
