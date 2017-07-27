@@ -76,8 +76,9 @@ public class ScanBuilder {
     }
 
     IndexMatchingResult result = extractConditions(conditions, table, index);
+    RangeBuilder builder = new RangeBuilder();
     List<IndexRange> irs =
-        RangeBuilder.exprsToIndexRanges(
+        builder.exprsToIndexRanges(
             result.accessPoints, result.accessPointsTypes,
             result.accessConditions, result.rangeType);
 
@@ -250,13 +251,13 @@ public class ScanBuilder {
   }
 
   public static class IndexMatchingResult {
-    public final List<TiExpr> residualConditions;
-    public final List<TiExpr> accessPoints;
-    public final List<DataType> accessPointsTypes;
-    public final List<TiExpr> accessConditions;
-    public final DataType rangeType;
+    final List<TiExpr> residualConditions;
+    final List<TiExpr> accessPoints;
+    final List<DataType> accessPointsTypes;
+    final List<TiExpr> accessConditions;
+    final DataType rangeType;
 
-    public IndexMatchingResult(
+    IndexMatchingResult(
         List<TiExpr> residualConditions,
         List<TiExpr> accessPoints,
         List<DataType> accessPointsTypes,
@@ -276,7 +277,7 @@ public class ScanBuilder {
   }
 
   @VisibleForTesting
-  public static IndexMatchingResult extractConditions(
+  static IndexMatchingResult extractConditions(
       List<TiExpr> conditions, TiTableInfo table, TiIndexInfo index) {
     // 0. Different than TiDB implementation, here logic has been unified for TableScan and IndexScan by
     // adding fake index on clustered table's pk

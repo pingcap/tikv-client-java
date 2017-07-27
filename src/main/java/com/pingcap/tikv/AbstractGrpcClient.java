@@ -28,7 +28,7 @@ import org.apache.logging.log4j.Logger;
 public abstract class AbstractGrpcClient<
         BlockingStubT extends AbstractStub<BlockingStubT>, StubT extends AbstractStub<StubT>>
     implements AutoCloseable {
-  protected final Logger logger = LogManager.getFormatterLogger(getClass());
+  final Logger logger = LogManager.getFormatterLogger(getClass());
   private TiSession session;
   private TiConfiguration conf;
 
@@ -86,7 +86,7 @@ public abstract class AbstractGrpcClient<
     logger.debug("leaving %s...", method.getFullMethodName());
   }
 
-  protected <ReqT, ResT> StreamObserver<ReqT> callBidiStreamingWithRetry(
+  <ReqT, ResT> StreamObserver<ReqT> callBidiStreamingWithRetry(
       MethodDescriptor<ReqT, ResT> method,
       StreamObserver<ResT> responseObserver,
       ErrorHandler handler) {

@@ -51,6 +51,7 @@ public abstract class RetryPolicy {
     return unrecoverableStatus.contains(status.getCode());
   }
 
+  @SuppressWarnings("unchecked")
   public <T> T callWithRetry(Callable<T> proc, String methodName) {
     while (true) {
       try {

@@ -49,11 +49,10 @@ public class RegionManager {
   private final RangeMap<Comparable, Long> keyToRegionIdCache;
   private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
-  public static final int MAX_CACHE_CAPACITY = 4096;
+  private static final int MAX_CACHE_CAPACITY = 4096;
 
   // To avoid double retrieval, we used the async version of grpc
   // When rpc not returned, instead of call again, it wait for previous one done
-  //TODO: zhexuany not sure why test failed when we try to use RegionMager.getInstance
   public RegionManager(ReadOnlyPDClient pdClient) {
     this.pdClient = pdClient;
     regionCache =
@@ -103,6 +102,7 @@ public class RegionManager {
     return getRegionById(regionId);
   }
 
+  @SuppressWarnings("unchecked")
   public void invalidateRegion(long regionId) {
     lock.writeLock().lock();
     try {
@@ -145,6 +145,8 @@ public class RegionManager {
     }
   }
 
+
+  @SuppressWarnings("unchecked")
   private boolean putRegion(TiRegion region) {
     if (!region.hasStartKey() || !region.hasEndKey()) return false;
 

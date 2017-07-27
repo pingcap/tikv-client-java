@@ -78,7 +78,15 @@ public class TiSelectRequest implements Serializable {
     }
   }
 
-  public SelectRequest buildIndexScan() {
+  public SelectRequest buildScan(boolean idxScan) {
+    if(idxScan)  {
+      return buildIndexScan();
+    } else {
+      return buildTableScan();
+    }
+  }
+
+  private SelectRequest buildIndexScan() {
     checkArgument(startTs != 0, "timestamp is 0");
     SelectRequest.Builder builder = SelectRequest.newBuilder();
     if (indexInfo == null) {
@@ -92,7 +100,7 @@ public class TiSelectRequest implements Serializable {
         .build();
   }
 
-  public SelectRequest buildTableScan() {
+  private SelectRequest buildTableScan() {
     checkArgument(startTs != 0, "timestamp is 0");
     SelectRequest.Builder builder = SelectRequest.newBuilder();
     getFields().forEach(expr -> builder.addFields(expr.toProto()));
@@ -163,7 +171,7 @@ public class TiSelectRequest implements Serializable {
     return this;
   }
 
-  public TiIndexInfo getIndexInfo() {
+  TiIndexInfo getIndexInfo() {
     return indexInfo;
   }
 
@@ -193,7 +201,7 @@ public class TiSelectRequest implements Serializable {
     return this;
   }
 
-  public int getTimeZoneOffset() {
+  int getTimeZoneOffset() {
     return timeZoneOffset;
   }
 
@@ -224,7 +232,7 @@ public class TiSelectRequest implements Serializable {
     return this;
   }
 
-  public long getStartTs() {
+  long getStartTs() {
     return startTs;
   }
 
@@ -280,12 +288,12 @@ public class TiSelectRequest implements Serializable {
    * @param byItem is a TiByItem.
    * @return a SelectBuilder
    */
-  public TiSelectRequest addOrderByItem(TiByItem byItem) {
+  TiSelectRequest addOrderByItem(TiByItem byItem) {
     orderByItems.add(requireNonNull(byItem, "byItem is null"));
     return this;
   }
 
-  public List<TiByItem> getOrderByItems() {
+  List<TiByItem> getOrderByItems() {
     return orderByItems;
   }
 
@@ -332,10 +340,9 @@ public class TiSelectRequest implements Serializable {
     return this;
   }
 
-  public TiSelectRequest resetRanges(List<KeyRange> ranges) {
+  public void resetRanges(List<KeyRange> ranges) {
     keyRanges.clear();
     keyRanges.addAll(ranges);
-    return this;
   }
 
   public List<KeyRange> getRanges() {
@@ -356,7 +363,7 @@ public class TiSelectRequest implements Serializable {
     StringBuilder sb = new StringBuilder();
     if (tableInfo != null) {
       sb.append(String.format("[table: %s] ", tableInfo.toString()));
-      tableInfo.toString();
+      sb.append(tableInfo.toString());
     }
 
     for (TiColumnRef ref : fields) {

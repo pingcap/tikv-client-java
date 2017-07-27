@@ -38,7 +38,7 @@ public class TiIndexInfo implements Serializable {
   private final boolean isFakePrimaryKey;
 
   @JsonCreator
-  public TiIndexInfo(
+  TiIndexInfo(
       @JsonProperty("id") long id,
       @JsonProperty("idx_name") CIStr name,
       @JsonProperty("tbl_name") CIStr tableName,

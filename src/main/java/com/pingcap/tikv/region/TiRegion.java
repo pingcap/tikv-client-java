@@ -92,7 +92,7 @@ public class TiRegion implements Serializable {
    * @param leaderStoreID is leader peer id.
    * @return false if no peers matches the store id.
    */
-  public boolean switchPeer(long leaderStoreID) {
+  boolean switchPeer(long leaderStoreID) {
     return meta.getPeersList()
         .stream()
         .anyMatch(
@@ -114,11 +114,11 @@ public class TiRegion implements Serializable {
     return peer != null && meta.hasStartKey() && meta.hasEndKey();
   }
 
-  public boolean hasStartKey() {
+  boolean hasStartKey() {
     return meta.hasStartKey();
   }
 
-  public boolean hasEndKey() {
+  boolean hasEndKey() {
     return meta.hasEndKey();
   }
 
@@ -137,7 +137,7 @@ public class TiRegion implements Serializable {
    * @param storeID leader store ID
    * @return false if peers are unreachable.
    */
-  public boolean onRequestFail(long storeID) {
+  boolean onRequestFail(long storeID) {
     if (this.peer.getStoreId() == storeID) {
       return true;
     }

@@ -16,7 +16,10 @@
 
 package com.pingcap.tikv.statistics;
 
+import com.google.protobuf.ByteString;
 import com.pingcap.tidb.tipb.Chunk;
+import com.pingcap.tidb.tipb.RowMeta;
+import com.pingcap.tikv.operation.ChunkIterator;
 import org.junit.Test;
 import org.junit.Before;
 
@@ -50,7 +53,7 @@ public class TiHistogramTest {
 //          + "   \"upper_bound\": 1,\n"
 //          + "   \"lower_bound\": 1,\n"
 //          + "}";
-    private List<Histogram> histograms = new ArrayList<>();
+    private List<Chunk> chunks = new ArrayList<>();
 @Before
 public void setup() throws Exception {
     /*
@@ -60,7 +63,15 @@ public void setup() throws Exception {
      * |       25 |        0 |       1 |         0 |     1 |       1 | 1           | 1           |
      * +----------+----------+---------+-----------+-------+---------+-------------+-------------+
      */
-
+    String histogramStr="\b6\b\000\b\002\b\000\b\002\b\002\002\0021\002\0021\b6\b\000\b\002\b\002\b\002\b\002\002\0022\002\0022";
+    Chunk chunk = Chunk.newBuilder()
+            .setRowsData(ByteString.copyFromUtf8(histogramStr))
+            .addRowsMeta(0, RowMeta.newBuilder().setHandle(1).setLength(18))
+            .addRowsMeta(1, RowMeta.newBuilder().setHandle(2).setLength(18))
+            .build();
+    chunks.add(chunk);
+    //get each one element of histogram from chunks
+    chunks.get(0).getRowsData().toStringUtf8();
 }
 
 /** 
@@ -69,8 +80,10 @@ public void setup() throws Exception {
 * 
 */ 
 @Test
-public void testEqualRowCount() throws Exception { 
-//TODO: Test goes here... 
+public void testEqualRowCount() throws Exception {
+    //get each one element of histogram from chunks
+    chunks.get(0).getRowsData().toStringUtf8();
+    ChunkIterator chunkIterator = new ChunkIterator(chunks);
 } 
 
 /** 

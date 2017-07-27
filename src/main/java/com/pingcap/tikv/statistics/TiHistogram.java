@@ -26,10 +26,7 @@ import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiConstant;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.expression.scalar.Equal;
-import com.pingcap.tikv.meta.TiDBInfo;
-import com.pingcap.tikv.meta.TiIndexInfo;
-import com.pingcap.tikv.meta.TiSelectRequest;
-import com.pingcap.tikv.meta.TiTableInfo;
+import com.pingcap.tikv.meta.*;
 import com.pingcap.tikv.operation.SchemaInfer;
 import com.pingcap.tikv.predicates.PredicateUtils;
 import com.pingcap.tikv.predicates.ScanBuilder;
@@ -45,16 +42,16 @@ import java.util.List;
 
 public class TiHistogram {
 
-  private final String DB_NAME = "mysql"; //the name of database
-  private final String TABLE_NAME = "stats_buckets"; //the name of table
-  private final String TABLE_ID = "table_id"; //the ID of table
-  private final String IS_INDEX = "is_index"; // whether or not have an index
-  private final String HIST_ID = "hist_id"; //Column ID for each histogram
-  private final String BUCKET_ID = "bucket_id"; //the ID of bucket
-  private final String COUNT = "count"; //the total number of bucket
-  private final String REPEATS = "repeats"; //repeats values in histogram
-  private final String LOWER_BOUND = "lower_bound"; //lower bound of histogram
-  private final String UPPER_BOUND = "upper_bound"; //upper bound of histogram
+  private static final String DB_NAME = "mysql"; //the name of database
+  private static final String TABLE_NAME = "stats_buckets"; //the name of table
+  private static final String TABLE_ID = "table_id"; //the ID of table
+  private static final String IS_INDEX = "is_index"; // whether or not have an index
+  private static final String HIST_ID = "hist_id"; //Column ID for each histogram
+  private static final String BUCKET_ID = "bucket_id"; //the ID of bucket
+  private static final String COUNT = "count"; //the total number of bucket
+  private static final String REPEATS = "repeats"; //repeats values in histogram
+  private static final String LOWER_BOUND = "lower_bound"; //lower bound of histogram
+  private static final String UPPER_BOUND = "upper_bound"; //upper bound of histogram
 
   //Histogram
   public Histogram histogram = new Histogram();
@@ -62,11 +59,10 @@ public class TiHistogram {
   private static TiConfiguration conf =
       TiConfiguration.createDefault(ImmutableList.of("127.0.0.1:" + 2379));
   private static TiCluster cluster = TiCluster.getCluster(conf);
-  private static Snapshot snapshot = cluster.createSnapshot();
 
-  // histogramFromStorage from the storage to histogram.
-  public Histogram histogramFromStorage(
-    long tableID, long isIndex, long colID) {
+  //createHistogram is func of create Histogram information
+  public static Histogram createHistogram(
+    long tableID, long isIndex, long colID, Snapshot snapshot) {
     Catalog cat = cluster.getCatalog();
     TiDBInfo db = cat.getDatabase(DB_NAME);
     TiTableInfo table = cat.getTable(db, TABLE_NAME);
@@ -83,7 +79,6 @@ public class TiHistogram {
     selReq
         .addRanges(scanPlan.getKeyRanges())
         .setTableInfo(table)
-//        .setIndexInfo(index)
         .addField(TiColumnRef.create(TABLE_ID, table))
         .addField(TiColumnRef.create(IS_INDEX, table))
         .addField(TiColumnRef.create(HIST_ID, table))

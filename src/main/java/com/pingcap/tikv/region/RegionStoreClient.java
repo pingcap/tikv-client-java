@@ -35,7 +35,20 @@ import com.pingcap.tikv.exception.SelectException;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.kvproto.Coprocessor;
 import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
-import com.pingcap.tikv.kvproto.Kvrpcpb.*;
+import com.pingcap.tikv.kvproto.Kvrpcpb.BatchGetRequest;
+import com.pingcap.tikv.kvproto.Kvrpcpb.BatchGetResponse;
+import com.pingcap.tikv.kvproto.Kvrpcpb.Context;
+import com.pingcap.tikv.kvproto.Kvrpcpb.GetRequest;
+import com.pingcap.tikv.kvproto.Kvrpcpb.GetResponse;
+import com.pingcap.tikv.kvproto.Kvrpcpb.KvPair;
+import com.pingcap.tikv.kvproto.Kvrpcpb.RawDeleteRequest;
+import com.pingcap.tikv.kvproto.Kvrpcpb.RawDeleteResponse;
+import com.pingcap.tikv.kvproto.Kvrpcpb.RawGetRequest;
+import com.pingcap.tikv.kvproto.Kvrpcpb.RawGetResponse;
+import com.pingcap.tikv.kvproto.Kvrpcpb.RawPutRequest;
+import com.pingcap.tikv.kvproto.Kvrpcpb.RawPutResponse;
+import com.pingcap.tikv.kvproto.Kvrpcpb.ScanRequest;
+import com.pingcap.tikv.kvproto.Kvrpcpb.ScanResponse;
 import com.pingcap.tikv.kvproto.Metapb.Store;
 import com.pingcap.tikv.kvproto.TikvGrpc;
 import com.pingcap.tikv.kvproto.TikvGrpc.TikvBlockingStub;
@@ -49,6 +62,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, TikvStub> {
+
   private final Context context;
   private final TikvBlockingStub blockingStub;
   private final TikvStub asyncStub;
@@ -59,8 +73,6 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
   private final int ReqTypeIndex = 102;
 
   private static final int MAX_MSG_SIZE = 134217728;
-  private static final int MAX_DEADLINE = 10;
-  private static final TimeUnit DEF_DEADLINE_UNIT = TimeUnit.MINUTES;
 
   public ByteString get(ByteString key, long version) {
     GetRequest request =
@@ -194,7 +206,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
     return scanHelper(resp);
   }
 
-  public Future<List<KvPair>> scanAsync(ByteString startKey, long version, boolean keyOnly) {
+  private Future<List<KvPair>> scanAsync(ByteString startKey, long version, boolean keyOnly) {
     FutureObserver<List<KvPair>, ScanResponse> responseObserver =
         new FutureObserver<>(this::scanHelper);
 
@@ -269,42 +281,40 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
     channel.shutdown();
   }
 
-  public static final int MAX_CACHE_CAPACITY = 64;
+  private static final int MAX_CACHE_CAPACITY = 64;
   private static final Cache<String, ManagedChannel> connPool =
       CacheBuilder.newBuilder().maximumSize(MAX_CACHE_CAPACITY).build();
 
+  private static ManagedChannel createNewChannel(String addressStr) {
+    HostAndPort address;
+    try {
+        address = HostAndPort.fromString(addressStr);
+      } catch (Exception e) {
+        throw new IllegalArgumentException("failed to form address");
+      }
+    ManagedChannel channel = ManagedChannelBuilder.forAddress(address.getHostText(), address.getPort())
+              .maxInboundMessageSize(MAX_MSG_SIZE)
+              .usePlaintext(true)
+              .build();
+      connPool.put(addressStr, channel);
+      return channel;
+  }
+
   public static RegionStoreClient create(
       TiRegion region, Store store, TiSession session, RegionManager regionManager) {
-    RegionStoreClient client = null;
+    RegionStoreClient client;
     String addressStr = store.getAddress();
-    try {
-      ManagedChannel channel;
-      channel = connPool.getIfPresent(addressStr);
-      if (channel == null || channel.isShutdown()) {
-        HostAndPort address = HostAndPort.fromString(addressStr);
-        channel =
-            ManagedChannelBuilder.forAddress(address.getHostText(), address.getPort())
-                .maxInboundMessageSize(MAX_MSG_SIZE)
-                .usePlaintext(true)
-                .build();
-        connPool.put(addressStr, channel);
-      }
-      TikvBlockingStub blockingStub = TikvGrpc.newBlockingStub(channel);
-
-      TikvStub asyncStub = TikvGrpc.newStub(channel);
-
-      client =
-          new RegionStoreClient(region, session, regionManager, channel, blockingStub, asyncStub);
-    } catch (Exception e) {
-      if (client != null) {
-        try {
-          connPool.invalidate(addressStr);
-          client.close();
-        } catch (Exception ignore) {
-        }
-      }
-      throw e;
+    ManagedChannel channel;
+    channel = connPool.getIfPresent(addressStr);
+    if (channel == null || channel.isShutdown()) {
+      channel = createNewChannel(addressStr);
     }
+
+    TikvBlockingStub blockingStub = TikvGrpc.newBlockingStub(channel);
+
+    TikvStub asyncStub = TikvGrpc.newStub(channel);
+    client =
+        new RegionStoreClient(region, session, regionManager, channel, blockingStub, asyncStub);
     return client;
   }
 

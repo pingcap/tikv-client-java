@@ -1,17 +1,13 @@
 package com.pingcap.tikv;
 
+
 import com.google.common.collect.ImmutableList;
-import com.google.protobuf.ByteString;
 import com.pingcap.tikv.catalog.Catalog;
-import com.pingcap.tikv.codec.KeyUtils;
-import com.pingcap.tikv.codec.TableCodec;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiConstant;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.expression.scalar.Equal;
-import com.pingcap.tikv.expression.scalar.IsNull;
-import com.pingcap.tikv.expression.scalar.Not;
-import com.pingcap.tikv.kvproto.Coprocessor;
+import com.pingcap.tikv.expression.scalar.NotEqual;
 import com.pingcap.tikv.meta.TiDBInfo;
 import com.pingcap.tikv.meta.TiIndexInfo;
 import com.pingcap.tikv.meta.TiSelectRequest;
@@ -47,17 +43,16 @@ public class Main {
     Catalog cat = cluster.getCatalog();
     TiDBInfo db = cat.getDatabase("mysql");
     TiTableInfo table = cat.getTable(db, "stats_buckets");
-
     TiIndexInfo index = TiIndexInfo.generateFakePrimaryKeyIndex(table);
 
-    List<TiExpr> exprs =
+
+    List<TiExpr> firstAnd =
             ImmutableList.of(
                     new Equal(TiColumnRef.create("table_id", table), TiConstant.create(27)),
                     new Equal(TiColumnRef.create("is_index", table), TiConstant.create(0)),
                     new Equal(TiColumnRef.create("hist_id", table), TiConstant.create(1)));
     ScanBuilder scanBuilder = new ScanBuilder();
-    ScanBuilder.ScanPlan scanPlan = scanBuilder.buildScan(exprs, index, table);
-
+    ScanBuilder.ScanPlan scanPlan = scanBuilder.buildScan(firstAnd, index, table);
     TiSelectRequest selReq = new TiSelectRequest();
     selReq
             .addRanges(scanPlan.getKeyRanges())
@@ -71,7 +66,6 @@ public class Main {
             .addField(TiColumnRef.create("lower_bound", table))
             .addField(TiColumnRef.create("upper_bound", table))
             .setStartTs(snapshot.getVersion());
-
     if (conf.isIgnoreTruncate()) {
       selReq.setTruncateMode(TiSelectRequest.TruncateMode.IgnoreTruncation);
     } else if (conf.isTruncateAsWarning()) {
@@ -80,54 +74,23 @@ public class Main {
 
     selReq.addWhere(PredicateUtils.mergeCNFExpressions(scanPlan.getFilters()));
 
-    System.out.println(exprs);
     List<RangeSplitter.RegionTask> keyWithRegionTasks =
         RangeSplitter.newSplitter(cluster.getRegionManager())
             .splitRangeByRegion(selReq.getRanges());
     for (RangeSplitter.RegionTask task : keyWithRegionTasks) {
       Iterator<Row> it = snapshot.select(selReq, task);
-
       while (it.hasNext()) {
         Row r = it.next();
         SchemaInfer schemaInfer = SchemaInfer.create(selReq);
         for (int i = 0; i < r.fieldCount(); i++) {
           Object val = r.get(i, schemaInfer.getType(i));
-          //printByHandle(table, (long)val, scanPlan.getFilters());
           System.out.print(val);
           System.out.print(" ");
         }
         System.out.print("\n");
       }
     }
-  }
-
-  private static void printByHandle(TiTableInfo table, long handle, List<TiExpr> filters) {
-    ByteString startKey = TableCodec.encodeRowKeyWithHandle(table.getId(), handle);
-    ByteString endKey = ByteString.copyFrom(KeyUtils.prefixNext(startKey.toByteArray()));
-
-    TiSelectRequest selReq = new TiSelectRequest();
-    selReq.addRanges(
-        ImmutableList.of(
-            Coprocessor.KeyRange.newBuilder().setStart(startKey).setEnd(endKey).build()));
-    selReq.addField(TiColumnRef.create("c1", table));
-    selReq.addField(TiColumnRef.create("c2", table));
-    selReq.addField(TiColumnRef.create("c3", table));
-    selReq.addField(TiColumnRef.create("c4", table));
-    if (filters != null) {
-      filters.stream().forEach(selReq::addWhere);
-    }
-
-    Iterator<Row> it = snapshot.select(selReq);
-
-    while (it.hasNext()) {
-      Row r = it.next();
-      SchemaInfer schemaInfer = SchemaInfer.create(selReq);
-      for (int i = 0; i < r.fieldCount(); i++) {
-        Object val = r.get(i, schemaInfer.getType(i));
-        System.out.print(val);
-        System.out.print(" ");
-      }
-      System.out.print("\n");
-    }
+    cluster.close();
+    client.close();
   }
 }

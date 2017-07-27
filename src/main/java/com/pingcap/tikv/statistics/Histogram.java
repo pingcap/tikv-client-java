@@ -27,7 +27,7 @@ public class Histogram {
   public long lastUpdateVersion;
   public long id;
 
-  public Histogram() {}
+  Histogram() {}
 
   public Histogram(
       long numberOfDistinctValue,

@@ -37,7 +37,7 @@ public abstract class DataType implements Serializable {
   public static final int UNSPECIFIED_LEN = -1;
 
   // encoding/decoding flag
-  static final int NULL_FLAG = 0;
+  private static final int NULL_FLAG = 0;
   static final int BYTES_FLAG = 1;
   static final int COMPACT_BYTES_FLAG = 2;
   static final int INT_FLAG = 3;

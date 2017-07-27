@@ -21,6 +21,7 @@ import com.google.common.primitives.UnsignedBytes;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.exception.CastingException;
 import java.util.Comparator;
+import javax.annotation.Nonnull;
 
 /**
  * Wrap objects into comparable types ByteString and byte[] are compared as unsigned lexicographical
@@ -55,7 +56,7 @@ public class Comparables {
     }
 
     @Override
-    public int compareTo(ComparableBytes other) {
+    public int compareTo(@Nonnull ComparableBytes other) {
       // in context of range compare and bytes compare
       // null order is not defined and causes exception
       requireNonNull(other, "other is null");
@@ -76,7 +77,7 @@ public class Comparables {
     }
 
     @Override
-    public int compareTo(ComparableByteString other) {
+    public int compareTo(@Nonnull ComparableByteString other) {
       requireNonNull(other, "other is null");
       ByteString otherBytes = other.bytes;
       int n = Math.min(bytes.size(), otherBytes.size());
