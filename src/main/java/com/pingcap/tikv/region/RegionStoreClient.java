@@ -35,6 +35,7 @@ import com.pingcap.tikv.exception.SelectException;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.kvproto.Coprocessor;
 import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
+import com.pingcap.tikv.kvproto.Kvrpcpb;
 import com.pingcap.tikv.kvproto.Kvrpcpb.BatchGetRequest;
 import com.pingcap.tikv.kvproto.Kvrpcpb.BatchGetResponse;
 import com.pingcap.tikv.kvproto.Kvrpcpb.Context;
@@ -226,7 +227,6 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
   }
 
   private List<KvPair> scanHelper(ScanResponse resp) {
-    if (resp.hasRegionError()) {
       throw new RegionException(resp.getRegionError());
     }
     return resp.getPairsList();
