@@ -56,13 +56,12 @@ public class TiHistogram {
   //Histogram
   public Histogram histogram = new Histogram();
 
-  private static TiConfiguration conf =
-      TiConfiguration.createDefault(ImmutableList.of("127.0.0.1:" + 2379));
-  private static TiCluster cluster = TiCluster.getCluster(conf);
+  //Bucket
+  public static Bucket bucket = new Bucket();
 
   //createHistogram is func of create Histogram information
   public static Histogram createHistogram(
-    long tableID, long isIndex, long colID, Snapshot snapshot) {
+    long tableID, long isIndex, long colID, Snapshot snapshot,TiConfiguration conf,TiCluster cluster) {
     Catalog cat = cluster.getCatalog();
     TiDBInfo db = cat.getDatabase(DB_NAME);
     TiTableInfo table = cat.getTable(db, TABLE_NAME);
@@ -89,11 +88,6 @@ public class TiHistogram {
         .addField(TiColumnRef.create(UPPER_BOUND, table))
         .setStartTs(snapshot.getVersion());
 
-    if (conf.isIgnoreTruncate()) {
-      selReq.setTruncateMode(TiSelectRequest.TruncateMode.IgnoreTruncation);
-    } else if (conf.isTruncateAsWarning()) {
-      selReq.setTruncateMode(TiSelectRequest.TruncateMode.TruncationAsWarning);
-    }
     selReq.addWhere(PredicateUtils.mergeCNFExpressions(scanPlan.getFilters()));
 
     List<RangeSplitter.RegionTask> keyWithRegionTasks =
@@ -101,7 +95,7 @@ public class TiHistogram {
             .splitRangeByRegion(selReq.getRanges());
     for (RangeSplitter.RegionTask worker : keyWithRegionTasks) {
       Iterator<Row> it = snapshot.select(selReq, worker);
-      Bucket bucket = new Bucket();
+
       while (it.hasNext()) {
         SchemaInfer schemaInfer = SchemaInfer.create(selReq);
         Row row = it.next();
@@ -124,7 +118,6 @@ public class TiHistogram {
 
   // equalRowCount estimates the row count where the column equals to value.
   public float equalRowCount(ByteString values) {
-    Bucket bucket = new Bucket();
     int index = bucket.lowerBound.compareTo(values);
     if (index == histogram.buckets.length) {
       return 0;
@@ -158,7 +151,6 @@ public class TiHistogram {
 
   // lessRowCount estimates the row count where the column less than value.
   public float lessRowCount(ByteString values) {
-    Bucket bucket = new Bucket();
     int index = bucket.lowerBound.compareTo(values);
     if (index == histogram.buckets.length) {
       return 0;
