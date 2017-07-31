@@ -61,7 +61,7 @@ public class TiHistogram {
 
   //createHistogram is func of create Histogram information
   public static Histogram createHistogram(
-    long tableID, long isIndex, long colID, Snapshot snapshot,TiConfiguration conf,TiCluster cluster) {
+    long tableID, long isIndex, long colID, Snapshot snapshot,TiConfiguration conf,TiCluster cluster) throws Exception{
     Catalog cat = cluster.getCatalog();
     TiDBInfo db = cat.getDatabase(DB_NAME);
     TiTableInfo table = cat.getTable(db, TABLE_NAME);
@@ -113,6 +113,8 @@ public class TiHistogram {
         }
       }
     }
+    cluster.close();
+
     return new Histogram();
   }
 

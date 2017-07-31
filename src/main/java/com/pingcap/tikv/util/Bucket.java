@@ -28,6 +28,16 @@ public class Bucket {
     this.upperBound = upperBound;
   }
 
+  @Override
+  public String toString() {
+    return "Bucket{" +
+            "count=" + count +
+            ", repeats=" + repeats +
+            ", lowerBound=" + lowerBound +
+            ", upperBound=" + upperBound +
+            '}';
+  }
+
   public Bucket() {}
 
   public long getCount() {

@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.pingcap.tikv.types.Types.*;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 public class TiHistogramTest {
@@ -40,12 +41,6 @@ public class TiHistogramTest {
   @Before
   public void setup() throws Exception {
     /*
-     * +----------+----------+---------+-----------+-------+---------+-------------+-------------+
-     * | table_id | is_index | hist_id | bucket_id | count | repeats | upper_bound | lower_bound |
-     * +----------+----------+---------+-----------+-------+---------+-------------+-------------+
-     * |       27 |        0 |       1 |         0 |     1 |       1 | 1           | 1           |
-     * +----------+----------+---------+-----------+-------+---------+-------------+-------------+
-     *
      *rows_data:"\b6   \b\000  \b\002   \b\000   \b\002  \b\002\  002\0021\    002\0021
      *            27    0      1         0       1       1        [B@2ad48653   [B@6bb4dd34
 	 *           \b6   \b\000  \b\002   \b\002   \b\002  \b\002   \002\0022    \002\0022"
@@ -89,16 +84,16 @@ public class TiHistogramTest {
     assertEquals(row.getLong(3), 0);
     assertEquals(row.getLong(4), 1);
     assertEquals(row.getLong(5), 1);
-//    assertEquals(row.getBytes(6), 49);
-//    assertEquals(row.getBytes(7), 49);
+    assertArrayEquals(row.getBytes(6),ByteString.copyFromUtf8("1").toByteArray());
+    assertArrayEquals(row.getBytes(6),ByteString.copyFromUtf8("1").toByteArray());
     assertEquals(row.getLong(8), 27);
     assertEquals(row.getLong(9), 0);
     assertEquals(row.getLong(10), 1);
     assertEquals(row.getLong(11), 1);
     assertEquals(row.getLong(12), 1);
     assertEquals(row.getLong(13), 1);
-//    assertEquals(row.getBytes(14), "50");
-//    assertEquals(row.getBytes(15), "50");
+    assertArrayEquals(row.getBytes(14), ByteString.copyFromUtf8("2").toByteArray());
+    assertArrayEquals(row.getBytes(15), ByteString.copyFromUtf8("2").toByteArray());
   }
 
   /** Method: equalRowCount(ByteString values) */
@@ -106,8 +101,6 @@ public class TiHistogramTest {
   public void testEqualRowCount() throws Exception {
     //get each one element of histogram from chunks
     chunks.get(0).getRowsData().toStringUtf8();
-
-
   }
 
   /** Method: greaterRowCount(ByteString values) */

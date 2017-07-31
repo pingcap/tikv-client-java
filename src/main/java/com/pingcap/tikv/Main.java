@@ -7,7 +7,6 @@ import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiConstant;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.expression.scalar.Equal;
-import com.pingcap.tikv.expression.scalar.NotEqual;
 import com.pingcap.tikv.meta.TiDBInfo;
 import com.pingcap.tikv.meta.TiIndexInfo;
 import com.pingcap.tikv.meta.TiSelectRequest;
@@ -84,7 +83,7 @@ public class Main {
         SchemaInfer schemaInfer = SchemaInfer.create(selReq);
         for (int i = 0; i < r.fieldCount(); i++) {
           Object val = r.get(i, schemaInfer.getType(i));
-          System.out.print(val);
+          System.out.print(val.toString());
           System.out.print(" ");
         }
         System.out.print("\n");
