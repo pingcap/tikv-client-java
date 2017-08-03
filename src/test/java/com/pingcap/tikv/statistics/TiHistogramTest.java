@@ -16,15 +16,20 @@
 
 package com.pingcap.tikv.statistics;
 
+import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import com.pingcap.tidb.tipb.Chunk;
-import com.pingcap.tidb.tipb.DataType;
 import com.pingcap.tidb.tipb.RowMeta;
+import com.pingcap.tikv.Snapshot;
+import com.pingcap.tikv.TiCluster;
+import com.pingcap.tikv.TiConfiguration;
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.operation.ChunkIterator;
 import com.pingcap.tikv.row.ObjectRowImpl;
 import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.types.DataTypeFactory;
+import com.pingcap.tikv.util.Bucket;
+import com.pingcap.tikv.util.Comparables;
 import org.junit.Test;
 import org.junit.Before;
 
@@ -36,14 +41,25 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 public class TiHistogramTest {
-  private List<Chunk> chunks = new ArrayList<>();
+  private static TiConfiguration conf =
+          TiConfiguration.createDefault(ImmutableList.of("127.0.0.1:" + 2379));
+  private static TiCluster cluster = TiCluster.getCluster(conf);
+  private static Snapshot snapshot = cluster.createSnapshot();
+  private static List<Chunk> chunks = new ArrayList<>();
+  private static TiHistogram tiHistogram = new TiHistogram();
 
   @Before
   public void setup() throws Exception {
     /*
+     * +----------+----------+---------+-----------+-------+---------+-------------+-------------+
+     * | table_id | is_index | hist_id | bucket_id | count | repeats | upper_bound | lower_bound |
+     * +----------+----------+---------+-----------+-------+---------+-------------+-------------+
+     * |       27 |        0 |       1 |         0 |     1 |       1 | 1           | 1           |
+     * +----------+----------+---------+-----------+-------+---------+-------------+-------------+
+     *
      *rows_data:"\b6   \b\000  \b\002   \b\000   \b\002  \b\002\  002\0021\    002\0021
      *            27    0      1         0       1       1        [B@2ad48653   [B@6bb4dd34
-	 *           \b6   \b\000  \b\002   \b\002   \b\002  \b\002   \002\0022    \002\0022"
+     *           \b6   \b\000  \b\002   \b\002   \b\002  \b\002   \002\0022    \002\0022"
      *            27    0        1       1        1        1       [B@7d9f158f  [B@45efd90f
      */
     String histogramStr =
@@ -84,8 +100,8 @@ public class TiHistogramTest {
     assertEquals(row.getLong(3), 0);
     assertEquals(row.getLong(4), 1);
     assertEquals(row.getLong(5), 1);
-    assertArrayEquals(row.getBytes(6),ByteString.copyFromUtf8("1").toByteArray());
-    assertArrayEquals(row.getBytes(6),ByteString.copyFromUtf8("1").toByteArray());
+    assertArrayEquals(row.getBytes(6), ByteString.copyFromUtf8("1").toByteArray());
+    assertArrayEquals(row.getBytes(7), ByteString.copyFromUtf8("1").toByteArray());
     assertEquals(row.getLong(8), 27);
     assertEquals(row.getLong(9), 0);
     assertEquals(row.getLong(10), 1);
@@ -96,58 +112,25 @@ public class TiHistogramTest {
     assertArrayEquals(row.getBytes(15), ByteString.copyFromUtf8("2").toByteArray());
   }
 
-  /** Method: equalRowCount(ByteString values) */
   @Test
-  public void testEqualRowCount() throws Exception {
-    //get each one element of histogram from chunks
-    chunks.get(0).getRowsData().toStringUtf8();
-  }
+  public void testHistogram() throws Exception{
+    Bucket[] buckets = new Bucket[4];
+    Bucket bucket = new Bucket();
+    bucket.setCount(2);
+    bucket.setRepeats(1);
+    bucket.setLowerBound(Comparables.wrap("1"));
+    bucket.setUpperBound(Comparables.wrap("1"));
 
-  /** Method: greaterRowCount(ByteString values) */
-  @Test
-  public void testGreaterRowCount() throws Exception {
-    //TODO: Test goes here...
-  }
+    Histogram histogram = tiHistogram.createHistogram(27, 0, 1, snapshot, conf, cluster);
+    histogram.setId(10);
+    histogram.setBuckets(buckets);
+    histogram.setLastUpdateVersion(1);
+    histogram.setNullCount(0);
+    histogram.setNumberOfDistinctValue(1);
 
-  /** Method: greaterAndEqRowCount(ByteString values) */
-  @Test
-  public void testGreaterAndEqRowCount() throws Exception {
-    //TODO: Test goes here...
-  }
+    int index = 4;
+    int length = histogram.getBuckets().length;
+    assertEquals(index,length);
 
-  /** Method: lessRowCount(ByteString values) */
-  @Test
-  public void testLessRowCount() throws Exception {
-    //TODO: Test goes here...
-  }
-
-  /** Method: lessAndEqRowCount(ByteString values) */
-  @Test
-  public void testLessAndEqRowCount() throws Exception {
-    //TODO: Test goes here...
-  }
-
-  /** Method: betweenRowCount(ByteString a, ByteString b) */
-  @Test
-  public void testBetweenRowCount() throws Exception {
-    //TODO: Test goes here...
-  }
-
-  /** Method: totalRowCount() */
-  @Test
-  public void testTotalRowCount() throws Exception {
-    //TODO: Test goes here...
-  }
-
-  /** Method: bucketRowCount() */
-  @Test
-  public void testBucketRowCount() throws Exception {
-    //TODO: Test goes here...
-  }
-
-  /** Method: inBucketBetweenCount() */
-  @Test
-  public void testInBucketBetweenCount() throws Exception {
-    //TODO: Test goes here...
   }
 }

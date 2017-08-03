@@ -44,7 +44,6 @@ public class Main {
     TiTableInfo table = cat.getTable(db, "stats_buckets");
     TiIndexInfo index = TiIndexInfo.generateFakePrimaryKeyIndex(table);
 
-
     List<TiExpr> firstAnd =
             ImmutableList.of(
                     new Equal(TiColumnRef.create("table_id", table), TiConstant.create(27)),

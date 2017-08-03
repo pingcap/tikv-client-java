@@ -18,8 +18,6 @@ package com.pingcap.tikv.statistics;
 
 import com.pingcap.tikv.util.Bucket;
 
-import java.util.Arrays;
-
 public class Histogram {
 
   //Histogram
@@ -29,18 +27,7 @@ public class Histogram {
   public long lastUpdateVersion;
   public long id;
 
-  Histogram() {}
-
-  @Override
-  public String toString() {
-    return "Histogram{" +
-            "numberOfDistinctValue=" + numberOfDistinctValue +
-            ", buckets=" + Arrays.toString(buckets) +
-            ", nullCount=" + nullCount +
-            ", lastUpdateVersion=" + lastUpdateVersion +
-            ", id=" + id +
-            '}';
-  }
+  public Histogram() {}
 
   public Histogram(
       long numberOfDistinctValue,

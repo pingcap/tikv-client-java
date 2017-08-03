@@ -20,22 +20,12 @@ import com.google.protobuf.ByteString;
 public class Bucket {
   public long count;
   public long repeats;
-  public Comparable<ByteString> lowerBound;
-  public Comparable<ByteString> upperBound;
+  public Comparable<Object> lowerBound;
+  public Comparable<Object> upperBound;
 
-  public Bucket(Comparable<ByteString> lowerBound, Comparable<ByteString> upperBound) {
+  public Bucket(Comparable<Object> lowerBound, Comparable<Object> upperBound) {
     this.lowerBound = lowerBound;
     this.upperBound = upperBound;
-  }
-
-  @Override
-  public String toString() {
-    return "Bucket{" +
-            "count=" + count +
-            ", repeats=" + repeats +
-            ", lowerBound=" + lowerBound +
-            ", upperBound=" + upperBound +
-            '}';
   }
 
   public Bucket() {}
@@ -56,19 +46,19 @@ public class Bucket {
     this.repeats = repeats;
   }
 
-  public Comparable<ByteString> getLowerBound() {
+  public Comparable<Object> getLowerBound() {
     return lowerBound;
   }
 
-  public void setLowerBound(Comparable<ByteString> lowerBound) {
+  public void setLowerBound(Comparable<Object> lowerBound) {
     this.lowerBound = lowerBound;
   }
 
-  public Comparable<ByteString> getUpperBound() {
+  public Comparable<Object> getUpperBound() {
     return upperBound;
   }
 
-  public void setUpperBound(Comparable<ByteString> upperBound) {
+  public void setUpperBound(Comparable<Object> upperBound) {
     this.upperBound = upperBound;
   }
 }

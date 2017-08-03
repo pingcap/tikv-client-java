@@ -60,7 +60,7 @@ public class TiHistogram {
   public static Bucket bucket = new Bucket();
 
   //createHistogram is func of create Histogram information
-  public static Histogram createHistogram(
+  public static Histogram createHistogram (
     long tableID, long isIndex, long colID, Snapshot snapshot,TiConfiguration conf,TiCluster cluster) throws Exception{
     Catalog cat = cluster.getCatalog();
     TiDBInfo db = cat.getDatabase(DB_NAME);
@@ -107,19 +107,17 @@ public class TiHistogram {
           bucket.upperBound = Comparables.wrap(row.getLong(4));
         } else {
           bucket.lowerBound =
-              (Comparable<ByteString>) row.get(3, DataTypeFactory.of(Types.TYPE_BLOB));
+              (Comparable<Object>) row.get(3, DataTypeFactory.of(Types.TYPE_BLOB));
           bucket.upperBound =
-              (Comparable<ByteString>) row.get(4, DataTypeFactory.of(Types.TYPE_BLOB));
+              (Comparable<Object>) row.get(4, DataTypeFactory.of(Types.TYPE_BLOB));
         }
       }
     }
-    cluster.close();
-
     return new Histogram();
   }
 
   // equalRowCount estimates the row count where the column equals to value.
-  public float equalRowCount(ByteString values) {
+  public float equalRowCount(Object values) {
     int index = bucket.lowerBound.compareTo(values);
     if (index == histogram.buckets.length) {
       return 0;
@@ -129,11 +127,11 @@ public class TiHistogram {
     if (c < 0) {
       return 0;
     }
-    return totalRowCount() / histogram.numberOfDistinctValue ;
+    return totalRowCount() / histogram.numberOfDistinctValue;
   }
 
   // greaterRowCount estimates the row count where the column greater than value.
-  public float greaterRowCount(ByteString values) {
+  public float greaterRowCount(Object values) {
     float lessCount = lessRowCount(values);
     float equalCount = equalRowCount(values);
     float greaterCount;
@@ -145,14 +143,14 @@ public class TiHistogram {
   }
 
   // greaterAndEqRowCount estimates the row count where the column less than or equal to value.
-  public float greaterAndEqRowCount(ByteString values) {
+  public float greaterAndEqRowCount(Object values) {
     float greaterCount = greaterRowCount(values);
     float equalCount = equalRowCount(values);
     return greaterCount + equalCount;
   }
 
   // lessRowCount estimates the row count where the column less than value.
-  public float lessRowCount(ByteString values) {
+  public float lessRowCount(Object values) {
     int index = bucket.lowerBound.compareTo(values);
     if (index == histogram.buckets.length) {
       return 0;
@@ -172,14 +170,14 @@ public class TiHistogram {
   }
 
   // lessAndEqRowCount estimates the row count where the column less than or equal to value.
-  public float lessAndEqRowCount(ByteString values) {
+  public float lessAndEqRowCount(Object values) {
     float lessCount = lessRowCount(values);
     float equalCount = equalRowCount(values);
     return lessCount + equalCount;
   }
 
   // betweenRowCount estimates the row count where column greater or equal to a and less than b.
-  public float betweenRowCount(ByteString a, ByteString b) {
+  public float betweenRowCount(Object a, Object b) {
     float lessCountA = lessRowCount(a);
     float lessCountB = lessRowCount(b);
     if (lessCountB >= lessCountA) {
