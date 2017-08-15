@@ -54,11 +54,11 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
         // no need update here. just let retry take control of this.
         this.regionManager.updateLeader(ctx.getRegionId(), ctx.getPeer().getStoreId());
         // TODO add sleep here
-        throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription("not leader"));
+        throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
       }
       if (error.hasStoreNotMatch()) {
         this.regionManager.invalidateStore(ctx.getPeer().getStoreId());
-        throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription("store not match"));
+        throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
       }
 
       // no need retry. NewRegions is returned in this response. we just need update RegionManage's region cache.
@@ -66,20 +66,20 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
         regionManager.onRegionStale(ctx.getRegionId(), error.getStaleEpoch().getNewRegionsList());
         this.regionManager.onRegionStale(
             ctx.getRegionId(), error.getStaleEpoch().getNewRegionsList());
-        throw new StatusRuntimeException(Status.fromCode(Status.Code.CANCELLED).withDescription("stale epoch"));
+        throw new StatusRuntimeException(Status.fromCode(Status.Code.CANCELLED).withDescription(error.toString()));
       }
 
       if (error.hasServerIsBusy()) {
         // TODO add some sleep here.
-        throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription("server is busy"));
+        throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
       }
 
       if (error.hasStaleCommand()) {
-        throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription("stale command"));
+        throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
       }
 
       if (error.hasRaftEntryTooLarge()) {
-        throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription("raft entry too large"));
+        throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
       }
       // for other errors, we only drop cache here and throw a retryable exception.
       this.regionManager.invalidateRegion(ctx.getRegionId());
