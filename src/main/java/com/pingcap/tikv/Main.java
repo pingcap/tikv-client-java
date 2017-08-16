@@ -6,7 +6,7 @@ import com.pingcap.tikv.catalog.Catalog;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiConstant;
 import com.pingcap.tikv.expression.TiExpr;
-import com.pingcap.tikv.expression.scalar.NotEqual;
+import com.pingcap.tikv.expression.scalar.Equal;
 import com.pingcap.tikv.meta.TiDBInfo;
 import com.pingcap.tikv.meta.TiIndexInfo;
 import com.pingcap.tikv.meta.TiSelectRequest;
@@ -40,27 +40,30 @@ public class Main {
     }
 
     Catalog cat = cluster.getCatalog();
-    TiDBInfo db = cat.getDatabase("test");
-    TiTableInfo table = cat.getTable(db, "t1");
-
+    TiDBInfo db = cat.getDatabase("mysql");
+    TiTableInfo table = cat.getTable(db, "stats_buckets");
     TiIndexInfo index = TiIndexInfo.generateFakePrimaryKeyIndex(table);
 
-    List<TiExpr> exprs =
-        ImmutableList.of(
-            new NotEqual(TiColumnRef.create("s1", table), TiConstant.create("xxxx")));
-
+    List<TiExpr> firstAnd =
+            ImmutableList.of(
+                    new Equal(TiColumnRef.create("table_id", table), TiConstant.create(27)),
+                    new Equal(TiColumnRef.create("is_index", table), TiConstant.create(0)),
+                    new Equal(TiColumnRef.create("hist_id", table), TiConstant.create(1)));
     ScanBuilder scanBuilder = new ScanBuilder();
-    ScanBuilder.ScanPlan scanPlan = scanBuilder.buildScan(exprs, index, table);
-
+    ScanBuilder.ScanPlan scanPlan = scanBuilder.buildScan(firstAnd, index, table);
     TiSelectRequest selReq = new TiSelectRequest();
     selReq
-        .addRanges(scanPlan.getKeyRanges())
-        .setTableInfo(table)
-//        .setIndexInfo(index)
-        .addField(TiColumnRef.create("c1", table))
-        .addField(TiColumnRef.create("s1", table))
-        .setStartTs(snapshot.getVersion());
-
+            .addRanges(scanPlan.getKeyRanges())
+            .setTableInfo(table)
+            .addField(TiColumnRef.create("table_id", table))
+            .addField(TiColumnRef.create("is_index", table))
+            .addField(TiColumnRef.create("hist_id", table))
+            .addField(TiColumnRef.create("bucket_id", table))
+            .addField(TiColumnRef.create("count", table))
+            .addField(TiColumnRef.create("repeats", table))
+            .addField(TiColumnRef.create("lower_bound", table))
+            .addField(TiColumnRef.create("upper_bound", table))
+            .setStartTs(snapshot.getVersion());
     if (conf.isIgnoreTruncate()) {
       selReq.setTruncateMode(TiSelectRequest.TruncateMode.IgnoreTruncation);
     } else if (conf.isTruncateAsWarning()) {
@@ -79,7 +82,7 @@ public class Main {
         SchemaInfer schemaInfer = SchemaInfer.create(selReq);
         for (int i = 0; i < r.fieldCount(); i++) {
           Object val = r.get(i, schemaInfer.getType(i));
-          System.out.print(val);
+          System.out.print(val.toString());
           System.out.print(" ");
         }
         System.out.print("\n");

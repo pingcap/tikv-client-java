@@ -30,7 +30,7 @@ public class ChunkIterator implements Iterator<ByteString> {
     private int bufOffset;
     private boolean eof;
 
-    ChunkIterator(List<Chunk> chunks) {
+    public ChunkIterator(List<Chunk> chunks) {
       // Read and then advance semantics
       this.chunks = chunks;
       chunkIndex = 0;
