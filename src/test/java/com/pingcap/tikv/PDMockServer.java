@@ -21,6 +21,7 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.Deque;
@@ -28,112 +29,109 @@ import java.util.Optional;
 import java.util.concurrent.LinkedBlockingDeque;
 
 public class PDMockServer extends PDGrpc.PDImplBase {
-  int port;
-  private long clusterId;
+    private final Deque<java.util.Optional<GetMembersResponse>> getMembersResp =
+            new LinkedBlockingDeque<java.util.Optional<GetMembersResponse>>();
+    private final Deque<GetRegionResponse> getRegionResp = new LinkedBlockingDeque<>();
+    private final Deque<GetRegionResponse> getRegionByIDResp = new LinkedBlockingDeque<>();
+    private final Deque<Optional<GetStoreResponse>> getStoreResp = new LinkedBlockingDeque<>();
+    int port;
+    private long clusterId;
+    private Server server;
 
-  private Server server;
-
-  void addGetMemberResp(GetMembersResponse r) {
-    getMembersResp.addLast(Optional.ofNullable(r));
-  }
-
-  private final Deque<java.util.Optional<GetMembersResponse>> getMembersResp =
-      new LinkedBlockingDeque<java.util.Optional<GetMembersResponse>>();
-
-  @Override
-  public void getMembers(GetMembersRequest request, StreamObserver<GetMembersResponse> resp) {
-    try {
-      resp.onNext(getMembersResp.removeFirst().get());
-      resp.onCompleted();
-    } catch (Exception e) {
-      resp.onError(Status.INTERNAL.asRuntimeException());
+    void addGetMemberResp(GetMembersResponse r) {
+        getMembersResp.addLast(Optional.ofNullable(r));
     }
-  }
 
-  @Override
-  public StreamObserver<TsoRequest> tso(StreamObserver<TsoResponse> resp) {
-    return new StreamObserver<TsoRequest>() {
-      private int physical = 1;
-      private int logical = 0;
-
-      @Override
-      public void onNext(TsoRequest value) {}
-
-      @Override
-      public void onError(Throwable t) {}
-
-      @Override
-      public void onCompleted() {
-        resp.onNext(GrpcUtils.makeTsoResponse(clusterId, physical++, logical++));
-        resp.onCompleted();
-      }
-    };
-  }
-
-  void addGetRegionResp(GetRegionResponse r) {
-    getRegionResp.addLast(r);
-  }
-
-  private final Deque<GetRegionResponse> getRegionResp = new LinkedBlockingDeque<>();
-
-  @Override
-  public void getRegion(GetRegionRequest request, StreamObserver<GetRegionResponse> resp) {
-    try {
-      resp.onNext(getRegionResp.removeFirst());
-      resp.onCompleted();
-    } catch (Exception e) {
-      resp.onError(Status.INTERNAL.asRuntimeException());
+    @Override
+    public void getMembers(GetMembersRequest request, StreamObserver<GetMembersResponse> resp) {
+        try {
+            resp.onNext(getMembersResp.removeFirst().get());
+            resp.onCompleted();
+        } catch (Exception e) {
+            resp.onError(Status.INTERNAL.asRuntimeException());
+        }
     }
-  }
 
-  void addGetRegionByIDResp(GetRegionResponse r) {
-    getRegionByIDResp.addLast(r);
-  }
+    @Override
+    public StreamObserver<TsoRequest> tso(StreamObserver<TsoResponse> resp) {
+        return new StreamObserver<TsoRequest>() {
+            private int physical = 1;
+            private int logical = 0;
 
-  private final Deque<GetRegionResponse> getRegionByIDResp = new LinkedBlockingDeque<>();
+            @Override
+            public void onNext(TsoRequest value) {
+            }
 
-  @Override
-  public void getRegionByID(GetRegionByIDRequest request, StreamObserver<GetRegionResponse> resp) {
-    try {
-      resp.onNext(getRegionByIDResp.removeFirst());
-      resp.onCompleted();
-    } catch (Exception e) {
-      resp.onError(Status.INTERNAL.asRuntimeException());
+            @Override
+            public void onError(Throwable t) {
+            }
+
+            @Override
+            public void onCompleted() {
+                resp.onNext(GrpcUtils.makeTsoResponse(clusterId, physical++, logical++));
+                resp.onCompleted();
+            }
+        };
     }
-  }
 
-  void addGetStoreResp(GetStoreResponse r) {
-    getStoreResp.addLast(Optional.ofNullable(r));
-  }
-
-  private final Deque<Optional<GetStoreResponse>> getStoreResp = new LinkedBlockingDeque<>();
-
-  public void getStore(GetStoreRequest request, StreamObserver<GetStoreResponse> resp) {
-    try {
-      resp.onNext(getStoreResp.removeFirst().get());
-      resp.onCompleted();
-    } catch (Exception e) {
-      resp.onError(Status.INTERNAL.asRuntimeException());
+    void addGetRegionResp(GetRegionResponse r) {
+        getRegionResp.addLast(r);
     }
-  }
 
-  void start(long clusterId) throws IOException {
-    try (ServerSocket s = new ServerSocket(0)) {
-      port = s.getLocalPort();
+    @Override
+    public void getRegion(GetRegionRequest request, StreamObserver<GetRegionResponse> resp) {
+        try {
+            resp.onNext(getRegionResp.removeFirst());
+            resp.onCompleted();
+        } catch (Exception e) {
+            resp.onError(Status.INTERNAL.asRuntimeException());
+        }
     }
-    this.clusterId = clusterId;
-    server = ServerBuilder.forPort(port).addService(this).build().start();
 
-    Runtime.getRuntime().addShutdownHook(new Thread(PDMockServer.this::stop));
-  }
-
-  void stop() {
-    if (server != null) {
-      server.shutdown();
+    void addGetRegionByIDResp(GetRegionResponse r) {
+        getRegionByIDResp.addLast(r);
     }
-  }
 
-  long getClusterId() {
-    return clusterId;
-  }
+    @Override
+    public void getRegionByID(GetRegionByIDRequest request, StreamObserver<GetRegionResponse> resp) {
+        try {
+            resp.onNext(getRegionByIDResp.removeFirst());
+            resp.onCompleted();
+        } catch (Exception e) {
+            resp.onError(Status.INTERNAL.asRuntimeException());
+        }
+    }
+
+    void addGetStoreResp(GetStoreResponse r) {
+        getStoreResp.addLast(Optional.ofNullable(r));
+    }
+
+    public void getStore(GetStoreRequest request, StreamObserver<GetStoreResponse> resp) {
+        try {
+            resp.onNext(getStoreResp.removeFirst().get());
+            resp.onCompleted();
+        } catch (Exception e) {
+            resp.onError(Status.INTERNAL.asRuntimeException());
+        }
+    }
+
+    void start(long clusterId) throws IOException {
+        try (ServerSocket s = new ServerSocket(0)) {
+            port = s.getLocalPort();
+        }
+        this.clusterId = clusterId;
+        server = ServerBuilder.forPort(port).addService(this).build().start();
+
+        Runtime.getRuntime().addShutdownHook(new Thread(PDMockServer.this::stop));
+    }
+
+    void stop() {
+        if (server != null) {
+            server.shutdown();
+        }
+    }
+
+    long getClusterId() {
+        return clusterId;
+    }
 }

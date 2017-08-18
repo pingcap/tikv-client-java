@@ -15,50 +15,56 @@
 
 package com.pingcap.tikv.util;
 
-import com.google.protobuf.ByteString;
+public class Bucket implements Comparable<Bucket> {
+    public long count;
+    public long repeats;
+    public Comparable<?> lowerBound;
+    public Comparable<?> upperBound;
 
-public class Bucket {
-  public long count;
-  public long repeats;
-  public Comparable<Object> lowerBound;
-  public Comparable<Object> upperBound;
+    public Bucket(long count, long repeats, Comparable<?> lowerBound, Comparable<?> upperBound) {
+        this.count = count;
+        this.repeats = repeats;
+        this.lowerBound = lowerBound;
+        this.upperBound = upperBound;
+    }
 
-  public Bucket(Comparable<Object> lowerBound, Comparable<Object> upperBound) {
-    this.lowerBound = lowerBound;
-    this.upperBound = upperBound;
-  }
+    public Bucket() {}
 
-  public Bucket() {}
+    @Override
+    public int compareTo(Bucket b) {
+        return Comparables.wrap(upperBound).compareTo(Comparables.wrap(b.upperBound));
+    }
 
-  public long getCount() {
-    return count;
-  }
+    public long getCount() {
+        return count;
+    }
 
-  public void setCount(long count) {
-    this.count = count;
-  }
+    public void setCount(long count) {
+        this.count = count;
+    }
 
-  public long getRepeats() {
-    return repeats;
-  }
+    public long getRepeats() {
+        return repeats;
+    }
 
-  public void setRepeats(long repeats) {
-    this.repeats = repeats;
-  }
+    public void setRepeats(long repeats) {
+        this.repeats = repeats;
+    }
 
-  public Comparable<Object> getLowerBound() {
-    return lowerBound;
-  }
+    public Comparable<?> getLowerBound() {
+        return lowerBound;
+    }
 
-  public void setLowerBound(Comparable<Object> lowerBound) {
-    this.lowerBound = lowerBound;
-  }
+    public void setLowerBound(Comparable<?> lowerBound) {
+        this.lowerBound = lowerBound;
+    }
 
-  public Comparable<Object> getUpperBound() {
-    return upperBound;
-  }
+    public Comparable<?> getUpperBound() {
+        return upperBound;
+    }
 
-  public void setUpperBound(Comparable<Object> upperBound) {
-    this.upperBound = upperBound;
-  }
+    public void setUpperBound(Comparable<?> upperBound) {
+        this.upperBound = upperBound;
+    }
+
 }

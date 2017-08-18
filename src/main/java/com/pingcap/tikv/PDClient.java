@@ -15,9 +15,6 @@
 
 package com.pingcap.tikv;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.net.HostAndPort;
 import com.google.protobuf.ByteString;
@@ -37,10 +34,17 @@ import com.pingcap.tikv.util.FutureObserver;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
+
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub>
     implements ReadOnlyPDClient {
@@ -249,6 +253,7 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub>
             GetMembersRequest.newBuilder().setHeader(RequestHeader.getDefaultInstance()).build();
         return stub.getMembers(request);
       } catch (Exception ignore) {
+        throw ignore;
       } finally {
         if (probChan != null) {
           probChan.shutdownNow();
@@ -328,7 +333,7 @@ public class PDClient extends AbstractGrpcClient<PDBlockingStub, PDStub>
     service.scheduleAtFixedRate(() -> updateLeader(null), 1, 1, TimeUnit.MINUTES);
   }
 
-  static PDClient createRaw(TiSession session) {
+  public static PDClient createRaw(TiSession session) {
     PDClient client = null;
     try {
       client = new PDClient(session);

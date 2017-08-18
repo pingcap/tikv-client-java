@@ -18,6 +18,7 @@ package com.pingcap.tikv;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.HostAndPort;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -73,7 +74,7 @@ public class TiConfiguration {
   }
 
 
-  boolean isIgnoreTruncate() {
+  public boolean isIgnoreTruncate() {
 
     return ignoreTruncate;
   }
@@ -83,7 +84,7 @@ public class TiConfiguration {
   }
 
 
-  boolean isTruncateAsWarning() {
+  public boolean isTruncateAsWarning() {
     return truncateAsWarning;
   }
 

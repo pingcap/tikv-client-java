@@ -15,45 +15,46 @@
 
 package com.pingcap.tikv.util;
 
-import static org.junit.Assert.assertTrue;
-
 import com.google.protobuf.ByteString;
-import java.util.function.Function;
 import org.junit.Test;
 
+import java.util.function.Function;
+
+import static org.junit.Assert.assertTrue;
+
 public class ComparablesTest {
-  @Test
-  public void wrapTest() throws Exception {
-    // compared as unsigned
-    testBytes(new byte[] {1, 2, -1, 10}, new byte[] {1, 2, 0, 10}, x -> x > 0);
-    testBytes(new byte[] {1, 2, 0, 10}, new byte[] {1, 2, 0, 10}, x -> x == 0);
-    testBytes(new byte[] {1, 2, 0, 10}, new byte[] {1, 2, 1, 10}, x -> x < 0);
-    testBytes(new byte[] {1, 2, 0, 10}, new byte[] {1, 2, 0}, x -> x > 0);
+    @Test
+    public void wrapTest() throws Exception {
+        // compared as unsigned
+        testBytes(new byte[]{1, 2, -1, 10}, new byte[]{1, 2, 0, 10}, x -> x > 0);
+        testBytes(new byte[]{1, 2, 0, 10}, new byte[]{1, 2, 0, 10}, x -> x == 0);
+        testBytes(new byte[]{1, 2, 0, 10}, new byte[]{1, 2, 1, 10}, x -> x < 0);
+        testBytes(new byte[]{1, 2, 0, 10}, new byte[]{1, 2, 0}, x -> x > 0);
 
-    testComparable(1, 2, x -> x < 0);
-    testComparable(13, 13, x -> x == 0);
-    testComparable(13, 2, x -> x > 0);
-  }
+        testComparable(1, 2, x -> x < 0);
+        testComparable(13, 13, x -> x == 0);
+        testComparable(13, 2, x -> x > 0);
+    }
 
-  private void testBytes(byte[] lhs, byte[] rhs, Function<Integer, Boolean> tester) {
-    ByteString lhsBS = ByteString.copyFrom(lhs);
-    ByteString rhsBS = ByteString.copyFrom(rhs);
+    private void testBytes(byte[] lhs, byte[] rhs, Function<Integer, Boolean> tester) {
+        ByteString lhsBS = ByteString.copyFrom(lhs);
+        ByteString rhsBS = ByteString.copyFrom(rhs);
 
-    Comparable lhsComp = Comparables.wrap(lhsBS);
-    Comparable rhsComp = Comparables.wrap(rhsBS);
+        Comparable lhsComp = Comparables.wrap(lhsBS);
+        Comparable rhsComp = Comparables.wrap(rhsBS);
 
-    assertTrue(tester.apply(lhsComp.compareTo(rhsComp)));
+        assertTrue(tester.apply(lhsComp.compareTo(rhsComp)));
 
-    lhsComp = Comparables.wrap(lhs);
-    rhsComp = Comparables.wrap(rhs);
+        lhsComp = Comparables.wrap(lhs);
+        rhsComp = Comparables.wrap(rhs);
 
-    assertTrue(tester.apply(lhsComp.compareTo(rhsComp)));
-  }
+        assertTrue(tester.apply(lhsComp.compareTo(rhsComp)));
+    }
 
-  private void testComparable(Object lhs, Object rhs, Function<Integer, Boolean> tester) {
-    Comparable lhsComp = Comparables.wrap(lhs);
-    Comparable rhsComp = Comparables.wrap(rhs);
+    private void testComparable(Object lhs, Object rhs, Function<Integer, Boolean> tester) {
+        Comparable lhsComp = Comparables.wrap(lhs);
+        Comparable rhsComp = Comparables.wrap(rhs);
 
-    assertTrue(tester.apply(lhsComp.compareTo(rhsComp)));
-  }
+        assertTrue(tester.apply(lhsComp.compareTo(rhsComp)));
+    }
 }
