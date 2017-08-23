@@ -22,8 +22,8 @@ import com.pingcap.tikv.kvproto.Kvrpcpb;
 import com.pingcap.tikv.kvproto.Pdpb;
 import com.pingcap.tikv.region.RegionManager;
 import io.grpc.Status;
-import io.grpc.Status.Code;
 import io.grpc.StatusRuntimeException;
+
 import java.util.function.Function;
 
 public class KVErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
