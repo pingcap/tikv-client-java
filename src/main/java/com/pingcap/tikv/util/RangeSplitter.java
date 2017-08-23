@@ -27,9 +27,13 @@ import com.pingcap.tikv.kvproto.Metapb;
 import com.pingcap.tikv.region.RegionManager;
 import com.pingcap.tikv.region.TiRegion;
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class RangeSplitter {
+
   public static class RegionTask implements Serializable {
     private final TiRegion region;
     private final Metapb.Store store;
