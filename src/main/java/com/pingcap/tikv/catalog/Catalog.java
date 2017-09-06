@@ -16,6 +16,7 @@
 package com.pingcap.tikv.catalog;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.pingcap.tikv.Snapshot;
 import com.pingcap.tikv.meta.TiDBInfo;
 import com.pingcap.tikv.meta.TiTableInfo;
@@ -24,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -35,27 +37,17 @@ public class Catalog {
   private CatalogCache metaCache;
 
   private static class CatalogCache {
-    private CatalogCache(HashMap<String, TiDBInfo> dbCache,
-                         HashMap<TiDBInfo, HashMap<String, TiTableInfo>> tableCache,
-                         CatalogTransaction transaction) {
-      this.dbCache = dbCache;
-      this.tableCache = tableCache;
+    private CatalogCache(CatalogTransaction transaction) {
       this.transaction = transaction;
+      this.dbCache = loadDatabases();
+      this.tableCache = new ConcurrentHashMap<>();
       this.currentVersion = transaction.getLatestSchemaVersion();
     }
 
-    private HashMap<String, TiDBInfo> dbCache = new HashMap<>();
-    private HashMap<TiDBInfo, HashMap<String, TiTableInfo>> tableCache = new HashMap<>();
+    private final Map<String, TiDBInfo> dbCache;
+    private final ConcurrentHashMap<TiDBInfo, Map<String, TiTableInfo>> tableCache;
     private CatalogTransaction transaction;
     private long currentVersion;
-
-    private HashMap<String, TiDBInfo> getDBCache() {
-      return dbCache;
-    }
-
-    private HashMap<TiDBInfo, HashMap<String, TiTableInfo>> getTableCache() {
-      return tableCache;
-    }
 
     public CatalogTransaction getTransaction() {
       return transaction;
@@ -64,12 +56,55 @@ public class Catalog {
     public long getVersion() {
       return currentVersion;
     }
+
+    public TiDBInfo getDatabase(String name) {
+      return dbCache.get(name);
+    }
+
+    public List<TiDBInfo> listDatabases() {
+      return ImmutableList.copyOf(dbCache.values());
+    }
+
+    public List<TiTableInfo> listTables(TiDBInfo db) {
+      Map<String, TiTableInfo> tableMap = tableCache.get(db);
+      if (tableMap == null) {
+        tableMap = loadTables(db);
+      }
+      return ImmutableList.copyOf(tableMap.values());
+    }
+
+    public TiTableInfo getTable(TiDBInfo db, String tableName) {
+      Map<String, TiTableInfo> tableMap = tableCache.get(db);
+      if (tableMap == null) {
+        tableMap = loadTables(db);
+      }
+      return tableMap.get(tableName);
+    }
+
+    private Map<String, TiTableInfo> loadTables(TiDBInfo db) {
+      List<TiTableInfo> tables = transaction.getTables(db.getId());
+      ImmutableMap.Builder<String, TiTableInfo> builder = ImmutableMap.builder();
+      for (TiTableInfo table : tables) {
+        builder.put(table.getName(), table);
+      }
+      Map<String, TiTableInfo> tableMap = builder.build();
+      tableCache.put(db, tableMap);
+      return tableMap;
+    }
+
+    private Map<String, TiDBInfo> loadDatabases() {
+      HashMap<String, TiDBInfo> newDBCache = new HashMap<>();
+
+      List<TiDBInfo> databases = transaction.getDatabases();
+      databases.forEach(db -> newDBCache.put(db.getName(), db));
+      return newDBCache;
+    }
   }
 
   public Catalog(Supplier<Snapshot> snapshotProvider, int refreshPeriod, TimeUnit periodUnit) {
     this.snapshotProvider = Objects.requireNonNull(snapshotProvider,
                                                    "Snapshot Provider is null");
-    metaCache = createNewMetaCache(new CatalogTransaction(snapshotProvider.get()));
+    metaCache = new CatalogCache(new CatalogTransaction(snapshotProvider.get()));
     service = Executors.newSingleThreadScheduledExecutor();
     service.scheduleAtFixedRate(() -> reloadCache(), refreshPeriod, refreshPeriod, periodUnit);
   }
@@ -77,7 +112,7 @@ public class Catalog {
   public Catalog(Supplier<Snapshot> snapshotProvider) {
     this.snapshotProvider = Objects.requireNonNull(snapshotProvider,
         "Snapshot Provider is null");
-    metaCache = createNewMetaCache(new CatalogTransaction(snapshotProvider.get()));
+    metaCache = new CatalogCache(new CatalogTransaction(snapshotProvider.get()));
   }
 
   private void reloadCache() {
@@ -85,53 +120,22 @@ public class Catalog {
     CatalogTransaction newTrx = new CatalogTransaction(snapshot);
     long latestVersion = newTrx.getLatestSchemaVersion();
     if (latestVersion > metaCache.getVersion()) {
-      metaCache = createNewMetaCache(newTrx);
+      metaCache = new CatalogCache(newTrx);
     }
-  }
-
-  private static CatalogCache createNewMetaCache(CatalogTransaction trx) {
-    HashMap<String, TiDBInfo> newDBCache = new HashMap<>();
-    HashMap<TiDBInfo, HashMap<String, TiTableInfo>> newTableCache = new HashMap<>();
-
-    List<TiDBInfo> databases = trx.getDatabases();
-    databases.forEach(db -> newDBCache.put(db.getName(), db));
-
-    for (TiDBInfo db : databases) {
-      List<TiTableInfo> tables = trx.getTables(db.getId());
-      for (TiTableInfo table : tables) {
-        newTableCache.compute(db, (key, tableMap) -> {
-          if (tableMap == null) {
-            HashMap<String, TiTableInfo> newTableMap = new HashMap<>();
-            newTableMap.put(table.getName(), table);
-            return newTableMap;
-          } else {
-            tableMap.put(table.getName(), table);
-            return tableMap;
-          }
-        });
-      }
-    }
-    return new CatalogCache(newDBCache, newTableCache, trx);
   }
 
   public List<TiDBInfo> listDatabases() {
-    return ImmutableList.copyOf(metaCache.getDBCache().values());
+    return metaCache.listDatabases();
   }
 
   public List<TiTableInfo> listTables(TiDBInfo database) {
     Objects.requireNonNull(database, "database is null");
-    Map<String, TiTableInfo> tables = metaCache.getTableCache().get(database);
-    if (tables == null) {
-      return null;
-    }
-    return ImmutableList.copyOf(tables.values());
+    return metaCache.listTables(database);
   }
-
-
 
   public TiDBInfo getDatabase(String dbName) {
     Objects.requireNonNull(dbName, "dbName is null");
-    return metaCache.getDBCache().get(dbName);
+    return metaCache.getDatabase(dbName);
   }
 
   public TiTableInfo getTable(String dbName, String tableName) {
@@ -145,14 +149,12 @@ public class Catalog {
   public TiTableInfo getTable(TiDBInfo database, String tableName) {
     Objects.requireNonNull(database, "database is null");
     Objects.requireNonNull(tableName, "tableName is null");
-    Map<String, TiTableInfo> tableMap = metaCache.getTableCache().get(database);
-    return tableMap.get(tableName);
+    return metaCache.getTable(database, tableName);
   }
 
   public TiTableInfo getTable(TiDBInfo database, long tableId) {
     Objects.requireNonNull(database, "database is null");
-    Map<String, TiTableInfo> tableMap = metaCache.getTableCache().get(database);
-    Collection<TiTableInfo> tables = tableMap.values();
+    Collection<TiTableInfo> tables = listTables(database);
     for (TiTableInfo table : tables) {
       if (table.getId() == tableId) {
         return table;

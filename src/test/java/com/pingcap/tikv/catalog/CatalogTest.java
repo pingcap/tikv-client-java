@@ -1,6 +1,7 @@
 package com.pingcap.tikv.catalog;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import com.google.common.collect.ImmutableList;
 import com.pingcap.tikv.KVMockServer;
@@ -107,16 +108,17 @@ public class CatalogTest {
     assertEquals("tEst1", names.get(1));
     assertEquals("test", names.get(2));
 
-    db = cat.getDatabase("TPCH_001");
-    tables = cat.listTables(db);
-    assertEquals(null, tables);
-
-    helper.dropDatabase(db.getId());
-    wrapper.call("reloadCache");
-    tables = cat.listTables(db);
-    assertEquals(null, tables);
-
     assertEquals(42, cat.getTable("global_temp", "test").getId());
     assertEquals(null, cat.getTable("global_temp", "test111"));
+
+    helper.dropTable(db.getId(), tables.get(0).getId());
+    helper.setSchemaVersion(668);
+    wrapper.call("reloadCache");
+    tables = cat.listTables(db);
+    assertEquals(2, tables.size());
+
+    db = cat.getDatabase("TPCH_001");
+    tables = cat.listTables(db);
+    assertTrue(tables.isEmpty());
   }
 }
