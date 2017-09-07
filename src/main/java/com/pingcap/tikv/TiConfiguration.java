@@ -31,6 +31,7 @@ public class TiConfiguration {
   private static final boolean DEF_TRUNCATE_AS_WARNING = false;
   private static final int DEF_META_RELOAD_PERIOD = 1;
   private static final TimeUnit DEF_META_RELOAD_UNIT = TimeUnit.SECONDS;
+  private static final int DEF_MAX_FRAME_SIZE = 268435456; // 256 MB
 
   private int timeout = DEF_TIMEOUT;
   private TimeUnit timeoutUnit = DEF_TIMEOUT_UNIT;
@@ -39,6 +40,7 @@ public class TiConfiguration {
   private TimeUnit metaReloadUnit = DEF_META_RELOAD_UNIT;
   private int metaReloadPeriod = DEF_META_RELOAD_PERIOD;
   private List<HostAndPort> pdAddrs = new ArrayList<>();
+  private int maxFrameSize = DEF_MAX_FRAME_SIZE;
 
   public static TiConfiguration createDefault(List<String> pdAddrs) {
     TiConfiguration conf = new TiConfiguration();
@@ -106,5 +108,13 @@ public class TiConfiguration {
 
   public void setTruncateAsWarning(boolean truncateAsWarning) {
     this.truncateAsWarning = truncateAsWarning;
+  }
+
+  public int getMaxFrameSize() {
+    return maxFrameSize;
+  }
+
+  public void setMaxFrameSize(int maxFrameSize) {
+    this.maxFrameSize = maxFrameSize;
   }
 }

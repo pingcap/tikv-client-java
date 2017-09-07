@@ -59,7 +59,6 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import java.util.List;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, TikvStub> {
 
@@ -71,8 +70,6 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
 
   private final int ReqTypeSelect = 101;
   private final int ReqTypeIndex = 102;
-
-  private static final int MAX_MSG_SIZE = 134217728;
 
   public ByteString get(ByteString key, long version) {
     GetRequest request =
@@ -285,7 +282,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
   private static final Cache<String, ManagedChannel> connPool =
       CacheBuilder.newBuilder().maximumSize(MAX_CACHE_CAPACITY).build();
 
-  private static ManagedChannel createNewChannel(String addressStr) {
+  private static ManagedChannel createNewChannel(String addressStr, int maxSize) {
     HostAndPort address;
     try {
         address = HostAndPort.fromString(addressStr);
@@ -293,7 +290,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
         throw new IllegalArgumentException("failed to form address");
       }
     ManagedChannel channel = ManagedChannelBuilder.forAddress(address.getHostText(), address.getPort())
-              .maxInboundMessageSize(MAX_MSG_SIZE)
+              .maxInboundMessageSize(maxSize)
               .usePlaintext(true)
               .build();
       connPool.put(addressStr, channel);
@@ -307,7 +304,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
     ManagedChannel channel;
     channel = connPool.getIfPresent(addressStr);
     if (channel == null || channel.isShutdown()) {
-      channel = createNewChannel(addressStr);
+      channel = createNewChannel(addressStr, session.getConf().getMaxFrameSize());
     }
 
     TikvBlockingStub blockingStub = TikvGrpc.newBlockingStub(channel);
