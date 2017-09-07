@@ -128,9 +128,13 @@ public class TiColumnRef implements TiExpr {
     }
   }
 
-  @Override
   public int hashCode() {
-    return Long.hashCode(columnInfo.getId()) * 31
-         + Long.hashCode(tableInfo.getId());
+    final int prime = 31;
+    int result = 1;
+    result = result * prime + Long.hashCode(columnInfo.getId());
+    result = result * prime + tableInfo.getName().hashCode();
+    result = result * prime + columnInfo.getName().hashCode();
+    result = result * prime + Long.hashCode(tableInfo.getId());
+    return result;
   }
 }
