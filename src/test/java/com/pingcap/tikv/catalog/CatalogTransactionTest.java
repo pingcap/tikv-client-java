@@ -73,7 +73,7 @@ public class CatalogTransactionTest {
     assertEquals("global_temp", dbs.get(0).getName());
 
     assertEquals(264, dbs.get(1).getId());
-    assertEquals("TPCH_001", dbs.get(1).getName());
+    assertEquals("tpch_001", dbs.get(1).getName());
 
     TiDBInfo db = trx.getDatabase(130);
     assertEquals(130, db.getId());
@@ -85,13 +85,13 @@ public class CatalogTransactionTest {
     MetaMockHelper helper = new MetaMockHelper(pdServer, kvServer);
     helper.preparePDForRegionRead();
     helper.addTable(130, 42, "test");
-    helper.addTable(130, 43, "tEst1");
+    helper.addTable(130, 43, "test1");
 
     TiCluster cluster = TiCluster.getCluster(conf);
     CatalogTransaction trx = new CatalogTransaction(cluster.createSnapshot());
     List<TiTableInfo> tables = trx.getTables(130);
     assertEquals(tables.size(), 2);
     assertEquals(tables.get(0).getName(), "test");
-    assertEquals(tables.get(1).getName(), "tEst1");
+    assertEquals(tables.get(1).getName(), "test1");
   }
 }

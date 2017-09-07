@@ -50,8 +50,8 @@ public class CatalogTest {
     List<TiDBInfo> dbs = cat.listDatabases();
     List<String> names = dbs.stream().map(db -> db.getName()).sorted().collect(Collectors.toList());
     assertEquals(2, dbs.size());
-    assertEquals("TPCH_001", names.get(0));
-    assertEquals("global_temp", names.get(1));
+    assertEquals("global_temp", names.get(0));
+    assertEquals("tpch_001", names.get(1));
 
     helper.addDatabase(265, "other");
     helper.setSchemaVersion(667);
@@ -62,9 +62,9 @@ public class CatalogTest {
     dbs = cat.listDatabases();
     assertEquals(3, dbs.size());
     names = dbs.stream().map(db -> db.getName()).sorted().collect(Collectors.toList());
-    assertEquals("TPCH_001", names.get(0));
-    assertEquals("global_temp", names.get(1));
-    assertEquals("other", names.get(2));
+    assertEquals("global_temp", names.get(0));
+    assertEquals("other", names.get(1));
+    assertEquals("tpch_001", names.get(2));
 
     assertEquals(130, cat.getDatabase("global_temp").getId());
     assertEquals(null, cat.getDatabase("global_temp111"));
@@ -77,22 +77,22 @@ public class CatalogTest {
     helper.setSchemaVersion(666);
 
     helper.addDatabase(130, "global_temp");
-    helper.addDatabase(264, "TPCH_001");
+    helper.addDatabase(264, "tpch_001");
 
     helper.addTable(130, 42, "test");
-    helper.addTable(130, 43, "tEst1");
+    helper.addTable(130, 43, "test1");
 
     TiCluster cluster = TiCluster.getCluster(conf);
     Catalog cat = cluster.getCatalog();
-    TiDBInfo db = cat.getDatabase("global_temp");
+    TiDBInfo db = cat.getDatabase("gLObal_temp");
     List<TiTableInfo> tables = cat.listTables(db);
     List<String> names = tables.stream().map(table -> table.getName()).sorted().collect(Collectors.toList());
     assertEquals(2, tables.size());
-    assertEquals("tEst1", names.get(0));
-    assertEquals("test", names.get(1));
+    assertEquals("test", names.get(0));
+    assertEquals("test1", names.get(1));
 
     assertEquals("test", cat.getTable(db, 42).getName());
-    assertEquals("tEst1", cat.getTable(db, 43).getName());
+    assertEquals("test1", cat.getTable(db, 43).getName());
     assertEquals(null, cat.getTable(db, 44));
 
     helper.addTable(130, 44, "other");
@@ -105,8 +105,8 @@ public class CatalogTest {
     names = tables.stream().map(table -> table.getName()).sorted().collect(Collectors.toList());
     assertEquals(3, tables.size());
     assertEquals("other", names.get(0));
-    assertEquals("tEst1", names.get(1));
-    assertEquals("test", names.get(2));
+    assertEquals("test", names.get(1));
+    assertEquals("test1", names.get(2));
 
     assertEquals(42, cat.getTable("global_temp", "test").getId());
     assertEquals(null, cat.getTable("global_temp", "test111"));
@@ -117,7 +117,7 @@ public class CatalogTest {
     tables = cat.listTables(db);
     assertEquals(2, tables.size());
 
-    db = cat.getDatabase("TPCH_001");
+    db = cat.getDatabase("TpCH_001");
     tables = cat.listTables(db);
     assertTrue(tables.isEmpty());
   }

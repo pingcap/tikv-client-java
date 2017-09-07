@@ -58,7 +58,8 @@ public class Catalog {
     }
 
     public TiDBInfo getDatabase(String name) {
-      return dbCache.get(name);
+      Objects.requireNonNull(name,"name is null");
+      return dbCache.get(name.toLowerCase());
     }
 
     public List<TiDBInfo> listDatabases() {
@@ -78,7 +79,7 @@ public class Catalog {
       if (tableMap == null) {
         tableMap = loadTables(db);
       }
-      return tableMap.get(tableName);
+      return tableMap.get(tableName.toLowerCase());
     }
 
     private Map<String, TiTableInfo> loadTables(TiDBInfo db) {
