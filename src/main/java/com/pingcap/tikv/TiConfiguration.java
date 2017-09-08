@@ -16,20 +16,20 @@
 package com.pingcap.tikv;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.net.HostAndPort;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
-public class TiConfiguration {
-  private static final int DEF_TIMEOUT = 3;
+public class TiConfiguration implements Serializable {
+  private static final int DEF_TIMEOUT = 10;
   private static final TimeUnit DEF_TIMEOUT_UNIT = TimeUnit.MINUTES;
   private static final int DEF_SCAN_BATCH_SIZE = 100;
   private static final boolean DEF_IGNORE_TRUNCATE = true;
   private static final boolean DEF_TRUNCATE_AS_WARNING = false;
-  private static final int DEF_META_RELOAD_PERIOD = 1;
+  private static final int DEF_META_RELOAD_PERIOD = 60;
   private static final TimeUnit DEF_META_RELOAD_UNIT = TimeUnit.SECONDS;
   private static final int DEF_MAX_FRAME_SIZE = 268435456; // 256 MB
 
@@ -42,24 +42,30 @@ public class TiConfiguration {
   private List<HostAndPort> pdAddrs = new ArrayList<>();
   private int maxFrameSize = DEF_MAX_FRAME_SIZE;
 
-  public static TiConfiguration createDefault(List<String> pdAddrs) {
+  public static TiConfiguration createDefault(String pdAddrsStr) {
+    Objects.requireNonNull(pdAddrsStr, "pdAddrsStr is null");
     TiConfiguration conf = new TiConfiguration();
-    conf.pdAddrs =
-        ImmutableList.copyOf(
-            ImmutableSet.copyOf(pdAddrs)
-                .asList()
-                .stream()
-                .map(HostAndPort::fromString)
-                .collect(Collectors.toList()));
+    conf.pdAddrs = strToHostAndPort(pdAddrsStr);
     return conf;
+  }
+
+  private static List<HostAndPort> strToHostAndPort(String addressStr) {
+    Objects.requireNonNull(addressStr);
+    String [] addrs = addressStr.split(",");
+    ImmutableList.Builder<HostAndPort> addrsBuilder = ImmutableList.builder();
+    for (String addr : addrs) {
+      addrsBuilder.add(HostAndPort.fromString(addr));
+    }
+    return addrsBuilder.build();
   }
 
   public int getTimeout() {
     return timeout;
   }
 
-  public void setTimeout(int timeout) {
+  public TiConfiguration setTimeout(int timeout) {
     this.timeout = timeout;
+    return this;
   }
 
   public TimeUnit getTimeoutUnit() {
@@ -70,23 +76,26 @@ public class TiConfiguration {
     return metaReloadUnit;
   }
 
-  public void setMetaReloadPeriodUnit(TimeUnit timeUnit) {
+  public TiConfiguration setMetaReloadPeriodUnit(TimeUnit timeUnit) {
     this.metaReloadUnit = timeUnit;
+    return this;
   }
 
-  public void setMetaReloadPeriod(int metaReloadPeriod) {
+  public TiConfiguration setMetaReloadPeriod(int metaReloadPeriod) {
     this.metaReloadPeriod = metaReloadPeriod;
+    return this;
   }
 
   public int getMetaReloadPeriod() {
     return metaReloadPeriod;
   }
 
-  public void setTimeoutUnit(TimeUnit timeoutUnit) {
+  public TiConfiguration setTimeoutUnit(TimeUnit timeoutUnit) {
     this.timeoutUnit = timeoutUnit;
+    return this;
   }
 
-  List<HostAndPort> getPdAddrs() {
+  public List<HostAndPort> getPdAddrs() {
     return pdAddrs;
   }
 
@@ -98,23 +107,26 @@ public class TiConfiguration {
     return ignoreTruncate;
   }
 
-  public void setIgnoreTruncate(boolean ignoreTruncate) {
+  public TiConfiguration setIgnoreTruncate(boolean ignoreTruncate) {
     this.ignoreTruncate = ignoreTruncate;
+    return this;
   }
 
   boolean isTruncateAsWarning() {
     return truncateAsWarning;
   }
 
-  public void setTruncateAsWarning(boolean truncateAsWarning) {
+  public TiConfiguration setTruncateAsWarning(boolean truncateAsWarning) {
     this.truncateAsWarning = truncateAsWarning;
+    return this;
   }
 
   public int getMaxFrameSize() {
     return maxFrameSize;
   }
 
-  public void setMaxFrameSize(int maxFrameSize) {
+  public TiConfiguration setMaxFrameSize(int maxFrameSize) {
     this.maxFrameSize = maxFrameSize;
+    return this;
   }
 }

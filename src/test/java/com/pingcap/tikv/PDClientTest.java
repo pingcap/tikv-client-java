@@ -16,9 +16,11 @@
 package com.pingcap.tikv;
 
 import static com.pingcap.tikv.GrpcUtils.encodeKey;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.net.HostAndPort;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.exception.GrpcException;
@@ -56,7 +58,7 @@ public class PDClientTest {
             GrpcUtils.makeMember(2, "http://" + LOCAL_ADDR + ":" + (server.port + 1)),
             GrpcUtils.makeMember(2, "http://" + LOCAL_ADDR + ":" + (server.port + 2))));
     TiConfiguration conf =
-        TiConfiguration.createDefault(ImmutableList.of("127.0.0.1:" + server.port));
+        TiConfiguration.createDefault("127.0.0.1:" + server.port);
     return PDClient.createRaw(TiSession.create(conf));
   }
 

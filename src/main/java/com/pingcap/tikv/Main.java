@@ -1,7 +1,6 @@
 package com.pingcap.tikv;
 
 
-import com.google.common.collect.ImmutableList;
 import com.pingcap.tikv.catalog.Catalog;
 import com.pingcap.tikv.meta.TiDBInfo;
 import com.pingcap.tikv.meta.TiTableInfo;
@@ -11,7 +10,7 @@ import java.util.logging.Logger;
 public class Main {
 
   private static TiConfiguration conf =
-      TiConfiguration.createDefault(ImmutableList.of("127.0.0.1:" + 2379));
+      TiConfiguration.createDefault("127.0.0.1:" + 2379);
   private static TiCluster cluster = TiCluster.getCluster(conf);
   private static Snapshot snapshot = cluster.createSnapshot();
 

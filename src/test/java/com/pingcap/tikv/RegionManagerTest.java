@@ -15,12 +15,14 @@
 
 package com.pingcap.tikv;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
-import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.kvproto.Metapb;
-import com.pingcap.tikv.kvproto.Metapb.*;
+import com.pingcap.tikv.kvproto.Metapb.Store;
+import com.pingcap.tikv.kvproto.Metapb.StoreState;
 import com.pingcap.tikv.region.RegionManager;
 import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.util.Pair;
@@ -55,7 +57,7 @@ public class RegionManagerTest {
             GrpcUtils.makeMember(2, "http://" + LOCAL_ADDR + ":" + (server.port + 1)),
             GrpcUtils.makeMember(2, "http://" + LOCAL_ADDR + ":" + (server.port + 2))));
     TiConfiguration conf =
-        TiConfiguration.createDefault(ImmutableList.of("127.0.0.1:" + server.port));
+        TiConfiguration.createDefault("127.0.0.1:" + server.port);
     return PDClient.createRaw(TiSession.create(conf));
   }
 

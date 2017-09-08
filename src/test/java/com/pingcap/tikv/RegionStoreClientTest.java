@@ -59,7 +59,7 @@ public class RegionStoreClientTest {
     server = new KVMockServer();
     port = server.start(region);
     // No PD needed in this test
-    TiConfiguration conf = TiConfiguration.createDefault(ImmutableList.of(""));
+    TiConfiguration conf = TiConfiguration.createDefault("");
     session = TiSession.create(conf);
   }
 

@@ -42,7 +42,7 @@ make tikv
 ## How to use for now
 Since it's not quite complete, a usage sample for now can be given is:
 ```java
-	TiConfiguration conf = TiConfiguration.createDefault(ImmutableList.of("127.0.0.1:" + 2379));
+	TiConfiguration conf = TiConfiguration.createDefault("127.0.0.1:2379");
         TiCluster cluster = TiCluster.getCluster(conf);
         Catalog cat = cluster.getCatalog();
         TiDBInfo db = cat.getDatabase("test");

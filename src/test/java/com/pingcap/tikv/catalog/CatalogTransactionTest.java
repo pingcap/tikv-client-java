@@ -17,7 +17,6 @@ package com.pingcap.tikv.catalog;
 
 import static org.junit.Assert.assertEquals;
 
-import com.google.common.collect.ImmutableList;
 import com.pingcap.tikv.KVMockServer;
 import com.pingcap.tikv.PDMockServer;
 import com.pingcap.tikv.TiCluster;
@@ -45,7 +44,7 @@ public class CatalogTransactionTest {
     kvServer = new KVMockServer();
     kvServer.start(new TiRegion(MetaMockHelper.region, MetaMockHelper.region.getPeers(0), IsolationLevel.RC));
     // No PD needed in this test
-    conf = TiConfiguration.createDefault(ImmutableList.of("127.0.0.1:" + pdServer.port));
+    conf = TiConfiguration.createDefault("127.0.0.1:" + pdServer.port);
   }
 
   @Test
