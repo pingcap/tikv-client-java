@@ -32,6 +32,7 @@ public class TiConfiguration implements Serializable {
   private static final int DEF_META_RELOAD_PERIOD = 60;
   private static final TimeUnit DEF_META_RELOAD_UNIT = TimeUnit.SECONDS;
   private static final int DEF_MAX_FRAME_SIZE = 268435456; // 256 MB
+  private static final int DEF_RPC_RETRY_TIMES = 3;
 
   private int timeout = DEF_TIMEOUT;
   private TimeUnit timeoutUnit = DEF_TIMEOUT_UNIT;
@@ -41,6 +42,7 @@ public class TiConfiguration implements Serializable {
   private int metaReloadPeriod = DEF_META_RELOAD_PERIOD;
   private List<HostAndPort> pdAddrs = new ArrayList<>();
   private int maxFrameSize = DEF_MAX_FRAME_SIZE;
+  private int rpcRetryTimes = DEF_RPC_RETRY_TIMES;
 
   public static TiConfiguration createDefault(String pdAddrsStr) {
     Objects.requireNonNull(pdAddrsStr, "pdAddrsStr is null");
@@ -128,5 +130,13 @@ public class TiConfiguration implements Serializable {
   public TiConfiguration setMaxFrameSize(int maxFrameSize) {
     this.maxFrameSize = maxFrameSize;
     return this;
+  }
+
+  public int getRpcRetryTimes() {
+    return rpcRetryTimes;
+  }
+
+  public void setRpcRetryTimes(int rpcRetryTimes) {
+    this.rpcRetryTimes = rpcRetryTimes;
   }
 }

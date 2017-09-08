@@ -23,13 +23,13 @@ import com.pingcap.tikv.policy.RetryPolicy;
  * slaves for read only purpose
  */
 public class TiSession {
-  private static final RetryPolicy.Builder DEF_RETRY_POLICY_BUILDER = new RetryNTimes.Builder(3);
-
   private TiConfiguration conf;
-  private RetryPolicy.Builder retryPolicyBuilder = DEF_RETRY_POLICY_BUILDER;
+  private RetryPolicy.Builder retryPolicyBuilder;
 
   public TiSession(TiConfiguration conf) {
     this.conf = conf;
+    int rTimes = conf.getRpcRetryTimes();
+    retryPolicyBuilder = new RetryNTimes.Builder(rTimes);
   }
 
   public TiConfiguration getConf() {
