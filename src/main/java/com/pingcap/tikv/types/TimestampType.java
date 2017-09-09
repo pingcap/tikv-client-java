@@ -30,7 +30,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 public class TimestampType extends DataType {
-  private ZoneId defaultZone = ZoneId.of("UTC");
+  private final ZoneId defaultZone = ZoneId.of("UTC");
   static TimestampType of(int tp) {
     return new TimestampType(tp);
   }
