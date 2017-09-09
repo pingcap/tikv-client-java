@@ -30,6 +30,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 public class TimestampType extends DataType {
+  private ZoneId defaultZone = ZoneId.of("UTC");
   static TimestampType of(int tp) {
     return new TimestampType(tp);
   }
@@ -77,7 +78,7 @@ public class TimestampType extends DataType {
       if (localDateTime == null) {
         row.setNull(pos);
       }
-      Timestamp timestamp = Timestamp.from(ZonedDateTime.of(localDateTime, ZoneId.of("UTC")).toInstant());
+      Timestamp timestamp = Timestamp.from(ZonedDateTime.of(localDateTime, defaultZone).toInstant());
       row.setTimestamp(pos, timestamp);
     } else if (flag == INT_FLAG) {
       long nanoSec = IntegerType.readLong(cdi);
