@@ -56,10 +56,6 @@ public abstract class RetryPolicy {
     while (true) {
       try {
         T result = proc.call();
-        // TODO: null check is only for temporary. In theory, every rpc call need
-        // have some mechanism to retry call. The reason we allow this having two reason:
-        // 1. Test's resp is null
-        // 2. getTimestamp pass a null error handler for now, since impl of it is not correct yet.
         if (handler != null) {
           handler.handle(result);
         }
