@@ -18,10 +18,10 @@ package com.pingcap.tikv.policy;
 import com.google.common.base.Preconditions;
 import com.pingcap.tikv.operation.ErrorHandler;
 
-public class RetryNTimes extends RetryPolicy {
+public class RetryNTimes<T> extends RetryPolicy<T> {
   private int n;
 
-  private RetryNTimes(int n, ErrorHandler handler) {
+  private RetryNTimes(int n, ErrorHandler<T> handler) {
     super(handler);
     Preconditions.checkArgument(n >= 1, "Retry count cannot be less than 1.");
     this.n = n;
@@ -36,7 +36,7 @@ public class RetryNTimes extends RetryPolicy {
     return new Builder(n);
   }
 
-  public static class Builder implements RetryPolicy.Builder {
+  public static class Builder<T> implements RetryPolicy.Builder<T> {
     private int n;
 
     public Builder(int n) {
@@ -44,8 +44,8 @@ public class RetryNTimes extends RetryPolicy {
     }
 
     @Override
-    public RetryPolicy create(ErrorHandler handler) {
-      return new RetryNTimes(n, handler);
+    public RetryPolicy<T> create(ErrorHandler<T> handler) {
+      return new RetryNTimes<>(n, handler);
     }
   }
 }

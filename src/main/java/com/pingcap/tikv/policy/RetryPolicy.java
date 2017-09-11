@@ -23,11 +23,11 @@ import java.util.concurrent.Callable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public abstract class RetryPolicy {
+public abstract class RetryPolicy<RespT> {
   private static final Logger logger = LogManager.getFormatterLogger(RetryPolicy.class);
 
-  // Basically a leader recheck method
-  private ErrorHandler handler;
+  // handles PD and TiKV's error.
+  private ErrorHandler<RespT> handler;
 
   private ImmutableSet<Status.Code> unrecoverableStatus =
       ImmutableSet.of(
@@ -36,33 +36,25 @@ public abstract class RetryPolicy {
           Status.Code.UNIMPLEMENTED, Status.Code.OUT_OF_RANGE,
           Status.Code.UNAUTHENTICATED, Status.Code.CANCELLED);
 
-  public RetryPolicy(ErrorHandler handler) {
+  RetryPolicy(ErrorHandler<RespT> handler) {
     this.handler = handler;
   }
 
   protected abstract boolean shouldRetry(Exception e);
 
-  protected boolean checkNotLeaderException(Status status) {
-    // TODO: need a way to check this, for now all unknown exception
-    return true;
-  }
-
   protected boolean checkNotRecoverableException(Status status) {
     return unrecoverableStatus.contains(status.getCode());
   }
 
-  @SuppressWarnings("unchecked")
-  public <T> T callWithRetry(Callable<T> proc, String methodName) {
+  public RespT callWithRetry(Callable<RespT> proc, String methodName) { 
     while (true) {
       try {
-        T result = proc.call();
+        RespT result = proc.call();
         if (handler != null) {
           handler.handle(result);
         }
         return result;
       } catch (Exception e) {
-        // TODO retry is keep sending request to server, this is really bad behavior here. More refractory on the
-        // way
         Status status = Status.fromThrowable(e);
         if (checkNotRecoverableException(status) || !shouldRetry(e)) {
           logger.error("Failed to recover from last grpc error calling %s.", methodName);
@@ -72,7 +64,7 @@ public abstract class RetryPolicy {
     }
   }
 
-  public interface Builder {
-    RetryPolicy create(ErrorHandler handler);
+  public interface Builder<T> {
+    RetryPolicy<T> create(ErrorHandler<T> handler);
   }
 }

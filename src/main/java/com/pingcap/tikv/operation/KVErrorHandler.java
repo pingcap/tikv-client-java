@@ -26,7 +26,7 @@ import io.grpc.Status.Code;
 import io.grpc.StatusRuntimeException;
 import java.util.function.Function;
 
-public class KVErrorHandler<RespT> implements ErrorHandler<RespT, Pdpb.Error> {
+public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
   private Function<RespT, Errorpb.Error> getRegionError;
   private RegionManager regionManager;
   private Kvrpcpb.Context ctx;
