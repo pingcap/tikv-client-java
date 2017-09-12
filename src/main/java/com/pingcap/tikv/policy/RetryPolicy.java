@@ -82,7 +82,7 @@ public abstract class RetryPolicy<RespT> {
         handleFailure(attempt, e, methodName);
       }
     }
-    throw new RuntimeException("failed to call");
+    throw new GrpcException("failed to call");
   }
 
   public interface Builder<T> {
