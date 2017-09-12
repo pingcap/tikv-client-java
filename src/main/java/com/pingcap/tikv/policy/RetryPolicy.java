@@ -26,6 +26,8 @@ import org.apache.logging.log4j.Logger;
 public abstract class RetryPolicy<RespT> {
   private static final Logger logger = LogManager.getFormatterLogger(RetryPolicy.class);
 
+  private static final int[] FIBONACCI = new int[] { 1, 1, 2, 3, 5, 8, 13 };
+
   // handles PD and TiKV's error.
   private ErrorHandler<RespT> handler;
 
@@ -42,26 +44,43 @@ public abstract class RetryPolicy<RespT> {
 
   protected abstract boolean shouldRetry(Exception e);
 
-  protected boolean checkNotRecoverableException(Status status) {
+  private boolean checkNotRecoverableException(Status status) {
     return unrecoverableStatus.contains(status.getCode());
   }
 
-  public RespT callWithRetry(Callable<RespT> proc, String methodName) { 
-    while (true) {
+  private void handleFailure(int attempt, Exception e, String methodName) {
+    Status status = Status.fromThrowable(e);
+    if (checkNotRecoverableException(status) || !shouldRetry(e)) {
+      logger.error("Failed to recover from last grpc error calling %s.", methodName);
+      throw new GrpcException(e);
+    }
+    doWait(attempt);
+  }
+
+  private void doWait(int attempt) {
+    try {
+      Thread.sleep( FIBONACCI[attempt] * 1000 );
+    } catch (InterruptedException e) {
+      throw new RuntimeException( e );
+    }
+  }
+
+  public RespT callWithRetry(Callable<RespT> proc, String methodName) {
+    for(int attempt = 0; attempt < FIBONACCI.length; attempt++) {
       try {
         RespT result = proc.call();
+        // Unlike usual case, error is not thrown as exception. Instead, the error info is
+        // hidden in ErrorPb and PdPb.Error. We have to extract the error info out fist and
+        // handle it accordingly.
         if (handler != null) {
           handler.handle(result);
         }
         return result;
       } catch (Exception e) {
-        Status status = Status.fromThrowable(e);
-        if (checkNotRecoverableException(status) || !shouldRetry(e)) {
-          logger.error("Failed to recover from last grpc error calling %s.", methodName);
-          throw new GrpcException(e);
-        }
+        handleFailure(attempt, e, methodName);
       }
     }
+    throw new RuntimeException("failed to call");
   }
 
   public interface Builder<T> {

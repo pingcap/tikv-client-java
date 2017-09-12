@@ -17,6 +17,7 @@
 
 package com.pingcap.tikv.operation;
 
+@FunctionalInterface
 public interface ErrorHandler<RespT> {
   void handle(RespT resp);
 }
