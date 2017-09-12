@@ -42,7 +42,9 @@ public abstract class RetryPolicy<RespT> {
     this.handler = handler;
   }
 
-  protected abstract boolean shouldRetry(Exception e);
+  public int[] getFibonacci() {
+    return FIBONACCI;
+  }
 
   private boolean checkNotRecoverableException(Status status) {
     return unrecoverableStatus.contains(status.getCode());
@@ -50,7 +52,7 @@ public abstract class RetryPolicy<RespT> {
 
   private void handleFailure(int attempt, Exception e, String methodName) {
     Status status = Status.fromThrowable(e);
-    if (checkNotRecoverableException(status) || !shouldRetry(e)) {
+    if (checkNotRecoverableException(status)) {
       logger.error("Failed to recover from last grpc error calling %s.", methodName);
       throw new GrpcException(e);
     }
@@ -59,14 +61,14 @@ public abstract class RetryPolicy<RespT> {
 
   private void doWait(int attempt) {
     try {
-      Thread.sleep( FIBONACCI[attempt] * 1000 );
+      Thread.sleep( getFibonacci()[attempt] * 1000 );
     } catch (InterruptedException e) {
       throw new RuntimeException( e );
     }
   }
 
   public RespT callWithRetry(Callable<RespT> proc, String methodName) {
-    for(int attempt = 0; attempt < FIBONACCI.length; attempt++) {
+    for(int attempt = 0; attempt < getFibonacci().length; attempt++) {
       try {
         RespT result = proc.call();
         // Unlike usual case, error is not thrown as exception. Instead, the error info is
