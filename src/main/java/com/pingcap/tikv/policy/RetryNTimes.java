@@ -17,13 +17,13 @@ package com.pingcap.tikv.policy;
 
 import com.google.common.base.Preconditions;
 import com.pingcap.tikv.operation.ErrorHandler;
+import com.pingcap.tikv.util.BackOff;
 import com.pingcap.tikv.util.ExponentialBackOff;
 
 public class RetryNTimes<T> extends RetryPolicy<T> {
-  private RetryNTimes(int n, ErrorHandler<T> handler) {
+  private RetryNTimes(ErrorHandler<T> handler, BackOff backOff) {
     super(handler);
-    this.backOff = new ExponentialBackOff(3);
-    Preconditions.checkArgument(n >= 1, "Retry count cannot be less than 1.");
+    this.backOff = backOff;
   }
 
   public static Builder newBuilder(int n) {
@@ -31,15 +31,15 @@ public class RetryNTimes<T> extends RetryPolicy<T> {
   }
 
   public static class Builder<T> implements RetryPolicy.Builder<T> {
-    private int n;
+    private BackOff backOff;
 
     public Builder(int n) {
-      this.n = n;
+      this.backOff = new ExponentialBackOff(n);
     }
 
     @Override
     public RetryPolicy<T> create(ErrorHandler<T> handler) {
-      return new RetryNTimes<>(n, handler);
+      return new RetryNTimes<>(handler, backOff);
     }
   }
 }

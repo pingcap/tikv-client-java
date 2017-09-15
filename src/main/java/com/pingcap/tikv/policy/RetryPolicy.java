@@ -27,7 +27,7 @@ import org.apache.logging.log4j.Logger;
 public abstract class RetryPolicy<RespT> {
   private static final Logger logger = LogManager.getFormatterLogger(RetryPolicy.class);
 
-  protected BackOff backOff = BackOff.ZERO_BACKOFF;
+  BackOff backOff = BackOff.ZERO_BACKOFF;
 
   // handles PD and TiKV's error.
   private ErrorHandler<RespT> handler;

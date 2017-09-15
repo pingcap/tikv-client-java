@@ -17,6 +17,8 @@
 
 package com.pingcap.tikv.util;
 
+import com.google.common.base.Preconditions;
+
 public class ExponentialBackOff implements BackOff {
   private long firstFib = 1;
   private long secondFib = 1;
@@ -24,6 +26,7 @@ public class ExponentialBackOff implements BackOff {
   private int counter;
 
   public ExponentialBackOff(int attempts) {
+    Preconditions.checkArgument(attempts >= 1, "Retry count cannot be less than 1.");
     counter = 0;
     this.attempts = attempts;
   }
