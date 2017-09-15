@@ -60,7 +60,7 @@ public abstract class RetryPolicy<RespT> {
     try {
       Thread.sleep( backOff.nextBackOffMillis() );
     } catch (InterruptedException e) {
-      throw new RuntimeException( e );
+      throw new GrpcException(e);
     }
   }
 
@@ -68,9 +68,6 @@ public abstract class RetryPolicy<RespT> {
     for(;true ;) {
       try {
         RespT result = proc.call();
-        // Unlike usual case, error is not thrown as exception. Instead, the error info is
-        // hidden in ErrorPb and PdPb.Error. We have to extract the error info out fist and
-        // handle it accordingly.
         if (handler != null) {
           handler.handle(result);
         }
