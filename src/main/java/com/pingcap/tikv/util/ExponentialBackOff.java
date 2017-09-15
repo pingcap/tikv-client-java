@@ -18,11 +18,20 @@
 package com.pingcap.tikv.util;
 
 public class ExponentialBackOff implements BackOff {
-  private long firstFib = 0;
+  private long firstFib = 1;
   private long secondFib = 1;
+  private int attempts;
+  private int counter;
+
+  public ExponentialBackOff(int attempts) {
+    counter = 0;
+    this.attempts = attempts;
+  }
+
   @Override
   public void reset() {
-    this.firstFib = 0;
+    this.counter = 0;
+    this.firstFib = 1;
     this.secondFib = 1;
   }
 
@@ -31,9 +40,16 @@ public class ExponentialBackOff implements BackOff {
    */
   @Override
   public long nextBackOffMillis() {
+    if(attempts < counter) {
+      return BackOff.STOP;
+    }
     // update two number in fibonacci's series
-    firstFib = firstFib + secondFib;
+    // 0 1
+    // 1 2
+    long millis = firstFib * 1000;
+    firstFib = secondFib;
     secondFib = firstFib + secondFib;
-    return firstFib*1000;
+    counter++;
+    return millis;
   }
 }

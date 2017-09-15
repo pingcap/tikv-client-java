@@ -27,7 +27,7 @@ import org.apache.logging.log4j.Logger;
 public abstract class RetryPolicy<RespT> {
   private static final Logger logger = LogManager.getFormatterLogger(RetryPolicy.class);
 
-  private BackOff backOff = BackOff.ZERO_BACKOFF;
+  protected BackOff backOff = BackOff.ZERO_BACKOFF;
 
   // handles PD and TiKV's error.
   private ErrorHandler<RespT> handler;
@@ -78,12 +78,11 @@ public abstract class RetryPolicy<RespT> {
       } catch (Exception e) {
         long nextBackMills  = this.backOff.nextBackOffMillis();
         if(nextBackMills == BackOff.STOP) {
-          break;
+          throw new GrpcException("failed to call");
         }
         handleFailure(e, methodName, nextBackMills);
       }
     }
-    throw new GrpcException("failed to call");
   }
 
   public interface Builder<T> {

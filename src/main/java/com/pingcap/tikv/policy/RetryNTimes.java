@@ -17,29 +17,13 @@ package com.pingcap.tikv.policy;
 
 import com.google.common.base.Preconditions;
 import com.pingcap.tikv.operation.ErrorHandler;
+import com.pingcap.tikv.util.ExponentialBackOff;
 
 public class RetryNTimes<T> extends RetryPolicy<T> {
-  private int[] fibonacci;
-
   private RetryNTimes(int n, ErrorHandler<T> handler) {
     super(handler);
+    this.backOff = new ExponentialBackOff(3);
     Preconditions.checkArgument(n >= 1, "Retry count cannot be less than 1.");
-    this.fibonacci = generateFibonacci(n);
-  }
-
-  @Override
-  public int[] getFibonacci() {
-    return fibonacci;
-  }
-
-  private int[] generateFibonacci(int n) {
-    int[] fib = new int[n];
-    fib[0] = 1;
-    fib[1] = 1;
-    for(int i = 2; i < n; i++) {
-      fib[i] = fib[i-1] + fib[i-2];
-    }
-    return fib;
   }
 
   public static Builder newBuilder(int n) {
