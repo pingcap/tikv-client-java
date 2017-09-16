@@ -20,22 +20,18 @@ package com.pingcap.tikv.util;
 import com.google.common.base.Preconditions;
 
 public class ExponentialBackOff implements BackOff {
-  private long firstFib = 1;
-  private long secondFib = 1;
   private int attempts;
   private int counter;
 
   public ExponentialBackOff(int attempts) {
     Preconditions.checkArgument(attempts >= 1, "Retry count cannot be less than 1.");
-    counter = 0;
+    this.counter = 1;
     this.attempts = attempts;
   }
 
   @Override
   public void reset() {
-    this.counter = 0;
-    this.firstFib = 1;
-    this.secondFib = 1;
+    this.counter = 1;
   }
 
   /**
@@ -43,15 +39,10 @@ public class ExponentialBackOff implements BackOff {
    */
   @Override
   public long nextBackOffMillis() {
-    if(attempts < counter) {
+    if(attempts <= counter) {
       return BackOff.STOP;
     }
-    // update two number in fibonacci's series
-    // 0 1
-    // 1 2
-    long millis = firstFib * 1000;
-    firstFib = secondFib;
-    secondFib = firstFib + secondFib;
+    long millis = (counter<<2) * 1000;
     counter++;
     return millis;
   }

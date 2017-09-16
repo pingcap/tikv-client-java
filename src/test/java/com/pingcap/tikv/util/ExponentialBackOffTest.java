@@ -23,13 +23,12 @@ import static org.junit.Assert.assertEquals;
 public class ExponentialBackOffTest {
   @Test
   public void nextBackOffMillisTest() {
-    BackOff backOff = new ExponentialBackOff(3);
-    long nextBackoffMillis = backOff.nextBackOffMillis();
-    assertEquals(nextBackoffMillis, 1000);
-    nextBackoffMillis = backOff.nextBackOffMillis();
-    assertEquals(nextBackoffMillis, 1000);
-    nextBackoffMillis = backOff.nextBackOffMillis();
-    assertEquals(nextBackoffMillis, 2000);
+    BackOff backOff = new ExponentialBackOff(10);
+    for(int i = 1; i < 10; i++) {
+      long nextBackoffMillis = backOff.nextBackOffMillis();
+      int factor = i<<2;
+      assertEquals(nextBackoffMillis, factor*1000);
+    }
   }
 
 }

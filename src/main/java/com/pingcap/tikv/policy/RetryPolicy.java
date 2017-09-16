@@ -58,7 +58,7 @@ public abstract class RetryPolicy<RespT> {
 
   private void doWait(long millis) {
     try {
-      Thread.sleep( backOff.nextBackOffMillis() );
+      Thread.sleep(millis);
     } catch (InterruptedException e) {
       throw new GrpcException(e);
     }
@@ -75,7 +75,7 @@ public abstract class RetryPolicy<RespT> {
       } catch (Exception e) {
         long nextBackMills  = this.backOff.nextBackOffMillis();
         if(nextBackMills == BackOff.STOP) {
-          throw new GrpcException("failed to call");
+          throw new GrpcException("retry is exhausted.");
         }
         handleFailure(e, methodName, nextBackMills);
       }
