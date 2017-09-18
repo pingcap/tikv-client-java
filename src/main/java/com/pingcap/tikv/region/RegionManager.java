@@ -34,6 +34,7 @@ import com.pingcap.tikv.kvproto.Metapb.Peer;
 import com.pingcap.tikv.kvproto.Metapb.Region;
 import com.pingcap.tikv.kvproto.Metapb.Store;
 import com.pingcap.tikv.kvproto.Metapb.StoreState;
+import com.pingcap.tikv.policy.RetryPolicy;
 import com.pingcap.tikv.util.Comparables;
 import com.pingcap.tikv.util.Pair;
 import java.util.List;
@@ -41,13 +42,17 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.annotation.ParametersAreNonnullByDefault;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class RegionManager {
+  private static final Logger logger = LogManager.getFormatterLogger(RetryPolicy.class);
   private final ReadOnlyPDClient pdClient;
   private final LoadingCache<Long, TiRegion> regionCache;
   private final LoadingCache<Long, Store>    storeCache;
   private final RangeMap<Comparable, Long>   keyToRegionIdCache;
   private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+  private final ReentrantReadWriteLock storeLock = new ReentrantReadWriteLock();
 
   private static final int MAX_CACHE_CAPACITY = 4096;
 
@@ -119,7 +124,9 @@ public class RegionManager {
   }
 
   public void invalidateStore(long storeId) {
+    storeLock.writeLock().lock();
     storeCache.invalidate(storeId);
+    storeLock.writeLock().unlock();
   }
 
   public Pair<TiRegion, Store> getRegionStorePairByKey(ByteString key) {
@@ -134,15 +141,20 @@ public class RegionManager {
 
   public TiRegion getRegionById(long id) {
     try {
+      lock.readLock().lock();
       return regionCache.get(id);
     } catch (Exception e) {
       throw new GrpcException(e);
+    } finally {
+      lock.readLock().unlock();
     }
   }
 
   public Store getStoreById(long id) {
     try {
+      storeLock.readLock().lock();
       Store store = storeCache.get(id);
+      storeLock.readLock().unlock();
       if (store.getState().equals(StoreState.Tombstone)) {
         return null;
       }
@@ -156,10 +168,10 @@ public class RegionManager {
   @SuppressWarnings("unchecked")
   private boolean putRegion(TiRegion region) {
     if (!region.hasStartKey() || !region.hasEndKey()) return false;
-    regionCache.put(region.getId(), region);
 
     lock.writeLock().lock();
     try {
+      regionCache.put(region.getId(), region);
       keyToRegionIdCache.put(makeRange(region.getStartKey(), region.getEndKey()), region.getId());
     } finally {
       lock.writeLock().unlock();
@@ -174,7 +186,9 @@ public class RegionManager {
 
   public void updateLeader(long regionID, long storeID) {
     try {
+      lock.readLock().lock();
       Optional<TiRegion> region = Optional.of(regionCache.get(regionID));
+      lock.readLock().unlock();
       region.ifPresent(
           r -> {
             if (!r.switchPeer(storeID)) {
@@ -183,6 +197,7 @@ public class RegionManager {
             }
           });
     } catch (ExecutionException e) {
+      lock.readLock().unlock();
       invalidateRegion(regionID);
     }
   }
@@ -193,7 +208,9 @@ public class RegionManager {
    * @param storeID TiKV store's id
    */
   public void onRequestFail(long regionID, long storeID) {
+    lock.readLock().lock();
     Optional<TiRegion> region = Optional.ofNullable(regionCache.getIfPresent(regionID));
+    lock.readLock().unlock();
     region.ifPresent(
         r -> {
           if (!r.onRequestFail(storeID)) {
