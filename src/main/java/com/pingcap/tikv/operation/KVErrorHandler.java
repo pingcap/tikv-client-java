@@ -18,13 +18,9 @@
 package com.pingcap.tikv.operation;
 
 import com.pingcap.tikv.kvproto.Errorpb;
-import com.pingcap.tikv.kvproto.Errorpb.NotLeader;
 import com.pingcap.tikv.kvproto.Kvrpcpb;
-import com.pingcap.tikv.kvproto.Metapb.Peer;
-import com.pingcap.tikv.kvproto.Pdpb;
 import com.pingcap.tikv.region.RegionManager;
 import io.grpc.Status;
-import io.grpc.Status.Code;
 import io.grpc.StatusRuntimeException;
 import java.util.function.Function;
 
@@ -53,9 +49,7 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
     if (error != null) {
       if (error.hasNotLeader()) {
         // update Leader here
-        // no need update here. just let retry take control of this.
-        Peer newLeader =  error.getNotLeader().getLeader();
-        this.regionManager.updateLeader(ctx.getRegionId(), newLeader.getStoreId());
+        this.regionManager.updateLeader(ctx.getRegionId(), error.getNotLeader().getLeader().getStoreId());
         throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
       }
       if (error.hasStoreNotMatch()) {

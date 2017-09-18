@@ -24,7 +24,6 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
-import com.google.common.util.concurrent.SettableFuture;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.ReadOnlyPDClient;
 import com.pingcap.tikv.TiSession;
@@ -34,20 +33,20 @@ import com.pingcap.tikv.kvproto.Kvrpcpb.IsolationLevel;
 import com.pingcap.tikv.kvproto.Metapb.Peer;
 import com.pingcap.tikv.kvproto.Metapb.Region;
 import com.pingcap.tikv.kvproto.Metapb.Store;
+import com.pingcap.tikv.kvproto.Metapb.StoreState;
 import com.pingcap.tikv.util.Comparables;
 import com.pingcap.tikv.util.Pair;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 public class RegionManager {
   private final ReadOnlyPDClient pdClient;
-  private final LoadingCache<Long, Future<TiRegion>> regionCache;
-  private final LoadingCache<Long, Future<Store>> storeCache;
-  private final RangeMap<Comparable, Long> keyToRegionIdCache;
+  private final LoadingCache<Long, TiRegion> regionCache;
+  private final LoadingCache<Long, Store>    storeCache;
+  private final RangeMap<Comparable, Long>   keyToRegionIdCache;
   private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
   private static final int MAX_CACHE_CAPACITY = 4096;
@@ -60,10 +59,10 @@ public class RegionManager {
         CacheBuilder.newBuilder()
             .maximumSize(MAX_CACHE_CAPACITY)
             .build(
-                new CacheLoader<Long, Future<TiRegion>>() {
+                new CacheLoader<Long, TiRegion>() {
                   @ParametersAreNonnullByDefault
-                  public Future<TiRegion> load(Long key) {
-                    return pdClient.getRegionByIDAsync(key);
+                  public TiRegion load(Long key) {
+                    return pdClient.getRegionByID(key);
                   }
                 });
 
@@ -71,10 +70,10 @@ public class RegionManager {
         CacheBuilder.newBuilder()
             .maximumSize(MAX_CACHE_CAPACITY)
             .build(
-                new CacheLoader<Long, Future<Store>>() {
+                new CacheLoader<Long, Store>() {
                   @ParametersAreNonnullByDefault
-                  public Future<Store> load(Long id) {
-                    return pdClient.getStoreAsync(id);
+                  public Store load(Long id) {
+                    return pdClient.getStore(id);
                   }
                 });
     keyToRegionIdCache = TreeRangeMap.create();
@@ -110,12 +109,12 @@ public class RegionManager {
   public void invalidateRegion(long regionId) {
     lock.writeLock().lock();
     try {
-      TiRegion region = regionCache.getUnchecked(regionId).get();
+      TiRegion region = regionCache.get(regionId);
       keyToRegionIdCache.remove(makeRange(region.getStartKey(), region.getEndKey()));
     } catch (Exception ignore) {
     } finally {
-      lock.writeLock().unlock();
       regionCache.invalidate(regionId);
+      lock.writeLock().unlock();
     }
   }
 
@@ -135,7 +134,7 @@ public class RegionManager {
 
   public TiRegion getRegionById(long id) {
     try {
-      return regionCache.getUnchecked(id).get();
+      return regionCache.get(id);
     } catch (Exception e) {
       throw new GrpcException(e);
     }
@@ -143,7 +142,11 @@ public class RegionManager {
 
   public Store getStoreById(long id) {
     try {
-      return storeCache.getUnchecked(id).get();
+      Store store = storeCache.get(id);
+      if (store.getState().equals(StoreState.Tombstone)) {
+        return null;
+      }
+      return store;
     } catch (Exception e) {
       throw new GrpcException(e);
     }
@@ -153,10 +156,7 @@ public class RegionManager {
   @SuppressWarnings("unchecked")
   private boolean putRegion(TiRegion region) {
     if (!region.hasStartKey() || !region.hasEndKey()) return false;
-
-    SettableFuture<TiRegion> regionFuture = SettableFuture.create();
-    regionFuture.set(region);
-    regionCache.put(region.getId(), regionFuture);
+    regionCache.put(region.getId(), region);
 
     lock.writeLock().lock();
     try {
@@ -173,18 +173,18 @@ public class RegionManager {
   }
 
   public void updateLeader(long regionID, long storeID) {
-    Optional<Future<TiRegion>> region = Optional.of(regionCache.getUnchecked(regionID));
-    region.ifPresent(
-        r -> {
-          try {
-            if (!r.get().switchPeer(storeID)) {
+    try {
+      Optional<TiRegion> region = Optional.of(regionCache.get(regionID));
+      region.ifPresent(
+          r -> {
+            if (!r.switchPeer(storeID)) {
               // drop region cache using verID
               invalidateRegion(regionID);
             }
-          } catch (InterruptedException | ExecutionException e) {
-            invalidateRegion(regionID);
-          }
-        });
+          });
+    } catch (ExecutionException e) {
+      invalidateRegion(regionID);
+    }
   }
 
   /**
@@ -193,30 +193,12 @@ public class RegionManager {
    * @param storeID TiKV store's id
    */
   public void onRequestFail(long regionID, long storeID) {
-    Optional<Future<TiRegion>> region = Optional.ofNullable(regionCache.getIfPresent(regionID));
+    Optional<TiRegion> region = Optional.ofNullable(regionCache.getIfPresent(regionID));
     region.ifPresent(
         r -> {
-          try {
-            if (!r.get().onRequestFail(storeID)) {
-              invalidateRegion(regionID);
-            }
-          } catch (InterruptedException | ExecutionException e) {
+          if (!r.onRequestFail(storeID)) {
             invalidateRegion(regionID);
           }
-          // store's meta may be out of date.
-          invalidateStore(storeID);
         });
-    // missing one last step here, need remove these region cache's store id is store id
-    // in go code, remove region cache share same store id.
-    regionCache.asMap().values().parallelStream().forEach(f -> {
-      try {
-        TiRegion r = f.get();
-        if(r.getLeader().getStoreId() == storeID) {
-          regionCache.invalidate(r.getId());
-        }
-      } catch (InterruptedException | ExecutionException e) {
-        e.printStackTrace();
-      }
-    });
   }
 }

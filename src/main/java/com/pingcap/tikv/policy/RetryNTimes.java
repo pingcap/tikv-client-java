@@ -15,7 +15,6 @@
 
 package com.pingcap.tikv.policy;
 
-import com.google.common.base.Preconditions;
 import com.pingcap.tikv.operation.ErrorHandler;
 import com.pingcap.tikv.util.BackOff;
 import com.pingcap.tikv.util.ExponentialBackOff;

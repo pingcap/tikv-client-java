@@ -24,12 +24,22 @@ import com.google.protobuf.ByteString;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.exception.GrpcException;
 import com.pingcap.tikv.kvproto.Kvrpcpb.IsolationLevel;
-import com.pingcap.tikv.kvproto.Metapb;
 import com.pingcap.tikv.kvproto.Metapb.Store;
 import com.pingcap.tikv.kvproto.PDGrpc;
 import com.pingcap.tikv.kvproto.PDGrpc.PDBlockingStub;
 import com.pingcap.tikv.kvproto.PDGrpc.PDStub;
-import com.pingcap.tikv.kvproto.Pdpb.*;
+import com.pingcap.tikv.kvproto.Pdpb.GetMembersRequest;
+import com.pingcap.tikv.kvproto.Pdpb.GetMembersResponse;
+import com.pingcap.tikv.kvproto.Pdpb.GetRegionByIDRequest;
+import com.pingcap.tikv.kvproto.Pdpb.GetRegionRequest;
+import com.pingcap.tikv.kvproto.Pdpb.GetRegionResponse;
+import com.pingcap.tikv.kvproto.Pdpb.GetStoreRequest;
+import com.pingcap.tikv.kvproto.Pdpb.GetStoreResponse;
+import com.pingcap.tikv.kvproto.Pdpb.Member;
+import com.pingcap.tikv.kvproto.Pdpb.RequestHeader;
+import com.pingcap.tikv.kvproto.Pdpb.Timestamp;
+import com.pingcap.tikv.kvproto.Pdpb.TsoRequest;
+import com.pingcap.tikv.kvproto.Pdpb.TsoResponse;
 import com.pingcap.tikv.meta.TiTimestamp;
 import com.pingcap.tikv.operation.PDErrorHandler;
 import com.pingcap.tikv.region.TiRegion;
@@ -41,7 +51,10 @@ import io.grpc.stub.StreamObserver;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
     implements ReadOnlyPDClient {
@@ -138,24 +151,13 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
     PDErrorHandler<GetStoreResponse> handler =
         new PDErrorHandler<>(r -> r.getHeader().hasError() ? r.getHeader().getError() : null, this);
     GetStoreResponse resp = callWithRetry(PDGrpc.METHOD_GET_STORE, request, handler);
-    Store store = resp.getStore();
-    if (store.getState() == Metapb.StoreState.Tombstone) {
-      return null;
-    }
-    return store;
+    return resp.getStore();
   }
 
   @Override
   public Future<Store> getStoreAsync(long storeId) {
     FutureObserver<Store, GetStoreResponse> responseObserver =
-        new FutureObserver<>(
-            (GetStoreResponse resp) -> {
-              Store store = resp.getStore();
-              if (store.getState() == Metapb.StoreState.Tombstone) {
-                return null;
-              }
-              return store;
-            });
+        new FutureObserver<>((GetStoreResponse resp) -> resp.getStore());
 
     GetStoreRequest request =
         GetStoreRequest.newBuilder().setHeader(header).setStoreId(storeId).build();
