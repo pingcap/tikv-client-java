@@ -23,6 +23,7 @@ import com.google.common.net.HostAndPort;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.exception.GrpcException;
+import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.kvproto.Kvrpcpb.IsolationLevel;
 import com.pingcap.tikv.kvproto.Metapb.Store;
 import com.pingcap.tikv.kvproto.PDGrpc;
@@ -316,6 +317,9 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
     header = RequestHeader.newBuilder().setClusterId(clusterId).build();
     tsoReq = TsoRequest.newBuilder().setHeader(header).build();
     updateLeader(resp);
+    if (leaderWrapper == null) {
+      throw new TiClientInternalException("Error Updating leader.");
+    }
     service = Executors.newSingleThreadScheduledExecutor();
     service.scheduleAtFixedRate(() -> updateLeader(null), 1, 1, TimeUnit.MINUTES);
   }
