@@ -20,8 +20,6 @@ package com.pingcap.tikv.region;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.common.net.HostAndPort;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -65,7 +63,6 @@ public class RegionStoreClient extends AbstractGRPCClient<TikvBlockingStub, Tikv
   private final Context context;
   private final TikvBlockingStub blockingStub;
   private final TikvStub asyncStub;
-  private final ManagedChannel channel;
   private RegionManager regionManager;
 
   private final int ReqTypeSelect = 101;
@@ -277,12 +274,7 @@ public class RegionStoreClient extends AbstractGRPCClient<TikvBlockingStub, Tikv
 
   @Override
   public void close() throws Exception {
-    channel.shutdown();
   }
-
-  private static final int MAX_CACHE_CAPACITY = 64;
-  private static final Cache<String, ManagedChannel> connPool =
-      CacheBuilder.newBuilder().maximumSize(MAX_CACHE_CAPACITY).build();
 
   private static ManagedChannel createNewChannel(String addressStr) {
     HostAndPort address;
@@ -295,7 +287,6 @@ public class RegionStoreClient extends AbstractGRPCClient<TikvBlockingStub, Tikv
               .maxInboundMessageSize(MAX_MSG_SIZE)
               .usePlaintext(true)
               .build();
-      connPool.put(addressStr, channel);
       return channel;
   }
 
@@ -304,10 +295,7 @@ public class RegionStoreClient extends AbstractGRPCClient<TikvBlockingStub, Tikv
     RegionStoreClient client;
     String addressStr = store.getAddress();
     ManagedChannel channel;
-    channel = connPool.getIfPresent(addressStr);
-    if (channel == null || channel.isShutdown()) {
-      channel = createNewChannel(addressStr);
-    }
+    channel = createNewChannel(addressStr);
 
     TikvBlockingStub blockingStub = TikvGrpc.newBlockingStub(channel);
 
@@ -328,7 +316,6 @@ public class RegionStoreClient extends AbstractGRPCClient<TikvBlockingStub, Tikv
     checkNotNull(region, "Region is empty");
     checkNotNull(region.getLeader(), "Leader Peer is null");
     checkArgument(region.getLeader() != null, "Leader Peer is null");
-    this.channel = channel;
     this.regionManager = regionManager;
     this.blockingStub = blockingStub;
     this.asyncStub = asyncStub;

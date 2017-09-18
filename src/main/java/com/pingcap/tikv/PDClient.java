@@ -195,19 +195,16 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
     private final HostAndPort leaderInfo;
     private final PDBlockingStub blockingStub;
     private final PDStub asyncStub;
-    private final ManagedChannel channel;
     private final long createTime;
 
     LeaderWrapper(
         HostAndPort leaderInfo,
         PDGrpc.PDBlockingStub blockingStub,
         PDGrpc.PDStub asyncStub,
-        ManagedChannel channel,
         long createTime) {
       this.leaderInfo = leaderInfo;
       this.blockingStub = blockingStub;
       this.asyncStub = asyncStub;
-      this.channel = channel;
       this.createTime = createTime;
     }
 
@@ -228,7 +225,6 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
     }
 
     void close() {
-      channel.shutdown();
     }
   }
 
@@ -242,18 +238,14 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
     List<HostAndPort> pdAddrs = getConf().getPdAddrs();
     checkArgument(pdAddrs.size() > 0, "No PD address specified.");
     for (HostAndPort url : pdAddrs) {
-      ManagedChannel probChan = null;
       try {
-        probChan = getManagedChannel(url);
+        ManagedChannel probChan = getManagedChannel(url);
         PDGrpc.PDBlockingStub stub = PDGrpc.newBlockingStub(probChan);
         GetMembersRequest request =
             GetMembersRequest.newBuilder().setHeader(RequestHeader.getDefaultInstance()).build();
         return stub.getMembers(request);
       } catch (Exception ignore) {
       } finally {
-        if (probChan != null) {
-          probChan.shutdownNow();
-        }
       }
     }
     return null;
@@ -289,7 +281,6 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
                 newLeader,
                 PDGrpc.newBlockingStub(clientChannel),
                 PDGrpc.newStub(clientChannel),
-                clientChannel,
                 System.nanoTime());
         logger.info("Switched to new leader: %s", newLeader.toString());
       }
