@@ -75,7 +75,7 @@ public abstract class RetryPolicy<RespT> {
       } catch (Exception e) {
         long nextBackMills  = this.backOff.nextBackOffMillis();
         if(nextBackMills == BackOff.STOP) {
-          throw new GrpcException("retry is exhausted.");
+          throw new GrpcException("retry is exhausted.", e);
         }
         handleFailure(e, methodName, nextBackMills);
       }
