@@ -208,5 +208,15 @@ public class RegionManager {
         });
     // missing one last step here, need remove these region cache's store id is store id
     // in go code, remove region cache share same store id.
+    regionCache.asMap().values().parallelStream().forEach(f -> {
+      try {
+        TiRegion r = f.get();
+        if(r.getLeader().getStoreId() == storeID) {
+          regionCache.invalidate(r.getId());
+        }
+      } catch (InterruptedException | ExecutionException e) {
+        e.printStackTrace();
+      }
+    });
   }
 }
