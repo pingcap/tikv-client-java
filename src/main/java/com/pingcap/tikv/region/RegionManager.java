@@ -104,6 +104,9 @@ public class RegionManager {
   }
 
   @SuppressWarnings("unchecked")
+  /**
+   * Remotes region associated with regionId from regionCache.
+   */
   public void invalidateRegion(long regionId) {
     lock.writeLock().lock();
     try {
@@ -174,15 +177,21 @@ public class RegionManager {
     region.ifPresent(
         r -> {
           try {
-            if (r.get().switchPeer(storeID)) {
+            if (!r.get().switchPeer(storeID)) {
+              // drop region cache using verID
               invalidateRegion(regionID);
             }
           } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
+            invalidateRegion(regionID);
           }
         });
   }
 
+  /**
+   * Clears all cache when a TiKV server does not respond
+   * @param regionID region's id
+   * @param storeID TiKV store's id
+   */
   public void onRequestFail(long regionID, long storeID) {
     Optional<Future<TiRegion>> region = Optional.ofNullable(regionCache.getIfPresent(regionID));
     region.ifPresent(
@@ -192,10 +201,12 @@ public class RegionManager {
               invalidateRegion(regionID);
             }
           } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
+            invalidateRegion(regionID);
           }
           // store's meta may be out of date.
           invalidateStore(storeID);
         });
+    // missing one last step here, need remove these region cache's store id is store id
+    // in go code, remove region cache share same store id.
   }
 }
