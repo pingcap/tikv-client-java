@@ -20,7 +20,6 @@ package com.pingcap.tikv.region;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.net.HostAndPort;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.pingcap.tidb.tipb.SelectRequest;
@@ -54,7 +53,6 @@ import com.pingcap.tikv.kvproto.TikvGrpc.TikvStub;
 import com.pingcap.tikv.operation.KVErrorHandler;
 import com.pingcap.tikv.util.FutureObserver;
 import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
 import java.util.List;
 import java.util.concurrent.Future;
 
@@ -67,8 +65,6 @@ public class RegionStoreClient extends AbstractGRPCClient<TikvBlockingStub, Tikv
 
   private final int ReqTypeSelect = 101;
   private final int ReqTypeIndex = 102;
-
-  private static final int MAX_MSG_SIZE = 134217728;
 
   public ByteString get(ByteString key, long version) {
     GetRequest request =
@@ -276,32 +272,17 @@ public class RegionStoreClient extends AbstractGRPCClient<TikvBlockingStub, Tikv
   public void close() throws Exception {
   }
 
-  private static ManagedChannel createNewChannel(String addressStr) {
-    HostAndPort address;
-    try {
-        address = HostAndPort.fromString(addressStr);
-      } catch (Exception e) {
-        throw new IllegalArgumentException("failed to form address");
-      }
-    ManagedChannel channel = ManagedChannelBuilder.forAddress(address.getHostText(), address.getPort())
-              .maxInboundMessageSize(MAX_MSG_SIZE)
-              .usePlaintext(true)
-              .build();
-      return channel;
-  }
-
   public static RegionStoreClient create(
       TiRegion region, Store store, TiSession session, RegionManager regionManager) {
     RegionStoreClient client;
     String addressStr = store.getAddress();
-    ManagedChannel channel;
-    channel = createNewChannel(addressStr);
+    ManagedChannel channel = getChannel(addressStr);
 
     TikvBlockingStub blockingStub = TikvGrpc.newBlockingStub(channel);
 
     TikvStub asyncStub = TikvGrpc.newStub(channel);
     client =
-        new RegionStoreClient(region, session, regionManager, channel, blockingStub, asyncStub);
+        new RegionStoreClient(region, session, regionManager, blockingStub, asyncStub);
     return client;
   }
 
@@ -309,7 +290,6 @@ public class RegionStoreClient extends AbstractGRPCClient<TikvBlockingStub, Tikv
       TiRegion region,
       TiSession session,
       RegionManager regionManager,
-      ManagedChannel channel,
       TikvBlockingStub blockingStub,
       TikvStub asyncStub) {
     super(session);

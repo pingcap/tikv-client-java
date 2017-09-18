@@ -21,7 +21,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.net.HostAndPort;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.exception.GrpcException;
 import com.pingcap.tikv.kvproto.Metapb;
@@ -68,7 +67,7 @@ public class PDClientTest {
     try (PDClient client = createClient()) {
       assertEquals(
           client.getLeaderWrapper().getLeaderInfo(),
-          HostAndPort.fromParts(LOCAL_ADDR, server.port));
+          LOCAL_ADDR + ":" + server.port);
       assertEquals(client.getHeader().getClusterId(), CLUSTER_ID);
     }
   }

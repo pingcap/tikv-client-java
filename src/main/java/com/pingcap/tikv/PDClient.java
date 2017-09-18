@@ -47,9 +47,7 @@ import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.types.BytesType;
 import com.pingcap.tikv.util.FutureObserver;
 import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -64,6 +62,7 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
   private volatile LeaderWrapper leaderWrapper;
   private ScheduledExecutorService service;
   private IsolationLevel isolationLevel;
+
 
   @Override
   public TiTimestamp getTimestamp() {
@@ -193,13 +192,13 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
   }
 
   class LeaderWrapper {
-    private final HostAndPort leaderInfo;
+    private final String leaderInfo;
     private final PDBlockingStub blockingStub;
     private final PDStub asyncStub;
     private final long createTime;
 
     LeaderWrapper(
-        HostAndPort leaderInfo,
+        String leaderInfo,
         PDGrpc.PDBlockingStub blockingStub,
         PDGrpc.PDStub asyncStub,
         long createTime) {
@@ -209,7 +208,7 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
       this.createTime = createTime;
     }
 
-    HostAndPort getLeaderInfo() {
+    String getLeaderInfo() {
       return leaderInfo;
     }
 
@@ -229,25 +228,17 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
     }
   }
 
-  private ManagedChannel getManagedChannel(HostAndPort url) {
-    return ManagedChannelBuilder.forAddress(url.getHostText(), url.getPort())
-        .usePlaintext(true)
-        .build();
-  }
-
   public GetMembersResponse getMembers() {
     List<HostAndPort> pdAddrs = getConf().getPdAddrs();
     checkArgument(pdAddrs.size() > 0, "No PD address specified.");
     for (HostAndPort url : pdAddrs) {
       try {
-        ManagedChannel probChan = getManagedChannel(url);
+        ManagedChannel probChan = getChannel(url.getHostText() + ":" + url.getPort());
         PDGrpc.PDBlockingStub stub = PDGrpc.newBlockingStub(probChan);
         GetMembersRequest request =
             GetMembersRequest.newBuilder().setHeader(RequestHeader.getDefaultInstance()).build();
         return stub.getMembers(request);
-      } catch (Exception ignore) {
-      } finally {
-      }
+      } catch (Exception ignore) {}
     }
     return null;
   }
@@ -268,25 +259,24 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
         List<String> leaderUrls = leader.getClientUrlsList();
         if (leaderUrls.isEmpty()) return;
         leaderUrlStr = leaderUrls.get(0);
-        // TODO: Why not strip protocol info on server side since grpc does not need it
         URL tURL = new URL(leaderUrlStr);
         HostAndPort newLeader = HostAndPort.fromParts(tURL.getHost(), tURL.getPort());
-        if (leaderWrapper != null && newLeader.equals(leaderWrapper.getLeaderInfo())) {
+        leaderUrlStr = newLeader.toString();
+        // TODO: Why not strip protocol info on server side since grpc does not need it
+        if (leaderWrapper != null && leaderUrlStr.equals(leaderWrapper.getLeaderInfo())) {
           return;
         }
 
         // switch leader
-        ManagedChannel clientChannel = getManagedChannel(newLeader);
+        ManagedChannel clientChannel = getChannel(leaderUrlStr);
         leaderWrapper =
             new LeaderWrapper(
-                newLeader,
+                leaderUrlStr,
                 PDGrpc.newBlockingStub(clientChannel),
                 PDGrpc.newStub(clientChannel),
                 System.nanoTime());
-        logger.info("Switched to new leader: %s", newLeader.toString());
+        logger.info("Switched to new leader: %s", leaderWrapper);
       }
-    } catch (MalformedURLException e) {
-      logger.error("Client URL is not valid: %s", leaderUrlStr, e);
     } catch (Exception e) {
       logger.error("Error updating leader.", e);
     }

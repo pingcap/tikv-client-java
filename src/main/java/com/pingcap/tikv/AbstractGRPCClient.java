@@ -17,13 +17,19 @@ package com.pingcap.tikv;
 
 import static io.grpc.stub.ClientCalls.asyncBidiStreamingCall;
 
+import com.google.common.net.HostAndPort;
 import com.pingcap.tikv.operation.ErrorHandler;
 import com.pingcap.tikv.policy.RetryNTimes.Builder;
 import com.pingcap.tikv.policy.RetryPolicy;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
 import io.grpc.MethodDescriptor;
 import io.grpc.stub.AbstractStub;
 import io.grpc.stub.ClientCalls;
 import io.grpc.stub.StreamObserver;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -33,6 +39,29 @@ public abstract class AbstractGRPCClient<
   final Logger logger = LogManager.getFormatterLogger(getClass());
   private TiSession session;
   private TiConfiguration conf;
+  private static final int MAX_MSG_SIZE = 134217728;
+  private static final Map<String, ManagedChannel> connPool = new HashMap<>();
+
+  protected static synchronized ManagedChannel getChannel(String addressStr) {
+    ManagedChannel channel = connPool.get(addressStr);
+    if (channel == null) {
+      HostAndPort address;
+      try {
+        address = HostAndPort.fromString(addressStr);
+      } catch (Exception e) {
+        throw new IllegalArgumentException("failed to form address");
+      }
+      // Channel should be lazy without actual connection until first call
+      // So a coarse grain lock is ok here
+      channel = ManagedChannelBuilder.forAddress(address.getHostText(), address.getPort())
+          .maxInboundMessageSize(MAX_MSG_SIZE)
+          .usePlaintext(true)
+          .idleTimeout(60, TimeUnit.SECONDS)
+          .build();
+      connPool.put(addressStr, channel);
+    }
+    return channel;
+  }
 
   protected AbstractGRPCClient(TiSession session) {
     this.session = session;
