@@ -30,6 +30,7 @@ import io.grpc.stub.StreamObserver;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import org.apache.log4j.Logger;
 
 public abstract class AbstractGRPCClient<
@@ -76,17 +77,18 @@ public abstract class AbstractGRPCClient<
   }
 
   // TODO: Seems a little bit messy for lambda part
-  protected <ReqT, RespT> RespT callWithRetry(
-                                            MethodDescriptor<ReqT, RespT> method, ReqT request, ErrorHandler<RespT> handler) {
+  protected <ReqT, RespT> RespT callWithRetry(MethodDescriptor<ReqT, RespT> method,
+                                              Supplier<ReqT> requestFactory,
+                                              ErrorHandler<RespT> handler) {
     logger.debug(String.format("Calling %s...", method.getFullMethodName()));
-    RetryPolicy.Builder<RespT> builder = new Builder<>(3);
+    RetryPolicy.Builder<RespT> builder = new Builder<>(6);
     RespT resp =
         builder.create(handler)
             .callWithRetry(
                 () -> {
                   BlockingStubT stub = getBlockingStub();
                   return ClientCalls.blockingUnaryCall(
-                      stub.getChannel(), method, stub.getCallOptions(), request);
+                      stub.getChannel(), method, stub.getCallOptions(), requestFactory.get());
                 },
                 method.getFullMethodName());
     logger.debug(String.format("leaving %s...", method.getFullMethodName()));
@@ -95,19 +97,19 @@ public abstract class AbstractGRPCClient<
 
   protected <ReqT, RespT> void callAsyncWithRetry(
       MethodDescriptor<ReqT, RespT> method,
-      ReqT request,
+      Supplier<ReqT> requestFactory,
       StreamObserver<RespT> responseObserver,
       ErrorHandler<RespT> handler) {
     logger.debug(String.format("Calling %s...", method.getFullMethodName()));
 
-    RetryPolicy.Builder<RespT> builder = new Builder<>(3);
+    RetryPolicy.Builder<RespT> builder = new Builder<>(6);
     builder.create(handler)
         .callWithRetry(
             () -> {
               StubT stub = getAsyncStub();
               ClientCalls.asyncUnaryCall(
                   stub.getChannel().newCall(method, stub.getCallOptions()),
-                  request,
+                  requestFactory.get(),
                   responseObserver);
               return null;
             },

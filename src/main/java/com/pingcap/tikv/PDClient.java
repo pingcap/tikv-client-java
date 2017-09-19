@@ -54,6 +54,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
     implements ReadOnlyPDClient {
@@ -89,7 +90,7 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
     BytesType.writeBytes(cdo, key.toByteArray());
     ByteString encodedKey = cdo.toByteString();
 
-    GetRegionRequest request =
+    Supplier<GetRegionRequest> request = () ->
         GetRegionRequest.newBuilder().setHeader(header).setRegionKey(encodedKey).build();
 
     PDErrorHandler<GetRegionResponse> handler =
@@ -103,7 +104,7 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
   public Future<TiRegion> getRegionByKeyAsync(ByteString key) {
     FutureObserver<TiRegion, GetRegionResponse> responseObserver =
         new FutureObserver<>(resp -> new TiRegion(resp.getRegion(), resp.getLeader(), isolationLevel));
-    GetRegionRequest request =
+    Supplier<GetRegionRequest> request = () ->
         GetRegionRequest.newBuilder().setHeader(header).setRegionKey(key).build();
 
     PDErrorHandler<GetRegionResponse> handler =
@@ -114,7 +115,7 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
 
   @Override
   public TiRegion getRegionByID(long id) {
-    GetRegionByIDRequest request =
+    Supplier<GetRegionByIDRequest> request = () ->
         GetRegionByIDRequest.newBuilder().setHeader(header).setRegionId(id).build();
     PDErrorHandler<GetRegionResponse> handler =
         new PDErrorHandler<>(r -> r.getHeader().hasError() ? r.getHeader().getError() : null, this);
@@ -136,7 +137,7 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
     FutureObserver<TiRegion, GetRegionResponse> responseObserver =
         new FutureObserver<>(resp -> new TiRegion(resp.getRegion(), resp.getLeader(), isolationLevel));
 
-    GetRegionByIDRequest request =
+    Supplier<GetRegionByIDRequest> request = () ->
         GetRegionByIDRequest.newBuilder().setHeader(header).setRegionId(id).build();
     PDErrorHandler<GetRegionResponse> handler =
         new PDErrorHandler<>(r -> r.getHeader().hasError() ? r.getHeader().getError() : null, this);
@@ -146,7 +147,7 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
 
   @Override
   public Store getStore(long storeId) {
-    GetStoreRequest request =
+    Supplier<GetStoreRequest> request = () ->
         GetStoreRequest.newBuilder().setHeader(header).setStoreId(storeId).build();
     PDErrorHandler<GetStoreResponse> handler =
         new PDErrorHandler<>(r -> r.getHeader().hasError() ? r.getHeader().getError() : null, this);
@@ -159,7 +160,7 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
     FutureObserver<Store, GetStoreResponse> responseObserver =
         new FutureObserver<>((GetStoreResponse resp) -> resp.getStore());
 
-    GetStoreRequest request =
+    Supplier<GetStoreRequest> request = () ->
         GetStoreRequest.newBuilder().setHeader(header).setStoreId(storeId).build();
     PDErrorHandler<GetStoreResponse> handler =
         new PDErrorHandler<>(r -> r.getHeader().hasError() ? r.getHeader().getError() : null, this);

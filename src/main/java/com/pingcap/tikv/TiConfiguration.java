@@ -29,7 +29,7 @@ public class TiConfiguration {
   private static final int DEF_SCAN_BATCH_SIZE = 100;
   private static final boolean DEF_IGNORE_TRUNCATE = true;
   private static final boolean DEF_TRUNCATE_AS_WARNING = false;
-  private static final int DEF_META_RELOAD_PERIOD = 1;
+  private static final int DEF_META_RELOAD_PERIOD = 10;
   private static final TimeUnit DEF_META_RELOAD_UNIT = TimeUnit.SECONDS;
 
   private int timeout = DEF_TIMEOUT;

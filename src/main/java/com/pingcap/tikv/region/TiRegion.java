@@ -29,8 +29,10 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.apache.log4j.Logger;
 
 public class TiRegion implements Serializable {
+  private static final Logger logger = Logger.getLogger(TiRegion.class);
   private final Region meta;
   private final Set<Long> unreachableStores;
   private Peer peer;
@@ -99,12 +101,18 @@ public class TiRegion implements Serializable {
    */
   boolean switchPeer(long leaderStoreID) {
     List<Peer> peers = meta.getPeersList();
+    logger.warn(String.format("Thread %s: switchPeer total %d peers",
+        Thread.currentThread().getId(), peers.size()));
     for (Peer p : peers) {
+      logger.warn(String.format("Thread %s: switchPeer cur peer store id %d",
+                  Thread.currentThread().getId(), p.getStoreId()));
       if (p.getStoreId() == leaderStoreID) {
         this.peer = p;
         return true;
       }
     }
+    logger.warn(String.format("Thread %s: switchPeer with store id %d failed",
+        Thread.currentThread().getId(), leaderStoreID));
     return false;
   }
 
