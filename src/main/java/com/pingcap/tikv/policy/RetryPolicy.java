@@ -73,6 +73,7 @@ public abstract class RetryPolicy<RespT> {
         return result;
       } catch (Exception e) {
         long nextBackMills  = this.backOff.nextBackOffMillis();
+        logger.warn(Thread.currentThread().getId() + ": Retried = " + nextBackMills);
         if(nextBackMills == BackOff.STOP) {
           throw new GrpcException("retry is exhausted.", e);
         }

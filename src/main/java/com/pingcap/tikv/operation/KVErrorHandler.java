@@ -51,7 +51,12 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
     if (error != null) {
       if (error.hasNotLeader()) {
         // update Leader here
-        logger.warn(Thread.currentThread().getId() + ": hasNotLeader region id" + error.getNotLeader().getRegionId());
+        logger.warn(String.format("Thread %s: NotLeader Error with region id %d",
+                                  Thread.currentThread().getId(), error.getNotLeader().getRegionId()));
+        logger.warn(String.format("Thread %s: origin call with region id %d and store id %d",
+                                  Thread.currentThread().getId(),
+                                  ctx.getRegionId(),
+                                  ctx.getPeer().getStoreId()));
         this.regionManager.updateLeader(ctx.getRegionId(), error.getNotLeader().getLeader().getStoreId());
         throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
       }

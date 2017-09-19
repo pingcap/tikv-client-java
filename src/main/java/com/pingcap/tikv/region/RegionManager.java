@@ -184,7 +184,8 @@ public class RegionManager {
 
   public void updateLeader(long regionID, long storeID) {
     try {
-      logger.warn(Thread.currentThread().getId() + ": updateLeader region id " + regionID);
+      logger.debug(String.format("Thread %s: updateLeader with region id %d",
+                                 Thread.currentThread().getId(), regionID));
       lock.readLock().lock();
       Optional<TiRegion> region = Optional.of(regionCache.get(regionID));
       lock.readLock().unlock();
@@ -192,10 +193,14 @@ public class RegionManager {
           r -> {
             if (!r.switchPeer(storeID)) {
               // drop region cache using verID
-              logger.warn(Thread.currentThread().getId() + ": updateLeader failed region id " + regionID);
+              logger.warn(String.format("Thread %s: updateLeader failed with region id %d",
+                                         Thread.currentThread().getId(), regionID));
               invalidateRegion(regionID);
             }
-            logger.warn(Thread.currentThread().getId() + ": updateLeader finished region id " + regionID);
+            logger.debug(String.format("Thread %s: leaving peer switching to %d with region id %d",
+                                        Thread.currentThread().getId(),
+                                        storeID,
+                                        regionID));
           });
     } catch (ExecutionException e) {
       lock.readLock().unlock();
