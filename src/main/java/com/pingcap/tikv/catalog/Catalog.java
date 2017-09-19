@@ -107,7 +107,7 @@ public class Catalog {
                                                    "Snapshot Provider is null");
     metaCache = new CatalogCache(new CatalogTransaction(snapshotProvider.get()));
     service = Executors.newSingleThreadScheduledExecutor();
-    // service.scheduleAtFixedRate(() -> reloadCache(), refreshPeriod, refreshPeriod, periodUnit);
+    service.scheduleAtFixedRate(() -> reloadCache(), refreshPeriod, refreshPeriod, periodUnit);
   }
 
   public Catalog(Supplier<Snapshot> snapshotProvider) {
