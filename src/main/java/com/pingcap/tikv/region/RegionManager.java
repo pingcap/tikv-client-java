@@ -36,10 +36,8 @@ import com.pingcap.tikv.kvproto.Metapb.StoreState;
 import com.pingcap.tikv.util.Comparables;
 import com.pingcap.tikv.util.Pair;
 import java.util.List;
-import org.apache.log4j.Logger;
 
 public class RegionManager {
-  private static final Logger logger = Logger.getLogger(RegionManager.class);
   private RegionCache cache;
   private final ReadOnlyPDClient pdClient;
 
@@ -99,8 +97,6 @@ public class RegionManager {
       TiRegion region = regionCache.getIfPresent(regionId);
       if (region == null) {
         region = pdClient.getRegionByID(regionId);
-        logger.warn(String.format("Thread %s: getRegionById cache miss with region id %d leader store id %d",
-                     Thread.currentThread().getId(), region.getId(), region.getLeader().getStoreId()));
         if (!putRegion(region)) {
           throw new TiClientInternalException("Invalid Region: " + region.toString());
         }
@@ -110,7 +106,7 @@ public class RegionManager {
 
     @SuppressWarnings("unchecked")
     /**
-     * Remotes region associated with regionId from regionCache.
+     * Removes region associated with regionId from regionCache.
      */
     public synchronized void invalidateRegion(long regionId) {
       try {
@@ -140,8 +136,6 @@ public class RegionManager {
         Store store = storeCache.getIfPresent(id);
         if (store == null) {
           store = pdClient.getStore(id);
-          logger.warn(String.format("Thread %s: getStoreById cache miss with store id %d",
-                                     Thread.currentThread().getId(), id));
         }
         if (store.getState().equals(StoreState.Tombstone)) {
           return null;
@@ -198,22 +192,12 @@ public class RegionManager {
   }
 
   public void updateLeader(long regionID, long storeID) {
-    logger.warn(String.format("Thread %s: updateLeader with region id %d",
-        Thread.currentThread().getId(), regionID));
     TiRegion r = cache.getRegionById(regionID);
     if (r != null) {
       if (!r.switchPeer(storeID)) {
         // drop region cache using verID
-        logger.warn(String.format("Thread %s: updateLeader failed with region id %d",
-            Thread.currentThread().getId(), regionID));
-        logger.warn(String.format("Thread %s: updateLeader peer list is id %s",
-            Thread.currentThread().getId(), regionID));
         cache.invalidateRegion(regionID);
       }
-      logger.warn(String.format("Thread %s: leaving peer switching to %d with region id %d",
-          Thread.currentThread().getId(),
-          storeID,
-          regionID));
     }
   }
 
@@ -236,14 +220,10 @@ public class RegionManager {
   }
 
   public void invalidateStore(long storeId) {
-    logger.warn(String.format("Thread %s: invalidateStore with store id %d",
-        Thread.currentThread().getId(), storeId));
     cache.invalidateStore(storeId);
   }
 
   public void invalidateRegion(long regionID) {
-    logger.warn(String.format("Thread %s: invalidateRegion with region id %d",
-        Thread.currentThread().getId(), regionID));
     cache.invalidateRegion(regionID);
   }
 }

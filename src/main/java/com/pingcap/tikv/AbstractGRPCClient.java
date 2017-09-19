@@ -39,7 +39,7 @@ public abstract class AbstractGRPCClient<
   final Logger logger = Logger.getLogger(this.getClass());
   private TiSession session;
   private TiConfiguration conf;
-  private static final int MAX_MSG_SIZE = 134217728;
+  private static final int MAX_MSG_SIZE = 134217728 * 4;
   private static final Map<String, ManagedChannel> connPool = new HashMap<>();
 
   protected static synchronized ManagedChannel getChannel(String addressStr) {
@@ -81,7 +81,7 @@ public abstract class AbstractGRPCClient<
                                               Supplier<ReqT> requestFactory,
                                               ErrorHandler<RespT> handler) {
     logger.debug(String.format("Calling %s...", method.getFullMethodName()));
-    RetryPolicy.Builder<RespT> builder = new Builder<>(6);
+    RetryPolicy.Builder<RespT> builder = new Builder<>(conf.getRetryTimes(), conf.getBackOffClass());
     RespT resp =
         builder.create(handler)
             .callWithRetry(
@@ -102,14 +102,15 @@ public abstract class AbstractGRPCClient<
       ErrorHandler<RespT> handler) {
     logger.debug(String.format("Calling %s...", method.getFullMethodName()));
 
-    RetryPolicy.Builder<RespT> builder = new Builder<>(6);
+    RetryPolicy.Builder<RespT> builder = new Builder<>(conf.getRetryTimes(), conf.getBackOffClass());
     builder.create(handler)
         .callWithRetry(
             () -> {
+              ReqT req = requestFactory.get();
               StubT stub = getAsyncStub();
               ClientCalls.asyncUnaryCall(
                   stub.getChannel().newCall(method, stub.getCallOptions()),
-                  requestFactory.get(),
+                  req,
                   responseObserver);
               return null;
             },
@@ -123,7 +124,7 @@ public abstract class AbstractGRPCClient<
       ErrorHandler<StreamObserver<ReqT>> handler) {
     logger.debug(String.format("Calling %s...", method.getFullMethodName()));
 
-    RetryPolicy.Builder<StreamObserver<ReqT>> builder = new Builder<>(3);
+    RetryPolicy.Builder<StreamObserver<ReqT>> builder = new Builder<>(conf.getRetryTimes(), conf.getBackOffClass());
     StreamObserver<ReqT> observer =
         builder.create(handler)
             .callWithRetry(

@@ -71,7 +71,7 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
       if (error.hasStoreNotMatch()) {
         logger.warn(String.format("Thread %s: Store Not Match happened with region id %d, store id %d",
                                   Thread.currentThread().getId(), ctxRegion.getId(),
-            ctxRegion.getLeader().getStoreId()));
+                                  ctxRegion.getLeader().getStoreId()));
 
         regionManager.invalidateRegion(ctxRegion.getId());
         regionManager.invalidateStore(ctxRegion.getLeader().getStoreId());

@@ -28,6 +28,7 @@ import com.pingcap.tikv.kvproto.Metapb.Store;
 import com.pingcap.tikv.kvproto.Metapb.StoreState;
 import com.pingcap.tikv.meta.TiTimestamp;
 import com.pingcap.tikv.region.TiRegion;
+import com.pingcap.tikv.util.ZeroBackOff;
 import java.io.IOException;
 import org.junit.After;
 import org.junit.Before;
@@ -59,6 +60,8 @@ public class PDClientTest {
             GrpcUtils.makeMember(2, "http://" + LOCAL_ADDR + ":" + (server.port + 2))));
     TiConfiguration conf =
         TiConfiguration.createDefault(ImmutableList.of("127.0.0.1:" + server.port));
+    conf.setRetryTimes(3);
+    conf.setBackOffClass(ZeroBackOff.class);
     return PDClient.createRaw(TiSession.create(conf));
   }
 

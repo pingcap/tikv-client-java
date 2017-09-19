@@ -279,8 +279,6 @@ public class RegionStoreClient extends AbstractGRPCClient<TikvBlockingStub, Tikv
 
   public static RegionStoreClient create(
       TiRegion region, Store store, TiSession session, RegionManager regionManager) {
-    logger.warn(String.format("Thread %s: RegionStoreClient create with region id %d, store id %d",
-        Thread.currentThread().getId(), region.getId(), store.getId()));
     RegionStoreClient client;
     String addressStr = store.getAddress();
     ManagedChannel channel = getChannel(addressStr);
@@ -329,8 +327,6 @@ public class RegionStoreClient extends AbstractGRPCClient<TikvBlockingStub, Tikv
     }
     blockingStub = TikvGrpc.newBlockingStub(channel);
     asyncStub = TikvGrpc.newStub(channel);
-    logger.warn(String.format("Thread %s: onNotLeader with region id %d, store id %d",
-        Thread.currentThread().getId(), region.getContext().getRegionId(), region.getContext().getPeer().getStoreId()));
   }
 
   @Override
