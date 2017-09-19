@@ -106,11 +106,10 @@ public abstract class AbstractGRPCClient<
     builder.create(handler)
         .callWithRetry(
             () -> {
-              ReqT req = requestFactory.get();
               StubT stub = getAsyncStub();
               ClientCalls.asyncUnaryCall(
                   stub.getChannel().newCall(method, stub.getCallOptions()),
-                  req,
+                  requestFactory.get(),
                   responseObserver);
               return null;
             },

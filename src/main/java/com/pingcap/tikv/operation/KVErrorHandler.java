@@ -47,7 +47,7 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
   public void handle(RespT resp) {
     // if resp is null, then region maybe out of dated. we need handle this on RegionManager.
     if (resp == null) {
-      regionManager.onRequestFail(ctxRegion.getId(), ctxRegion.getLeader().getStoreId());
+//      regionManager.onRequestFail(ctxRegion.getId(), ctxRegion.getLeader().getStoreId());
       return;
     }
 
