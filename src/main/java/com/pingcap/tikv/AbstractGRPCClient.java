@@ -30,13 +30,12 @@ import io.grpc.stub.StreamObserver;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.apache.log4j.Logger;
 
 public abstract class AbstractGRPCClient<
         BlockingStubT extends AbstractStub<BlockingStubT>, StubT extends AbstractStub<StubT>>
     implements AutoCloseable {
-  final Logger logger = LogManager.getFormatterLogger(getClass());
+  final Logger logger = Logger.getLogger(this.getClass());
   private TiSession session;
   private TiConfiguration conf;
   private static final int MAX_MSG_SIZE = 134217728;
@@ -79,7 +78,7 @@ public abstract class AbstractGRPCClient<
   // TODO: Seems a little bit messy for lambda part
   protected <ReqT, RespT> RespT callWithRetry(
                                             MethodDescriptor<ReqT, RespT> method, ReqT request, ErrorHandler<RespT> handler) {
-    logger.debug("Calling %s...", method.getFullMethodName());
+    logger.debug(String.format("Calling %s...", method.getFullMethodName()));
     RetryPolicy.Builder<RespT> builder = new Builder<>(3);
     RespT resp =
         builder.create(handler)
@@ -90,7 +89,7 @@ public abstract class AbstractGRPCClient<
                       stub.getChannel(), method, stub.getCallOptions(), request);
                 },
                 method.getFullMethodName());
-    logger.debug("leaving %s...", method.getFullMethodName());
+    logger.debug(String.format("leaving %s...", method.getFullMethodName()));
     return resp;
   }
 
@@ -99,7 +98,7 @@ public abstract class AbstractGRPCClient<
       ReqT request,
       StreamObserver<RespT> responseObserver,
       ErrorHandler<RespT> handler) {
-    logger.debug("Calling %s...", method.getFullMethodName());
+    logger.debug(String.format("Calling %s...", method.getFullMethodName()));
 
     RetryPolicy.Builder<RespT> builder = new Builder<>(3);
     builder.create(handler)
@@ -113,14 +112,14 @@ public abstract class AbstractGRPCClient<
               return null;
             },
             method.getFullMethodName());
-    logger.debug("leaving %s...", method.getFullMethodName());
+    logger.debug(String.format("leaving %s...", method.getFullMethodName()));
   }
 
   <ReqT, RespT> StreamObserver<ReqT> callBidiStreamingWithRetry(
       MethodDescriptor<ReqT, RespT> method,
       StreamObserver<RespT> responseObserver,
       ErrorHandler<StreamObserver<ReqT>> handler) {
-    logger.debug("Calling %s...", method.getFullMethodName());
+    logger.debug(String.format("Calling %s...", method.getFullMethodName()));
 
     RetryPolicy.Builder<StreamObserver<ReqT>> builder = new Builder<>(3);
     StreamObserver<ReqT> observer =
@@ -132,7 +131,7 @@ public abstract class AbstractGRPCClient<
                       stub.getChannel().newCall(method, stub.getCallOptions()), responseObserver);
                 },
                 method.getFullMethodName());
-    logger.debug("leaving %s...", method.getFullMethodName());
+    logger.debug(String.format("leaving %s...", method.getFullMethodName()));
     return observer;
   }
 

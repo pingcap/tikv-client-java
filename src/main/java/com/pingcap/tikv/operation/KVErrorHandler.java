@@ -23,8 +23,10 @@ import com.pingcap.tikv.region.RegionManager;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.util.function.Function;
+import org.apache.log4j.Logger;
 
 public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
+  private static final Logger logger = Logger.getLogger(KVErrorHandler.class);
   private Function<RespT, Errorpb.Error> getRegionError;
   private RegionManager regionManager;
   private Kvrpcpb.Context ctx;
@@ -49,6 +51,7 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
     if (error != null) {
       if (error.hasNotLeader()) {
         // update Leader here
+        logger.warn(Thread.currentThread().getId() + ": hasNotLeader region id" + error.getNotLeader().getRegionId());
         this.regionManager.updateLeader(ctx.getRegionId(), error.getNotLeader().getLeader().getStoreId());
         throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
       }

@@ -275,7 +275,7 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
                 PDGrpc.newBlockingStub(clientChannel),
                 PDGrpc.newStub(clientChannel),
                 System.nanoTime());
-        logger.info("Switched to new leader: %s", leaderWrapper);
+        logger.info(String.format("Switched to new leader: %s", leaderWrapper));
       }
     } catch (Exception e) {
       logger.error("Error updating leader.", e);

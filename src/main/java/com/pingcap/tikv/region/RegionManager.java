@@ -34,7 +34,6 @@ import com.pingcap.tikv.kvproto.Metapb.Peer;
 import com.pingcap.tikv.kvproto.Metapb.Region;
 import com.pingcap.tikv.kvproto.Metapb.Store;
 import com.pingcap.tikv.kvproto.Metapb.StoreState;
-import com.pingcap.tikv.policy.RetryPolicy;
 import com.pingcap.tikv.util.Comparables;
 import com.pingcap.tikv.util.Pair;
 import java.util.List;
@@ -42,11 +41,10 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.annotation.ParametersAreNonnullByDefault;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.apache.log4j.Logger;
 
 public class RegionManager {
-  private static final Logger logger = LogManager.getFormatterLogger(RetryPolicy.class);
+  private static final Logger logger = Logger.getLogger(RegionManager.class);
   private final ReadOnlyPDClient pdClient;
   private final LoadingCache<Long, TiRegion> regionCache;
   private final LoadingCache<Long, Store>    storeCache;
@@ -186,6 +184,7 @@ public class RegionManager {
 
   public void updateLeader(long regionID, long storeID) {
     try {
+      logger.warn(Thread.currentThread().getId() + ": updateLeader region id " + regionID);
       lock.readLock().lock();
       Optional<TiRegion> region = Optional.of(regionCache.get(regionID));
       lock.readLock().unlock();
@@ -193,8 +192,10 @@ public class RegionManager {
           r -> {
             if (!r.switchPeer(storeID)) {
               // drop region cache using verID
+              logger.warn(Thread.currentThread().getId() + ": updateLeader failed region id " + regionID);
               invalidateRegion(regionID);
             }
+            logger.warn(Thread.currentThread().getId() + ": updateLeader finished region id " + regionID);
           });
     } catch (ExecutionException e) {
       lock.readLock().unlock();
