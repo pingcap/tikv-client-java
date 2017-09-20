@@ -118,19 +118,6 @@ public class RegionStoreClient extends AbstractGRPCClient<TikvBlockingStub, Tikv
     }
   }
 
-  public Future<ByteString> getAsync(ByteString key, long version) {
-    FutureObserver<ByteString, GetResponse> responseObserver =
-        new FutureObserver<>(this::getHelper);
-    Supplier<GetRequest> factory = () ->
-        GetRequest.newBuilder().setContext(region.getContext()).setKey(key).setVersion(version).build();
-
-    KVErrorHandler<GetResponse> handler =
-        new KVErrorHandler<>(
-            regionManager, this, region, resp -> resp.hasRegionError() ? resp.getRegionError() : null);
-    callAsyncWithRetry(TikvGrpc.METHOD_KV_GET, factory, responseObserver, handler);
-    return responseObserver.getFuture();
-  }
-
   private ByteString getHelper(GetResponse resp) {
     if (resp.hasError()) {
       throw new KeyException(resp.getError());
@@ -155,24 +142,6 @@ public class RegionStoreClient extends AbstractGRPCClient<TikvBlockingStub, Tikv
     return batchGetHelper(resp);
   }
 
-  public Future<List<KvPair>> batchGetAsync(Iterable<ByteString> keys, long version) {
-    FutureObserver<List<KvPair>, BatchGetResponse> responseObserver =
-        new FutureObserver<>(this::batchGetHelper);
-
-    Supplier<BatchGetRequest> request = () ->
-        BatchGetRequest.newBuilder()
-            .setContext(region.getContext())
-            .addAllKeys(keys)
-            .setVersion(version)
-            .build();
-
-    KVErrorHandler<BatchGetResponse> handler =
-        new KVErrorHandler<>(
-            regionManager, this, region, resp -> resp.hasRegionError() ? resp.getRegionError() : null);
-    callAsyncWithRetry(TikvGrpc.METHOD_KV_BATCH_GET, request, responseObserver, handler);
-    return responseObserver.getFuture();
-  }
-
   private List<KvPair> batchGetHelper(BatchGetResponse resp) {
     if (resp.hasRegionError()) {
       throw new RegionException(resp.getRegionError());
@@ -182,10 +151,6 @@ public class RegionStoreClient extends AbstractGRPCClient<TikvBlockingStub, Tikv
 
   public List<KvPair> scan(ByteString startKey, long version) {
     return scan(startKey, version, false);
-  }
-
-  public Future<List<KvPair>> scanAsync(ByteString startKey, long version) {
-    return scanAsync(startKey, version, false);
   }
 
   public List<KvPair> scan(ByteString startKey, long version, boolean keyOnly) {
@@ -203,25 +168,6 @@ public class RegionStoreClient extends AbstractGRPCClient<TikvBlockingStub, Tikv
             regionManager, this, region, resp -> resp.hasRegionError() ? resp.getRegionError() : null);
     ScanResponse resp = callWithRetry(TikvGrpc.METHOD_KV_SCAN, request, handler);
     return scanHelper(resp);
-  }
-
-  private Future<List<KvPair>> scanAsync(ByteString startKey, long version, boolean keyOnly) {
-    FutureObserver<List<KvPair>, ScanResponse> responseObserver =
-        new FutureObserver<>(this::scanHelper);
-
-    Supplier<ScanRequest> request = () ->
-        ScanRequest.newBuilder()
-            .setContext(region.getContext())
-            .setStartKey(startKey)
-            .setVersion(version)
-            .setKeyOnly(keyOnly)
-            .build();
-
-    KVErrorHandler<ScanResponse> handler =
-        new KVErrorHandler<>(
-            regionManager, this, region, resp -> resp.hasRegionError() ? resp.getRegionError() : null);
-    callAsyncWithRetry(TikvGrpc.METHOD_KV_SCAN, request, responseObserver, handler);
-    return responseObserver.getFuture();
   }
 
   private List<KvPair> scanHelper(ScanResponse resp) {
@@ -245,24 +191,6 @@ public class RegionStoreClient extends AbstractGRPCClient<TikvBlockingStub, Tikv
             regionManager, this, region, resp -> resp.hasRegionError() ? resp.getRegionError() : null);
     Coprocessor.Response resp = callWithRetry(TikvGrpc.METHOD_COPROCESSOR, reqToSend, handler);
     return coprocessorHelper(resp);
-  }
-
-  public Future<SelectResponse> coprocessAsync(SelectRequest req, List<KeyRange> ranges) {
-    FutureObserver<SelectResponse, Coprocessor.Response> responseObserver =
-        new FutureObserver<>(this::coprocessorHelper);
-    Supplier<Coprocessor.Request> reqToSend = () ->
-        Coprocessor.Request.newBuilder()
-            .setContext(region.getContext())
-            .setTp(req.hasIndexInfo() ? ReqTypeIndex : ReqTypeSelect)
-            .setData(req.toByteString())
-            .addAllRanges(ranges)
-            .build();
-
-    KVErrorHandler<Coprocessor.Response> handler =
-        new KVErrorHandler<>(
-            regionManager, this, region, resp -> resp.hasRegionError() ? resp.getRegionError() : null);
-    callAsyncWithRetry(TikvGrpc.METHOD_COPROCESSOR, reqToSend, responseObserver, handler);
-    return responseObserver.getFuture();
   }
 
   private SelectResponse coprocessorHelper(Coprocessor.Response resp) {

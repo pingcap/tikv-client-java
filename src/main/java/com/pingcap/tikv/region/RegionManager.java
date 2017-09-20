@@ -214,8 +214,6 @@ public class RegionManager {
       }
     }
 
-    // missing one last step here, need remove these region cache's store id is store id
-    // in go code, remove region cache share same store id.
     cache.invalidateAllRegionForStore(storeID);
   }
 
