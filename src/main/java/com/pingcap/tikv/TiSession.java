@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 
-public class TiSession {
+public class TiSession implements AutoCloseable {
   private static final Map<String, ManagedChannel> connPool = new HashMap<>();
   private final TiConfiguration conf;
   private final RegionManager regionManager;
@@ -95,5 +95,10 @@ public class TiSession {
 
   public static TiSession create(TiConfiguration conf) {
     return new TiSession(conf);
+  }
+
+  @Override
+  public void close() throws Exception {
+    connPool.values().forEach(ManagedChannel::shutdown);
   }
 }
