@@ -29,14 +29,13 @@ import java.util.concurrent.TimeUnit;
 public class TiSession implements AutoCloseable {
   private static final Map<String, ManagedChannel> connPool = new HashMap<>();
   private final TiConfiguration conf;
-  private final RegionManager regionManager;
-  private final PDClient client;
-  private Catalog catalog; // Meta loading is heavy, pending for lazy loading
+  // below object creation is either heavy or making connection (pd), pending for lazy loading
+  private volatile RegionManager regionManager;
+  private volatile PDClient client;
+  private volatile Catalog catalog;
 
   public TiSession(TiConfiguration conf) {
     this.conf = conf;
-    this.client = PDClient.createRaw(this);
-    this.regionManager = new RegionManager(this.client);
   }
 
   public TiConfiguration getConf() {
@@ -44,7 +43,7 @@ public class TiSession implements AutoCloseable {
   }
 
   public TiTimestamp getTimestamp() {
-    return client.getTimestamp();
+    return getPDClient().getTimestamp();
   }
 
   public Snapshot createSnapshot() {
@@ -56,20 +55,44 @@ public class TiSession implements AutoCloseable {
   }
 
   public PDClient getPDClient() {
-    return client;
-  }
-
-  public synchronized Catalog getCatalog() {
-    if (catalog == null) {
-      catalog = new Catalog(() -> createSnapshot(),
-                                  conf.getMetaReloadPeriod(),
-                                  conf.getMetaReloadPeriodUnit());
+    PDClient res = client;
+    if (res == null) {
+      synchronized (this) {
+        if (client == null) {
+          client = PDClient.createRaw(this);
+          res = client;
+        }
+      }
     }
-    return catalog;
+    return res;
   }
 
-  public RegionManager getRegionManager() {
-    return regionManager;
+  public Catalog getCatalog() {
+    Catalog res = catalog;
+    if (res == null) {
+      synchronized (this) {
+        if (catalog == null) {
+          catalog = new Catalog(() -> createSnapshot(),
+              conf.getMetaReloadPeriod(),
+              conf.getMetaReloadPeriodUnit());
+          res = catalog;
+        }
+      }
+    }
+    return res;
+  }
+
+  public synchronized RegionManager getRegionManager() {
+    RegionManager res = regionManager;
+    if (res == null) {
+      synchronized (this) {
+        if (regionManager == null) {
+          regionManager = new RegionManager(getPDClient());
+          res = regionManager;
+        }
+      }
+    }
+    return res;
   }
 
   public synchronized ManagedChannel getChannel(String addressStr) {

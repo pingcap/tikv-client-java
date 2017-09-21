@@ -16,14 +16,15 @@ public class Main {
 
   public static void main(String[] args) throws Exception {
     // May need to save this reference
+    TiSession session = TiSession.create(conf);
+    Catalog cat = session.getCatalog();
+    TiDBInfo db = cat.getDatabase("test");
+    TiTableInfo table = cat.getTable(db, "t2");
     Logger log = Logger.getLogger("io.grpc");
     log.setLevel(Level.WARNING);
 
-    Catalog cat = session.getCatalog();
     cat.listDatabases();
-    TiDBInfo db = cat.getDatabase("TPCH_001");
     while (true) {
-      TiTableInfo table = cat.getTable(db, "test");
       if (table != null) {
         System.out.println("exist");
       } else {
