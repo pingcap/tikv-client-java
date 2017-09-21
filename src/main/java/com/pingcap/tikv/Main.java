@@ -11,15 +11,15 @@ public class Main {
 
   private static TiConfiguration conf =
       TiConfiguration.createDefault("127.0.0.1:" + 2379);
-  private static TiCluster cluster = TiCluster.getCluster(conf);
-  private static Snapshot snapshot = cluster.createSnapshot();
+  private static TiSession session = TiSession.create(conf);
+  private static Snapshot snapshot = session.createSnapshot();
 
   public static void main(String[] args) throws Exception {
     // May need to save this reference
     Logger log = Logger.getLogger("io.grpc");
     log.setLevel(Level.WARNING);
 
-    Catalog cat = cluster.getCatalog();
+    Catalog cat = session.getCatalog();
     cat.listDatabases();
     TiDBInfo db = cat.getDatabase("TPCH_001");
     while (true) {

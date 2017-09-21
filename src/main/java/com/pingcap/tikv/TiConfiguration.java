@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.net.HostAndPort;
 import com.pingcap.tikv.util.BackOff;
 import com.pingcap.tikv.util.ExponentialBackOff;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -34,6 +35,7 @@ public class TiConfiguration implements Serializable {
   private static final TimeUnit DEF_META_RELOAD_UNIT = TimeUnit.SECONDS;
   private static final int DEF_RETRY_TIMES = 3;
   private static final Class<? extends BackOff> DEF_BACKOFF_CLASS = ExponentialBackOff.class;
+  private static final int DEF_MAX_FRAME_SIZE = 268435456 * 2; // 256 * 2 MB
 
   private int retryTimes = DEF_RETRY_TIMES;
   private int timeout = DEF_TIMEOUT;
@@ -42,18 +44,14 @@ public class TiConfiguration implements Serializable {
   private boolean truncateAsWarning = DEF_TRUNCATE_AS_WARNING;
   private TimeUnit metaReloadUnit = DEF_META_RELOAD_UNIT;
   private int metaReloadPeriod = DEF_META_RELOAD_PERIOD;
+  private int maxFrameSize = DEF_MAX_FRAME_SIZE;
   private Class<? extends BackOff> backOffClass = DEF_BACKOFF_CLASS;
   private List<HostAndPort> pdAddrs = new ArrayList<>();
 
-  public static TiConfiguration createDefault(List<String> pdAddrs) {
+  public static TiConfiguration createDefault(String pdAddrsStr) {
+    Objects.requireNonNull(pdAddrsStr, "pdAddrsStr is null");
     TiConfiguration conf = new TiConfiguration();
-    conf.pdAddrs =
-        ImmutableList.copyOf(
-            ImmutableSet.copyOf(pdAddrs)
-                .asList()
-                .stream()
-                .map(HostAndPort::fromString)
-                .collect(Collectors.toList()));
+    conf.pdAddrs = strToHostAndPort(pdAddrsStr);
     return conf;
   }
 
@@ -146,10 +144,19 @@ public class TiConfiguration implements Serializable {
     return this;
   }
 
-    return rpcRetryTimes;
-  }
-    this.backOffClass = backOffClass;
   public void setRpcRetryTimes(int rpcRetryTimes) {
-    this.rpcRetryTimes = rpcRetryTimes;
+    this.retryTimes = rpcRetryTimes;
+  }
+
+  public int getRpcRetryTimes() {
+    return retryTimes;
+  }
+
+  public Class<? extends BackOff> getBackOffClass() {
+    return backOffClass;
+  }
+
+  public void setBackOffClass(Class<? extends BackOff> backOffClass) {
+    this.backOffClass = backOffClass;
   }
 }

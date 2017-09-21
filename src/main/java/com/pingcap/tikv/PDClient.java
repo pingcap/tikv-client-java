@@ -234,7 +234,7 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
     checkArgument(pdAddrs.size() > 0, "No PD address specified.");
     for (HostAndPort url : pdAddrs) {
       try {
-        ManagedChannel probChan = getChannel(url.getHostText() + ":" + url.getPort());
+        ManagedChannel probChan = getSession().getChannel(url.getHostText() + ":" + url.getPort());
         PDGrpc.PDBlockingStub stub = PDGrpc.newBlockingStub(probChan);
         GetMembersRequest request =
             GetMembersRequest.newBuilder().setHeader(RequestHeader.getDefaultInstance()).build();
@@ -269,7 +269,7 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
         }
 
         // switch leader
-        ManagedChannel clientChannel = getChannel(leaderUrlStr);
+        ManagedChannel clientChannel = getSession().getChannel(leaderUrlStr);
         leaderWrapper =
             new LeaderWrapper(
                 leaderUrlStr,
@@ -328,6 +328,7 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
         } catch (InterruptedException ignore) {
         }
       }
+      throw e;
     }
 
     return client;

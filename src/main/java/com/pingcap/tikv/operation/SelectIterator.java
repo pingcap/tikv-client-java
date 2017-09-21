@@ -76,7 +76,7 @@ public class SelectIterator implements Iterator<Row> {
 
     RegionStoreClient client;
     try {
-      client = RegionStoreClient.create(region, store, session, regionManager);
+      client = RegionStoreClient.create(region, store, session);
       SelectResponse resp = client.coprocess(req.buildScan(indexScan), ranges);
       // if resp is null, then indicates eof.
       if (resp == null) {

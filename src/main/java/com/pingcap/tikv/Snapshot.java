@@ -45,9 +45,9 @@ public class Snapshot {
   private final TiSession session;
   private final TiConfiguration conf;
 
-  public Snapshot(TiTimestamp timestamp, RegionManager regionCache, TiSession session) {
+  public Snapshot(TiTimestamp timestamp, TiSession session) {
     this.timestamp = timestamp;
-    this.regionCache = regionCache;
+    this.regionCache = session.getRegionManager();
     this.session = session;
     this.conf = session.getConf();
   }
@@ -73,7 +73,7 @@ public class Snapshot {
   public ByteString get(ByteString key) {
     Pair<TiRegion, Store> pair = regionCache.getRegionStorePairByKey(key);
     RegionStoreClient client =
-        RegionStoreClient.create(pair.first, pair.second, getSession(), regionCache);
+        RegionStoreClient.create(pair.first, pair.second, getSession());
     // TODO: Need to deal with lock error after grpc stable
     return client.get(key, timestamp.getVersion());
   }
@@ -141,7 +141,7 @@ public class Snapshot {
         curKeyRange = makeRange(curRegion.getStartKey(), curRegion.getEndKey());
 
         try (RegionStoreClient client =
-            RegionStoreClient.create(lastPair.first, lastPair.second, getSession(), regionCache)) {
+            RegionStoreClient.create(lastPair.first, lastPair.second, getSession())) {
           List<KvPair> partialResult = client.batchGet(keyBuffer, timestamp.getVersion());
           // TODO: Add lock check
           result.addAll(partialResult);
