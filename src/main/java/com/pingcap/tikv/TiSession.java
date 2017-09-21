@@ -15,21 +15,15 @@
 
 package com.pingcap.tikv;
 
-import com.pingcap.tikv.policy.RetryNTimes;
-import com.pingcap.tikv.policy.RetryPolicy;
-
 /**
  * NOT thread-safe!! A session suppose to be change by single thread in master node and use by
  * slaves for read only purpose
  */
 public class TiSession {
   private TiConfiguration conf;
-  private RetryPolicy.Builder retryPolicyBuilder;
 
   public TiSession(TiConfiguration conf) {
     this.conf = conf;
-    int rTimes = conf.getRpcRetryTimes();
-    retryPolicyBuilder = new RetryNTimes.Builder(rTimes);
   }
 
   public TiConfiguration getConf() {
@@ -38,9 +32,5 @@ public class TiSession {
 
   public static TiSession create(TiConfiguration conf) {
     return new TiSession(conf);
-  }
-
-  RetryPolicy.Builder getRetryPolicyBuilder() {
-    return retryPolicyBuilder;
   }
 }

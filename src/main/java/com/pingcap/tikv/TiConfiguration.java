@@ -17,7 +17,8 @@ package com.pingcap.tikv;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.HostAndPort;
-import java.io.Serializable;
+import com.pingcap.tikv.util.BackOff;
+import com.pingcap.tikv.util.ExponentialBackOff;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -29,26 +30,39 @@ public class TiConfiguration implements Serializable {
   private static final int DEF_SCAN_BATCH_SIZE = 100;
   private static final boolean DEF_IGNORE_TRUNCATE = true;
   private static final boolean DEF_TRUNCATE_AS_WARNING = false;
-  private static final int DEF_META_RELOAD_PERIOD = 60;
+  private static final int DEF_META_RELOAD_PERIOD = 10;
   private static final TimeUnit DEF_META_RELOAD_UNIT = TimeUnit.SECONDS;
-  private static final int DEF_MAX_FRAME_SIZE = 268435456; // 256 MB
-  private static final int DEF_RPC_RETRY_TIMES = 3;
+  private static final int DEF_RETRY_TIMES = 3;
+  private static final Class<? extends BackOff> DEF_BACKOFF_CLASS = ExponentialBackOff.class;
 
+  private int retryTimes = DEF_RETRY_TIMES;
   private int timeout = DEF_TIMEOUT;
   private TimeUnit timeoutUnit = DEF_TIMEOUT_UNIT;
   private boolean ignoreTruncate = DEF_IGNORE_TRUNCATE;
   private boolean truncateAsWarning = DEF_TRUNCATE_AS_WARNING;
   private TimeUnit metaReloadUnit = DEF_META_RELOAD_UNIT;
   private int metaReloadPeriod = DEF_META_RELOAD_PERIOD;
+  private Class<? extends BackOff> backOffClass = DEF_BACKOFF_CLASS;
   private List<HostAndPort> pdAddrs = new ArrayList<>();
-  private int maxFrameSize = DEF_MAX_FRAME_SIZE;
-  private int rpcRetryTimes = DEF_RPC_RETRY_TIMES;
 
-  public static TiConfiguration createDefault(String pdAddrsStr) {
-    Objects.requireNonNull(pdAddrsStr, "pdAddrsStr is null");
+  public static TiConfiguration createDefault(List<String> pdAddrs) {
     TiConfiguration conf = new TiConfiguration();
-    conf.pdAddrs = strToHostAndPort(pdAddrsStr);
+    conf.pdAddrs =
+        ImmutableList.copyOf(
+            ImmutableSet.copyOf(pdAddrs)
+                .asList()
+                .stream()
+                .map(HostAndPort::fromString)
+                .collect(Collectors.toList()));
     return conf;
+  }
+
+  public int getRetryTimes() {
+    return retryTimes;
+  }
+
+  public void setRetryTimes(int n) {
+    this.retryTimes = n;
   }
 
   private static List<HostAndPort> strToHostAndPort(String addressStr) {
@@ -132,10 +146,9 @@ public class TiConfiguration implements Serializable {
     return this;
   }
 
-  public int getRpcRetryTimes() {
     return rpcRetryTimes;
   }
-
+    this.backOffClass = backOffClass;
   public void setRpcRetryTimes(int rpcRetryTimes) {
     this.rpcRetryTimes = rpcRetryTimes;
   }
