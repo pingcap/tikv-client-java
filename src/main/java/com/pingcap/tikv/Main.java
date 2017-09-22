@@ -22,15 +22,13 @@ public class Main {
 
     Catalog cat = cluster.getCatalog();
     cat.listDatabases();
-    TiDBInfo db = cat.getDatabase("TPCH_001");
-    while (true) {
-      TiTableInfo table = cat.getTable(db, "test");
-      if (table != null) {
-        System.out.println("exist");
-      } else {
-        System.out.println("deleted");
-      }
-      Thread.currentThread().sleep(1000);
+    TiDBInfo db = cat.getDatabase("TPCH_test");
+    TiTableInfo table = cat.getTable(db, "test");
+    if (table != null) {
+      System.out.println("exist");
+    } else {
+      System.out.println("deleted");
     }
+    cluster.close();
   }
 }

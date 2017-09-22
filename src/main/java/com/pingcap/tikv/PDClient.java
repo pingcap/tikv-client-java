@@ -69,7 +69,7 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
 
   @Override
   public TiTimestamp getTimestamp() {
-    Supplier<TsoRequest> request = () -> TsoRequest.newBuilder().setHeader(header).build();
+    Supplier<TsoRequest> request = () -> tsoReq;
 
     PDErrorHandler<TsoResponse> handler =
         new PDErrorHandler<>(r -> r.getHeader().hasError() ? r.getHeader().getError() : null, this);
