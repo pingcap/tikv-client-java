@@ -247,9 +247,10 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
 
   public void updateLeader(GetMembersResponse resp) {
     for(HostAndPort url : this.pdAddrs) {
-      resp = getMembers();
-      if(resp == null) continue;
-      Member leader = resp.getLeader();
+      if(resp == null) {
+        continue;
+      }
+
       String leaderUrlStr = url.toString();
       // TODO: Why not strip protocol info on server side since grpc does not need it
       if (leaderWrapper != null && leaderUrlStr.equals(leaderWrapper.getLeaderInfo())) {
