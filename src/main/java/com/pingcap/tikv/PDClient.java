@@ -48,6 +48,7 @@ import com.pingcap.tikv.types.BytesType;
 import com.pingcap.tikv.util.FutureObserver;
 import io.grpc.ManagedChannel;
 import io.grpc.stub.StreamObserver;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -68,21 +69,14 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
 
   @Override
   public TiTimestamp getTimestamp() {
-    FutureObserver<Timestamp, TsoResponse> responseObserver =
-        new FutureObserver<>(TsoResponse::getTimestamp);
-    StreamObserver<TsoRequest> requestObserver =
-        callBidiStreamingWithRetry(PDGrpc.METHOD_TSO, responseObserver, null);
-    requestObserver.onNext(tsoReq);
-    requestObserver.onCompleted();
-    try {
-      Timestamp timestamp = responseObserver.getFuture().get();
-      return new TiTimestamp(timestamp.getPhysical(), timestamp.getLogical());
-    } catch (InterruptedException ie) {
-      Thread.currentThread().interrupt();
-    } catch (Exception e) {
-      throw new GrpcException(e);
-    }
-    return null;
+    Supplier<TsoRequest> request = () -> TsoRequest.newBuilder().setHeader(header).build();
+
+    PDErrorHandler<TsoResponse> handler =
+        new PDErrorHandler<>(r -> r.getHeader().hasError() ? r.getHeader().getError() : null, this);
+
+    TsoResponse resp = callWithRetry(PDGrpc.METHOD_TSO, request, handler);
+    Timestamp timestamp = resp.getTimestamp();
+    return new TiTimestamp(timestamp.getPhysical(), timestamp.getLogical());
   }
 
   @Override
@@ -230,43 +224,63 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
     }
   }
 
-  public GetMembersResponse getMembers() {
-    List<HostAndPort> pdAddrs = getConf().getPdAddrs();
-    checkArgument(pdAddrs.size() > 0, "No PD address specified.");
-    for (HostAndPort url : pdAddrs) {
-      try {
-        ManagedChannel probChan = getChannel(url.getHostText() + ":" + url.getPort());
-        PDGrpc.PDBlockingStub stub = PDGrpc.newBlockingStub(probChan);
-        GetMembersRequest request =
-            GetMembersRequest.newBuilder().setHeader(RequestHeader.getDefaultInstance()).build();
-        return stub.getMembers(request);
-      } catch (Exception ignore) {}
+  public GetMembersResponse getMembers(HostAndPort url) {
+    try {
+      ManagedChannel probChan = getChannel(url.getHostText() + ":" + url.getPort());
+      PDGrpc.PDBlockingStub stub = PDGrpc.newBlockingStub(probChan);
+      GetMembersRequest request =
+          GetMembersRequest.newBuilder().setHeader(RequestHeader.getDefaultInstance()).build();
+      return stub.getMembers(request);
+    } catch (Exception e) {
+      logger.warn("failed to get member from pd server.", e);
     }
     return null;
   }
 
-  public void updateLeader(GetMembersResponse resp) {
-    for(HostAndPort url : this.pdAddrs) {
-      if(resp == null) {
-        continue;
-      }
+  private void switchLeader(List<String> leaderURLs) {
+    if(leaderURLs.isEmpty()) return;
+    String leaderUrlStr = leaderURLs.get(0);
+    // TODO: Why not strip protocol info on server side since grpc does not need it
+    if (leaderWrapper != null && leaderUrlStr.equals(leaderWrapper.getLeaderInfo())) {
+      return;
+    }
+    // switch leader
+    createLeaderWrapper(leaderUrlStr);
+   logger.info(String.format("Switched to new leader: %s", leaderWrapper));
+  }
 
-      String leaderUrlStr = url.toString();
-      // TODO: Why not strip protocol info on server side since grpc does not need it
+  private void createLeaderWrapper(String leaderUrlStr) {
+    try {
+      URL tURL = new URL(leaderUrlStr);
+      HostAndPort newLeader = HostAndPort.fromParts(tURL.getHost(), tURL.getPort());
+      leaderUrlStr = newLeader.toString();
       if (leaderWrapper != null && leaderUrlStr.equals(leaderWrapper.getLeaderInfo())) {
         return;
       }
-      // switch leader
+
+      // create new Leader
       ManagedChannel clientChannel = getChannel(leaderUrlStr);
       leaderWrapper =
-          new LeaderWrapper(
-              leaderUrlStr,
-              PDGrpc.newBlockingStub(clientChannel),
-              PDGrpc.newStub(clientChannel),
-              System.nanoTime());
-      logger.info(String.format("Switched to new leader: %s", leaderWrapper));
+        new LeaderWrapper(
+            leaderUrlStr,
+            PDGrpc.newBlockingStub(clientChannel),
+            PDGrpc.newStub(clientChannel),
+            System.nanoTime());
+    } catch (MalformedURLException e) {
+      logger.error("Error updating leader.", e);
     }
-    throw new TiClientInternalException("already tried all pd address, none of them is alive.");
+  }
+
+  public void updateLeader() {
+    for(HostAndPort url : this.pdAddrs) {
+      // since resp is null, we need update leader's address by walking through all pd server.
+      GetMembersResponse resp = getMembers(url);
+      if(resp == null) {
+        continue;
+      }
+      switchLeader(resp.getLeader().getClientUrlsList());
+    }
+    throw new TiClientInternalException("already tried all address on file, but not leader found yet.");
   }
 
   @Override
@@ -288,18 +302,24 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
   }
 
   private void initCluster(List<HostAndPort> pdAddrs) {
-    GetMembersResponse resp = getMembers();
+    GetMembersResponse resp = null;
+    for(HostAndPort u: pdAddrs) {
+      resp = getMembers(u);
+      if(resp != null) {
+        break;
+      }
+    }
     checkNotNull(resp, "Failed to init client for PD cluster.");
     long clusterId = resp.getHeader().getClusterId();
     header = RequestHeader.newBuilder().setClusterId(clusterId).build();
     tsoReq = TsoRequest.newBuilder().setHeader(header).build();
     this.pdAddrs = pdAddrs;
-    updateLeader(resp);
-    if (leaderWrapper == null) {
-      throw new TiClientInternalException("Error Updating leader.");
-    }
+    createLeaderWrapper(resp.getLeader().getClientUrls(0));
+//    if (leaderWrapper == null) {
+//      throw new TiClientInternalException("Error Updating leader.");
+//    }
     service = Executors.newSingleThreadScheduledExecutor();
-    service.scheduleAtFixedRate(() -> updateLeader(null), 1, 1, TimeUnit.MINUTES);
+    service.scheduleAtFixedRate(this::updateLeader, 1, 1, TimeUnit.MINUTES);
   }
 
   static PDClient createRaw(TiSession session) {
@@ -316,7 +336,6 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
         }
       }
     }
-
     return client;
   }
 }
