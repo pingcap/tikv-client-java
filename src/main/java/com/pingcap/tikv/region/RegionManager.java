@@ -184,9 +184,14 @@ public class RegionManager {
     return cache.getStoreById(id);
   }
 
-  public void onRegionStale(long regionID, List<Region> regions) {
+  /**
+   * invalidate old regionID and insert new regions to region manager.
+   * @param regionID region's id
+   * @param newRegions  new regions that will be inserted into region manager.
+   */
+  public void onRegionStale(long regionID, List<Region> newRegions) {
     cache.invalidateRegion(regionID);
-    for (Region r : regions) {
+    for (Region r : newRegions) {
       cache.putRegion(new TiRegion(r, r.getPeers(0), IsolationLevel.RC));
     }
   }
