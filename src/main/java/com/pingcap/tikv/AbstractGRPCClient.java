@@ -40,7 +40,7 @@ public abstract class AbstractGRPCClient<
   private TiSession session;
   private TiConfiguration conf;
   private static final int MAX_MSG_SIZE = 134217728 * 4;
-  private static final Map<String, ManagedChannel> connPool = new HashMap<>();
+  protected static final Map<String, ManagedChannel> connPool = new HashMap<>();
 
   protected static synchronized ManagedChannel getChannel(String addressStr) {
     ManagedChannel channel = connPool.get(addressStr);
@@ -140,4 +140,5 @@ public abstract class AbstractGRPCClient<
   protected abstract BlockingStubT getBlockingStub();
 
   protected abstract StubT getAsyncStub();
+
 }

@@ -165,6 +165,7 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
 
   @Override
   public void close() throws InterruptedException {
+    connPool.values().parallelStream().forEach(ManagedChannel::shutdown);
     if (service != null) {
       service.shutdownNow();
     }
