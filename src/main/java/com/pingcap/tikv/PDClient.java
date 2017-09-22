@@ -237,25 +237,24 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
     return null;
   }
 
-  private void switchLeader(List<String> leaderURLs) {
-    if(leaderURLs.isEmpty()) return;
+  private synchronized boolean switchLeader(List<String> leaderURLs) {
+    if(leaderURLs.isEmpty()) return false;
     String leaderUrlStr = leaderURLs.get(0);
     // TODO: Why not strip protocol info on server side since grpc does not need it
     if (leaderWrapper != null && leaderUrlStr.equals(leaderWrapper.getLeaderInfo())) {
-      return;
+      return true;
     }
     // switch leader
-    createLeaderWrapper(leaderUrlStr);
-   logger.info(String.format("Switched to new leader: %s", leaderWrapper));
+    return createLeaderWrapper(leaderUrlStr);
   }
 
-  private void createLeaderWrapper(String leaderUrlStr) {
+  private boolean createLeaderWrapper(String leaderUrlStr) {
     try {
       URL tURL = new URL(leaderUrlStr);
       HostAndPort newLeader = HostAndPort.fromParts(tURL.getHost(), tURL.getPort());
       leaderUrlStr = newLeader.toString();
       if (leaderWrapper != null && leaderUrlStr.equals(leaderWrapper.getLeaderInfo())) {
-        return;
+        return true;
       }
 
       // create new Leader
@@ -268,7 +267,10 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
             System.nanoTime());
     } catch (MalformedURLException e) {
       logger.error("Error updating leader.", e);
+      return false;
     }
+    logger.info(String.format("Switched to new leader: %s", leaderWrapper));
+    return true;
   }
 
   public void updateLeader() {
@@ -278,7 +280,10 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
       if(resp == null) {
         continue;
       }
-      switchLeader(resp.getLeader().getClientUrlsList());
+      // if leader is switched, just return.
+      if(switchLeader(resp.getLeader().getClientUrlsList())) {
+        return;
+      }
     }
     throw new TiClientInternalException("already tried all address on file, but not leader found yet.");
   }
@@ -315,9 +320,6 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
     tsoReq = TsoRequest.newBuilder().setHeader(header).build();
     this.pdAddrs = pdAddrs;
     createLeaderWrapper(resp.getLeader().getClientUrls(0));
-//    if (leaderWrapper == null) {
-//      throw new TiClientInternalException("Error Updating leader.");
-//    }
     service = Executors.newSingleThreadScheduledExecutor();
     service.scheduleAtFixedRate(this::updateLeader, 1, 1, TimeUnit.MINUTES);
   }
