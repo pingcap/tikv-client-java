@@ -165,7 +165,6 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
 
   @Override
   public void close() throws InterruptedException {
-    connPool.values().parallelStream().forEach(ManagedChannel::shutdown);
     if (service != null) {
       service.shutdownNow();
     }
@@ -307,8 +306,9 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
     super(session);
   }
 
-  private void initCluster(List<HostAndPort> pdAddrs) {
+  private void initCluster() {
     GetMembersResponse resp = null;
+    List<HostAndPort> pdAddrs = getSession().getConf().getPdAddrs();
     for(HostAndPort u: pdAddrs) {
       resp = getMembers(u);
       if(resp != null) {
@@ -330,7 +330,7 @@ public class PDClient extends AbstractGRPCClient<PDBlockingStub, PDStub>
     try {
       client = new PDClient(session);
       client.setIsolationLevel(IsolationLevel.RC);
-      client.initCluster(session.getConf().getPdAddrs());
+      client.initCluster();
     } catch (Exception e) {
       if (client != null) {
         try {
