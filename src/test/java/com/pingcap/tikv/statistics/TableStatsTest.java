@@ -251,7 +251,7 @@ public class TableStatsTest {
 
     for(test g: tests) {
       double selectivity = statsTbl.Selectivity(mockDBReader, g.exprs);
-      System.out.println("selectivity = " + selectivity);
+      System.out.println("selectivity=" + selectivity);
       assertEquals(selectivity, g.selectivity, 0.000001);
     }
 
