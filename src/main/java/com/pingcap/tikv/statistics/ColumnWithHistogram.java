@@ -1,16 +1,20 @@
 package com.pingcap.tikv.statistics;
 
+import com.google.common.collect.BoundType;
 import com.google.common.collect.Range;
-import com.google.protobuf.ByteString;
+import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.meta.TiColumnInfo;
+import com.pingcap.tikv.meta.TiKey;
 import com.pingcap.tikv.predicates.RangeBuilder.IndexRange;
 import com.pingcap.tikv.types.DataType;
-import com.pingcap.tikv.util.Comparables;
+import com.pingcap.tikv.types.DataTypeFactory;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
+
+import static com.pingcap.tikv.types.Types.TYPE_BLOB;
+import static com.pingcap.tikv.types.Types.TYPE_LONG;
 
 /**
  * Created by birdstorm on 2017/8/14.
@@ -39,21 +43,44 @@ public class ColumnWithHistogram {
         if (points.size() > 1) {
           System.out.println("Warning: ColumnRowCount should only contain one attribute.");
         }
-        cnt = hg.equalRowCount(Comparables.wrap(points.get(0)));
+        cnt = hg.equalRowCount(TiKey.create(points.get(0)));
         assert range.getRange() == null;
       } else if (range.getRange() != null){
         Range rg = range.getRange();
-        Comparable lowerBound = rg.hasLowerBound() ?
-            Comparables.wrap(ByteString.copyFrom(rg.lowerEndpoint().toString().getBytes())):
-            Comparables.wrap(DataType.indexMinValue());
-        Comparable upperBound = rg.hasUpperBound() ?
-            Comparables.wrap(ByteString.copyFrom(rg.upperEndpoint().toString().getBytes())):
-            Comparables.wrap(DataType.indexMaxValue());
-        Objects.requireNonNull(lowerBound, "LowerBound must not be null");
-        Objects.requireNonNull(upperBound, "UpperBound must not be null");
+        TiKey lowerBound, upperBound;
+        DataType t;
+        boolean lNull = !rg.hasLowerBound();
+        boolean rNull = !rg.hasUpperBound();
+        boolean lOpen = lNull || rg.lowerBoundType().equals(BoundType.OPEN);
+        boolean rOpen = rNull || rg.upperBoundType().equals(BoundType.OPEN);
+        String l = lOpen ? "(" : "[";
+        String r = rOpen ? ")" : "]";
 
+
+        CodecDataOutput cdo = new CodecDataOutput();
+        Object lower = TiKey.unwrap(rg.hasLowerBound() ? rg.lowerEndpoint() : DataType.indexMinValue());
+        Object upper = TiKey.unwrap(rg.hasUpperBound() ? rg.upperEndpoint() : DataType.indexMaxValue());
+
+        System.out.println("=>" + l + (lNull ? lower : "-∞") + "," + (rNull ? upper : "∞") + r);
+
+        if(lNull) t = DataTypeFactory.of(TYPE_BLOB);
+        else t = DataTypeFactory.of(TYPE_LONG);
+        t.encode(cdo, DataType.EncodeType.KEY, lower);
+        if(lOpen && !lNull) {
+          cdo.writeByte(0);
+        }
+        lowerBound = TiKey.create(cdo.toByteString());
+
+        cdo.reset();
+        if(rNull) t = DataTypeFactory.of(TYPE_BLOB);
+        else t = DataTypeFactory.of(TYPE_LONG);
+        t.encode(cdo, DataType.EncodeType.KEY, upper);
+        if(!rOpen) {
+          cdo.writeByte(0);
+        }
+        upperBound = TiKey.create(cdo.toByteString());
+        System.out.println(l + lowerBound + "," + upperBound + r);
         cnt += hg.betweenRowCount(lowerBound, upperBound);
-
       }
       rowCount += cnt;
     }

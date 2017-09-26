@@ -15,15 +15,23 @@
 
 package com.pingcap.tikv.util;
 
-import javax.annotation.ParametersAreNonnullByDefault;
+import com.pingcap.tikv.meta.TiKey;
+import org.jetbrains.annotations.NotNull;
 
 public class Bucket implements Comparable<Bucket> {
   public long count;
   public long repeats;
-  public Comparable lowerBound;
-  public Comparable upperBound;
+  public TiKey lowerBound;
+  public TiKey upperBound;
 
-  public Bucket(long count, long repeats, Comparable lowerBound, Comparable upperBound) {
+  public Bucket(long count, long repeats, Object lowerBound, Object upperBound) {
+    this.count = count;
+    this.repeats = repeats;
+    this.lowerBound = TiKey.encode(lowerBound);
+    this.upperBound = TiKey.encode(upperBound);
+  }
+
+  public Bucket(long count, long repeats, TiKey lowerBound, TiKey upperBound) {
     this.count = count;
     this.repeats = repeats;
     this.lowerBound = lowerBound;
@@ -32,21 +40,15 @@ public class Bucket implements Comparable<Bucket> {
   }
 
   /** used for binary search only */
-  public Bucket(Comparable upperBound) {
+  public Bucket(TiKey upperBound) {
     this.upperBound = upperBound;
     assert upperBound != null;
   }
 
   @Override
-  @ParametersAreNonnullByDefault
-  public int compareTo(Bucket b) {
-    if(upperBound instanceof Comparables.ComparableBytes && b.upperBound instanceof Comparables.ComparableBytes) {
-      return ((Comparables.ComparableBytes) upperBound).compareTo(((Comparables.ComparableBytes) b.upperBound));
-    } else if(upperBound instanceof Comparables.ComparableByteString && b.upperBound instanceof Comparables.ComparableByteString) {
-      return ((Comparables.ComparableByteString) upperBound).compareTo(((Comparables.ComparableByteString) b.upperBound));
-    } else {
-      return upperBound.compareTo(b.upperBound);
-    }
+  @SuppressWarnings("unchecked")
+  public int compareTo(@NotNull Bucket b) {
+    return upperBound.compareTo(b.upperBound);
   }
 
   public long getCount() {
@@ -65,19 +67,19 @@ public class Bucket implements Comparable<Bucket> {
     this.repeats = repeats;
   }
 
-  public Comparable getLowerBound() {
+  public TiKey getLowerBound() {
     return lowerBound;
   }
 
-  public void setLowerBound(Comparable lowerBound) {
+  public void setLowerBound(TiKey lowerBound) {
     this.lowerBound = lowerBound;
   }
 
-  public Comparable getUpperBound() {
+  public TiKey getUpperBound() {
     return upperBound;
   }
 
-  public void setUpperBound(Comparable upperBound) {
+  public void setUpperBound(TiKey upperBound) {
     this.upperBound = upperBound;
   }
 

@@ -5,10 +5,7 @@ import com.pingcap.tikv.TiConfiguration;
 import com.pingcap.tikv.catalog.Catalog;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiExpr;
-import com.pingcap.tikv.meta.TiDBInfo;
-import com.pingcap.tikv.meta.TiIndexInfo;
-import com.pingcap.tikv.meta.TiSelectRequest;
-import com.pingcap.tikv.meta.TiTableInfo;
+import com.pingcap.tikv.meta.*;
 import com.pingcap.tikv.operation.SchemaInfer;
 import com.pingcap.tikv.predicates.PredicateUtils;
 import com.pingcap.tikv.predicates.ScanBuilder;
@@ -129,7 +126,7 @@ public class DBReader {
       SchemaInfer schemaInfer = SchemaInfer.create(selReq);
       for (int i = 0; i < r.fieldCount(); i++) {
         Object c = r.get(i, schemaInfer.getType(i));
-        System.out.print(Comparables.wrap(c));
+        System.out.print(TiKey.create(c));
         System.out.print(" ");
       }
       System.out.print("\n");

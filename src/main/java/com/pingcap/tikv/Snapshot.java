@@ -15,8 +15,6 @@
 
 package com.pingcap.tikv;
 
-import static com.pingcap.tikv.meta.TiKey.makeRange;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
 import com.google.protobuf.ByteString;
@@ -35,9 +33,12 @@ import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.util.Pair;
 import com.pingcap.tikv.util.RangeSplitter.RegionTask;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
+import static com.pingcap.tikv.meta.TiKey.makeRange;
 
 public class Snapshot {
   private final TiTimestamp timestamp;
@@ -139,7 +140,7 @@ public class Snapshot {
     List<ByteString> keyBuffer = new ArrayList<>();
     List<KvPair> result = new ArrayList<>(keys.size());
     for (ByteString key : keys) {
-      if (curRegion == null || !curKeyRange.contains(new TiKey<>(key))) {
+      if (curRegion == null || !curKeyRange.contains(TiKey.create(key))) {
         Pair<TiRegion, Store> pair = regionCache.getRegionStorePairByKey(key);
         lastPair = pair;
         curRegion = pair.first;

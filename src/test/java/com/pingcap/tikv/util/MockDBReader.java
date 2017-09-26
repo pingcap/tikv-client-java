@@ -410,12 +410,12 @@ public class MockDBReader extends DBReader {
       boolean ok = false;
 
       if(e0 instanceof TiConstant && e1 instanceof TiColumnRef && ((TiColumnRef) e1).getName().equalsIgnoreCase(columnName)) {
-        Comparable r = Comparables.wrap(row.get(i, e0.getType()));
-        Comparable c = Comparables.wrap(((TiConstant) e0).getValue());
+        TiKey r = TiKey.encode(row.get(i, e0.getType()));
+        TiKey c = TiKey.encode(((TiConstant) e0).getValue());
 
         switch (Op) {
           case "=":
-            ok = r.equals(c);
+            ok = r.compareTo(c) == 0;
             break;
           case "NullEqual":
             // not done
@@ -437,12 +437,12 @@ public class MockDBReader extends DBReader {
             System.out.println("unknown or unsupported operator " + Op);
         }
       } else if(e1 instanceof TiConstant && e0 instanceof TiColumnRef && ((TiColumnRef) e0).getName().equalsIgnoreCase(columnName)) {
-        Comparable r = Comparables.wrap(row.get(i, e1.getType()));
-        Comparable c = Comparables.wrap(((TiConstant) e1).getValue());
+        TiKey r = TiKey.encode(row.get(i, e1.getType()));
+        TiKey c = TiKey.encode(((TiConstant) e1).getValue());
 
         switch (Op) {
           case "=":
-            ok = r.equals(c);
+            ok = r.compareTo(c) == 0;
             break;
           case "NullEqual":
             // not done
@@ -500,7 +500,8 @@ public class MockDBReader extends DBReader {
       }
       ret.add(cur);
     }
-    System.out.println("altogether " + ret.size() + " rows from " + t.getTableInfo().getName());
+    System.out.println("altogether " + ret.size() + " rows from "
+        + t.getTableInfo().getName() + "#" + t.getTableInfo().getId());
     return ret;
   }
 
@@ -515,7 +516,7 @@ public class MockDBReader extends DBReader {
           for (int i = 0; i < r.fieldCount(); i++) {
             Object val = r.get(i, t.getType(i));
             if(s.equalsIgnoreCase(t.getTableInfo().getColumns().get(i).getName())) {
-              System.out.print(Comparables.wrap(val) + " ");
+              System.out.print(TiKey.create(val) + " ");
             }
           }
         }

@@ -56,6 +56,7 @@ public class TableStats {
     }
 
     TiTableInfo histogramInfo = dbReader.getTableInfo("stats_histograms");
+
     List<TiExpr> firstAnd = ImmutableList.of(
         new Equal(TiColumnRef.create("table_id", histogramInfo), TiConstant.create(id)));
     List<String> returnFields = ImmutableList.of(

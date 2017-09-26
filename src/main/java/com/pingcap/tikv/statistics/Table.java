@@ -1,12 +1,14 @@
 package com.pingcap.tikv.statistics;
 
 import com.google.common.collect.Range;
+import com.google.protobuf.ByteString;
 import com.pingcap.tidb.tipb.ColumnInfo;
 import com.pingcap.tikv.expression.TiBinaryFunctionExpresson;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiConstant;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.meta.TiIndexInfo;
+import com.pingcap.tikv.meta.TiKey;
 import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.predicates.PredicateUtils;
 import com.pingcap.tikv.predicates.RangeBuilder;
@@ -14,7 +16,6 @@ import com.pingcap.tikv.predicates.RangeBuilder.IndexRange;
 import com.pingcap.tikv.predicates.ScanBuilder;
 import com.pingcap.tikv.predicates.ScanBuilder.IndexMatchingResult;
 import com.pingcap.tikv.types.DataType;
-import com.pingcap.tikv.util.Comparables;
 import com.pingcap.tikv.util.DBReader;
 
 import java.util.*;
@@ -121,7 +122,7 @@ public class Table {
   }
 
   /** ColumnGreaterRowCount estimates the row count where the column greater than value. */
-  public double ColumnGreaterRowCount(Comparable value, ColumnInfo columnInfo) {
+  public double ColumnGreaterRowCount(TiKey value, ColumnInfo columnInfo) {
     if (ColumnIsInvalid(columnInfo)) {
       return (double) (Count) / pseudoLessRate;
     }
@@ -132,7 +133,7 @@ public class Table {
   }
 
   /** ColumnLessRowCount estimates the row count where the column less than value. */
-  public double ColumnLessRowCount(Comparable value, ColumnInfo columnInfo) {
+  public double ColumnLessRowCount(TiKey value, ColumnInfo columnInfo) {
     if (ColumnIsInvalid(columnInfo)) {
       return (double) (Count) / pseudoLessRate;
     }
@@ -143,7 +144,7 @@ public class Table {
   }
 
   /** ColumnBetweenRowCount estimates the row count where column greater or equal to a and less than b. */
-  public double ColumnBetweenRowCount(Comparable a, Comparable b, ColumnInfo columnInfo) {
+  public double ColumnBetweenRowCount(TiKey a, TiKey b, ColumnInfo columnInfo) {
     if (ColumnIsInvalid(columnInfo)) {
       return (double) (Count) / pseudoBetweenRate;
     }
@@ -154,7 +155,7 @@ public class Table {
   }
 
   /** ColumnEqualRowCount estimates the row count where the column equals to value. */
-  public double ColumnEqualRowCount(Comparable value, ColumnInfo columnInfo) {
+  public double ColumnEqualRowCount(TiKey value, ColumnInfo columnInfo) {
     if (ColumnIsInvalid(columnInfo)) {
       return (double) (Count) / pseudoEqualRate;
     }
@@ -230,26 +231,26 @@ public class Table {
     double rowCount = 0;
     for (IndexRange columnRange : columnRanges) {
       List<Object> points = columnRange.getAccessPoints();
-      Comparable lowerBound, upperBound;
+      TiKey<ByteString> lowerBound, upperBound;
       Range rg = columnRange.getRange();
       if (points.size() > 0) {
-        lowerBound = Comparables.wrap(points.get(0));
-        upperBound = Comparables.wrap(lowerBound);
+        lowerBound = TiKey.encode(points.get(0));
+        upperBound = TiKey.encode(points.get(0));
       } else {
-        lowerBound = Comparables.wrap(rg.lowerEndpoint());
-        upperBound = Comparables.wrap(rg.upperEndpoint());
+        lowerBound = TiKey.encode(rg.hasLowerBound()? rg.lowerEndpoint(): DataType.indexMinValue());
+        upperBound = TiKey.encode(rg.hasUpperBound()? rg.upperEndpoint(): DataType.indexMaxValue());
       }
-      if (lowerBound == null && upperBound.compareTo(DataType.indexMaxValue()) == 0) {
+      if (!rg.hasLowerBound() && upperBound.compareTo(TiKey.encode(DataType.indexMaxValue())) == 0) {
         rowCount += tableRowCount;
-      } else if (lowerBound != null && lowerBound.compareTo(DataType.indexMinValue()) == 0) {
+      } else if (rg.hasLowerBound() && lowerBound.compareTo(TiKey.encode(DataType.indexMinValue())) == 0) {
         double nullCount = tableRowCount / pseudoEqualRate;
-        if (upperBound.compareTo(DataType.indexMaxValue()) == 0) {
+        if (upperBound.compareTo(TiKey.encode(DataType.indexMaxValue())) == 0) {
           rowCount += tableRowCount - nullCount;
         } else {
           double lessCount = tableRowCount / pseudoLessRate;
           rowCount += lessCount - nullCount;
         }
-      } else if (upperBound.compareTo(DataType.indexMaxValue()) == 0) {
+      } else if (upperBound.compareTo(TiKey.encode(DataType.indexMaxValue())) == 0) {
         rowCount += tableRowCount / pseudoLessRate;
       } else {
         if (lowerBound.compareTo(upperBound) == 0) {

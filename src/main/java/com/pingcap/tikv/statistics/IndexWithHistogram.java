@@ -3,9 +3,9 @@ package com.pingcap.tikv.statistics;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
 import com.pingcap.tikv.meta.TiIndexInfo;
+import com.pingcap.tikv.meta.TiKey;
 import com.pingcap.tikv.predicates.RangeBuilder.IndexRange;
 import com.pingcap.tikv.predicates.ScanBuilder;
-import com.pingcap.tikv.util.Comparables;
 
 import java.util.List;
 
@@ -32,7 +32,7 @@ public class IndexWithHistogram {
     for (KeyRange range : KeyRanges) {
       ByteString lowerBound = range.getStart();
       ByteString upperBound = range.getEnd();
-      double cnt = hg.betweenRowCount(Comparables.wrap(lowerBound), Comparables.wrap(upperBound));
+      double cnt = hg.betweenRowCount(TiKey.create(lowerBound), TiKey.create(upperBound));
       totalCount += cnt;
     }
     if (totalCount > hg.totalRowCount()) {

@@ -17,8 +17,6 @@
 
 package com.pingcap.tikv.region;
 
-import static com.pingcap.tikv.meta.TiKey.makeRange;
-
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -36,12 +34,15 @@ import com.pingcap.tikv.kvproto.Metapb.Region;
 import com.pingcap.tikv.kvproto.Metapb.Store;
 import com.pingcap.tikv.meta.TiKey;
 import com.pingcap.tikv.util.Pair;
+
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import javax.annotation.ParametersAreNonnullByDefault;
+
+import static com.pingcap.tikv.meta.TiKey.makeRange;
 
 public class RegionManager {
   private final ReadOnlyPDClient pdClient;
@@ -88,7 +89,7 @@ public class RegionManager {
     Long regionId;
     lock.readLock().lock();
     try {
-      regionId = keyToRegionIdCache.get(new TiKey<>(key));
+      regionId = keyToRegionIdCache.get(TiKey.create(key));
     } finally {
       lock.readLock().unlock();
     }
