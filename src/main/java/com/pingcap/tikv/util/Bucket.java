@@ -16,7 +16,6 @@
 package com.pingcap.tikv.util;
 
 import com.pingcap.tikv.meta.TiKey;
-import org.jetbrains.annotations.NotNull;
 
 public class Bucket implements Comparable<Bucket> {
   public long count;
@@ -47,7 +46,7 @@ public class Bucket implements Comparable<Bucket> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public int compareTo(@NotNull Bucket b) {
+  public int compareTo(Bucket b) {
     return upperBound.compareTo(b.upperBound);
   }
 
