@@ -6,7 +6,7 @@ import com.pingcap.tikv.catalog.Catalog;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiConstant;
 import com.pingcap.tikv.expression.TiExpr;
-import com.pingcap.tikv.expression.scalar.GreaterEqual;
+import com.pingcap.tikv.expression.scalar.GreaterThan;
 import com.pingcap.tikv.expression.scalar.NotEqual;
 import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.region.TiRegion;
@@ -62,7 +62,7 @@ public class Main {
     System.out.println();
 
     List<TiExpr> myExprs = ImmutableList.of(
-        new GreaterEqual(TiColumnRef.create("s1", table), TiConstant.create(1)));
+        new GreaterThan(TiColumnRef.create("c1", table), TiConstant.create((long) 2)));
     System.out.println(myExprs.size());
     System.out.println(t.Selectivity(dbReader, myExprs));
 

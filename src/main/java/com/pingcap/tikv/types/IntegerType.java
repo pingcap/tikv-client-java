@@ -48,6 +48,10 @@ public class IntegerType extends DataType {
         return readVarLong(cdi);
       case INT_FLAG:
         return readLong(cdi);
+      case BYTES_FLAG:
+        return Long.MIN_VALUE;
+      case MAX_FLAG:
+        return Long.MAX_VALUE;
       default:
         throw new TiClientInternalException("Invalid " + toString() + " flag: " + flag);
     }

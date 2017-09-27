@@ -170,4 +170,9 @@ public class TiColumnRef implements TiExpr {
     return (int) (prime * ((columnInfo == null) ? 0 : columnInfo.getId())
                 + ((tableInfo == null) ? 0 : tableInfo.getId()));
   }
+
+  @Override
+  public String toString() {
+    return getName();
+  }
 }

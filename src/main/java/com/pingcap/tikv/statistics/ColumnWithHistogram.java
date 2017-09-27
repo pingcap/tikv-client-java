@@ -13,7 +13,6 @@ import com.pingcap.tikv.types.DataTypeFactory;
 import java.util.List;
 import java.util.Set;
 
-import static com.pingcap.tikv.types.Types.TYPE_BLOB;
 import static com.pingcap.tikv.types.Types.TYPE_LONG;
 
 /**
@@ -58,28 +57,34 @@ public class ColumnWithHistogram {
 
 
         CodecDataOutput cdo = new CodecDataOutput();
-        Object lower = TiKey.unwrap(rg.hasLowerBound() ? rg.lowerEndpoint() : DataType.indexMinValue());
-        Object upper = TiKey.unwrap(rg.hasUpperBound() ? rg.upperEndpoint() : DataType.indexMaxValue());
+        Object lower = TiKey.unwrap(!lNull ? rg.lowerEndpoint() : DataType.indexMinValue());
+        Object upper = TiKey.unwrap(!rNull ? rg.upperEndpoint() : DataType.indexMaxValue());
 
-        System.out.println("=>" + l + (lNull ? lower : "-∞") + "," + (rNull ? upper : "∞") + r);
+//        System.out.println("=>" + l + (!lNull ? lower : "-∞") + "," + (!rNull ? upper : "∞") + r);
 
-        if(lNull) t = DataTypeFactory.of(TYPE_BLOB);
-        else t = DataTypeFactory.of(TYPE_LONG);
-        t.encode(cdo, DataType.EncodeType.KEY, lower);
-        if(lOpen && !lNull) {
-          cdo.writeByte(0);
+        t = DataTypeFactory.of(TYPE_LONG);
+        if(lNull) {
+          t.encodeMinValue(cdo);
+        } else {
+          t.encode(cdo, DataType.EncodeType.KEY, lower);
+          if(lOpen) {
+            cdo.writeByte(0);
+          }
         }
         lowerBound = TiKey.create(cdo.toByteString());
 
         cdo.reset();
-        if(rNull) t = DataTypeFactory.of(TYPE_BLOB);
-        else t = DataTypeFactory.of(TYPE_LONG);
-        t.encode(cdo, DataType.EncodeType.KEY, upper);
-        if(!rOpen) {
-          cdo.writeByte(0);
+        if(rNull) {
+          t.encodeMaxValue(cdo);
+        } else {
+          t.encode(cdo, DataType.EncodeType.KEY, upper);
+          if(!rOpen) {
+            cdo.writeByte(0);
+          }
         }
         upperBound = TiKey.create(cdo.toByteString());
-        System.out.println(l + lowerBound + "," + upperBound + r);
+
+        System.out.print(l + lowerBound + "," + upperBound + r);
         cnt += hg.betweenRowCount(lowerBound, upperBound);
       }
       rowCount += cnt;

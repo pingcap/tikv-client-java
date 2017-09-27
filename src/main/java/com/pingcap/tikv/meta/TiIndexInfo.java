@@ -179,4 +179,9 @@ public class TiIndexInfo implements Serializable {
   public boolean isFakePrimaryKey() {
     return isFakePrimaryKey;
   }
+
+  @Override
+  public String toString() {
+    return getName() + "#" + getId() + ":" + indexColumns.toString();
+  }
 }

@@ -278,6 +278,30 @@ public class Table {
       this.mask = (BitSet) _mask.clone();
       this.ranges = _ranges;
     }
+
+    private String retrieve(int x) {
+      switch(x) {
+        case 0: return "index";
+        case 1: return "pk";
+        case 2: return "column";
+        default: return "";
+      }
+    }
+
+    @Override
+    public String toString() {
+      String ans = retrieve(tp) + "#" + String.valueOf(ID) + "_" + mask + "_";
+      for(IndexRange ir: ranges) {
+        ans = ans.concat("," + ir.getRange().toString());
+      }
+      return ans;
+    }
+  }
+
+  private class exprSetCompare implements Comparator<exprSet> {
+    public int compare(exprSet a, exprSet b) {
+      return (int) (b.ID - a.ID);
+    }
   }
 
   public static boolean checkColumnConstant(List<TiExpr> exprs) {
@@ -327,7 +351,7 @@ public class Table {
     }
     int len = exprs.size();
     TiTableInfo table = dbReader.getTableInfo(getTableID());
-    ArrayList<exprSet> sets = new ArrayList<>();
+    List<exprSet> sets = new ArrayList<>();
     Set<TiColumnRef> extractedCols = PredicateUtils.extractColumnRefFromExpr(PredicateUtils.mergeCNFExpressions(exprs));
     for(ColumnWithHistogram colInfo: Columns.values()) {
       TiColumnRef col = TiColumnRef.colInfo2Col(extractedCols, colInfo.getColumnInfo());
@@ -345,6 +369,7 @@ public class Table {
       }
     }
     for(IndexWithHistogram idxInfo: Indices.values()) {
+      System.out.println(idxInfo.getIndexInfo());
       List<TiColumnRef> idxCols = TiColumnRef.indexInfo2Cols(extractedCols, idxInfo.getIndexInfo());
       // This index should have histogram.
       if(idxCols.size() > 0 && !idxInfo.getHistogram().getBuckets().isEmpty()) {
@@ -352,11 +377,16 @@ public class Table {
         List<IndexRange> ranges = new ArrayList<>();
         ranges = getMaskAndRanges(exprs, idxCols, maskCovered, ranges, table, idxInfo.getIndexInfo());
         exprSet tmp = new exprSet(indexType, idxInfo.getIndexInfo().getId(), maskCovered, ranges);
+        if(idxInfo.getIndexInfo().getId() == 2) {
+          System.out.println(tmp + " " + maskCovered);
+        }
         sets.add(tmp);
       }
     }
-
+    sets.sort(new exprSetCompare());
+    System.out.println(">>>" + sets + "<<<");
     sets = getUsableSetsByGreedy(sets, len);
+    System.out.println("<<<" + sets + ">>>");
     double ret = 1.0;
     BitSet mask = new BitSet(len);
     mask.clear();
@@ -387,7 +417,7 @@ public class Table {
                                             TiTableInfo table) {
     List<TiExpr> exprsClone = new ArrayList<>();
     exprsClone.addAll(exprs);
-    IndexMatchingResult result = ScanBuilder.extractConditions(exprsClone, table, table.getIndices().get(0));
+    IndexMatchingResult result = ScanBuilder.extractConditions(exprsClone, table, columnRef.getColumnInfo());
     List<TiExpr> accessConditions = result.getAccessConditions();
     int i = 0;
     for(TiExpr x: exprsClone) {
@@ -420,8 +450,8 @@ public class Table {
         indexColumnRef.get(0).getType()), indexColumnRef.get(0).getType());
   }
 
-  private ArrayList<exprSet> getUsableSetsByGreedy(ArrayList<exprSet> sets, int len) {
-    ArrayList<exprSet> newBlocks = new ArrayList<>();
+  private List<exprSet> getUsableSetsByGreedy(List<exprSet> sets, int len) {
+    List<exprSet> newBlocks = new ArrayList<>();
     BitSet mask = new BitSet(len);
     mask.clear();
     mask.flip(0, len);
@@ -430,18 +460,22 @@ public class Table {
       int bestID = -1;
       int bestCount = 0;
       int bestTp = colType;
-      int count = 0;
+      int id = 0;
+//      System.out.println("origin: " + mask);
+//      System.out.println("sets now: " + sets);
       for(exprSet set: sets) {
         st = (BitSet) set.mask.clone();
         st.and(mask);
         int bits = st.cardinality();
-        if(bestTp == colType && set.tp < colType || bestCount < bits) {
-          bestID = count;
+        if((bestTp == colType && set.tp < colType && bestCount <= bits) || bestCount < bits) {
+//          System.out.println("update: " + set + " #" + id);
+          bestID = id;
           bestCount = bits;
           bestTp = set.tp;
         }
-        count ++;
+        id ++;
       }
+//      System.out.println("wiped: " + bestCount + " bits");
       if(bestCount == 0) {
         break;
       } else {
@@ -449,8 +483,13 @@ public class Table {
         st.xor(sets.get(bestID).mask);
         mask.and(st);
         newBlocks.add(sets.get(bestID));
-        sets.remove(bestID);
+        //sets should have at least one object
+        for(int i = bestID; i < sets.size() - 1; i ++) {
+          sets.set(i, sets.get(i + 1));
+        }
+        sets.remove(sets.size() - 1);
       }
+//      System.out.println("new: " + newBlocks + "\nold: " + sets);
     }
     return newBlocks;
   }

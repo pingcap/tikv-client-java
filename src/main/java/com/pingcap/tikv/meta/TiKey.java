@@ -48,19 +48,27 @@ public class TiKey<T> implements Comparable<TiKey<T>> {
     return new TiKey<>(data);
   }
 
-  public static TiKey<byte[]> create(byte[] data) {
-    return new TiKey<>(data);
+  public static TiKey<ByteString> create(byte[] data) {
+    return new TiKey<>(ByteString.copyFrom((data)));
   }
 
   public static TiKey<Long> create(Number data) {
     return new TiKey<>(data.longValue());
   }
 
-  public static TiKey<Object> create(@Nonnull Object data) {
+  public static TiKey<?> create(@Nonnull Object data) {
     if(data instanceof TiKey) {
       return create(((TiKey) data).data);
     } else {
-      return new TiKey<>(data);
+      if(data instanceof Number) {
+        return create(((Number) data));
+      } else if(data instanceof ByteString) {
+        return create(((ByteString) data));
+      } else if(data instanceof byte[]) {
+        return create(ByteString.copyFrom(((byte[]) data)));
+      } else {
+        return new TiKey<>(data);
+      }
     }
   }
 
@@ -80,9 +88,12 @@ public class TiKey<T> implements Comparable<TiKey<T>> {
       tp = DataTypeFactory.of(TYPE_LONG);
     } else if(o instanceof ByteString) {
       tp = DataTypeFactory.of(TYPE_BLOB);
+    } else if(o instanceof byte[]) {
+      tp = DataTypeFactory.of(TYPE_BLOB);
     } else {
       return create(ByteString.EMPTY);
     }
+
     tp.encode(cdo, DataType.EncodeType.KEY, o);
     return create(cdo.toByteString());
   }
@@ -141,9 +152,20 @@ public class TiKey<T> implements Comparable<TiKey<T>> {
     } else if(data.equals(cdoMin.toByteString())) {
       return "-∞";
     } else if(data instanceof ByteString) {
-      DataType tp = DataTypeFactory.of(TYPE_LONG);
-      CodecDataInput cdi = new CodecDataInput(((ByteString) data));
-      return String.valueOf(tp.decode(cdi));
+      if(((ByteString) data).isValidUtf8()) {
+        return ((ByteString) data).toStringUtf8();
+      } else {
+        DataType tp = DataTypeFactory.of(TYPE_LONG);
+        CodecDataInput cdi = new CodecDataInput(((ByteString) data));
+        long ans = (long) tp.decode(cdi);
+        if(ans == Long.MAX_VALUE) {
+          return "+∞";
+        } else if(ans == Long.MIN_VALUE) {
+          return "-∞";
+        } else {
+          return String.valueOf(ans);
+        }
+      }
     } else {
       return data.toString();
     }

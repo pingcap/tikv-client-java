@@ -49,7 +49,7 @@ public abstract class DataType implements Serializable {
   static final int VARINT_FLAG = 8;
   static final int UVARINT_FLAG = 9;
   private static final int JSON_FLAG = 10;
-  private static final int MAX_FLAG = 250;
+  static final int MAX_FLAG = 250;
   // MySQL type
   protected int tp;
   // Not Encode/Decode flag, this is used to strict mysql type

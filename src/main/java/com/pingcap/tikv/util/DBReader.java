@@ -114,6 +114,9 @@ public class DBReader {
         rowList.add(row);
       }
     }
+    printRows(rowList, selReq);
+    System.out.println("altogether " + rowList.size() + " rows from "
+        + selReq.getTableInfo().getName() + "#" + selReq.getTableInfo().getId());
     return rowList;
   }
 
@@ -122,6 +125,11 @@ public class DBReader {
   }
 
   private void printRows(List<Row> rows, TiSelectRequest selReq) {
+    System.out.println(">>>>>>>>>>>>>" + selReq.getTableInfo().getName());
+    for(TiColumnRef f: selReq.getFields()) {
+      System.out.print(f.getName() + " ");
+    }
+    System.out.println();
     for(Row r: rows) {
       SchemaInfer schemaInfer = SchemaInfer.create(selReq);
       for (int i = 0; i < r.fieldCount(); i++) {
@@ -131,6 +139,7 @@ public class DBReader {
       }
       System.out.print("\n");
     }
+    System.out.println("<<<<<<<<<<<<<");
   }
 
   public void printRows(String tableName, List<TiExpr> exprs, List<String> returnFields) {

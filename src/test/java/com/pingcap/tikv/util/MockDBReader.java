@@ -471,8 +471,6 @@ public class MockDBReader extends DBReader {
     return false;
   }
 
-
-  // TODO: it is a rough implementation, should make it elegant
   private List<Row> getSelectedRows(table t, List<TiExpr> exprs, List<String> returnFields) {
     List<Row> ret = new ArrayList<>();
     int n = returnFields.size();
