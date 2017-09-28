@@ -28,8 +28,9 @@ import java.util.function.Supplier;
 import org.apache.log4j.Logger;
 
 public abstract class AbstractGRPCClient<
-        BlockingStubT extends AbstractStub<BlockingStubT>, StubT extends AbstractStub<StubT>>
+    BlockingStubT extends AbstractStub<BlockingStubT>, StubT extends AbstractStub<StubT>>
     implements AutoCloseable {
+
   final Logger logger = Logger.getLogger(this.getClass());
   protected TiSession session;
   protected TiConfiguration conf;
@@ -42,17 +43,18 @@ public abstract class AbstractGRPCClient<
   public TiSession getSession() {
     return session;
   }
-  
+
   public TiConfiguration getConf() {
     return conf;
   }
 
   // TODO: Seems a little bit messy for lambda part
   protected <ReqT, RespT> RespT callWithRetry(MethodDescriptor<ReqT, RespT> method,
-                                              Supplier<ReqT> requestFactory,
-                                              ErrorHandler<RespT> handler) {
+      Supplier<ReqT> requestFactory,
+      ErrorHandler<RespT> handler) {
     logger.debug(String.format("Calling %s...", method.getFullMethodName()));
-    RetryPolicy.Builder<RespT> builder = new Builder<>(conf.getRetryTimes(), conf.getBackOffClass());
+    RetryPolicy.Builder<RespT> builder = new Builder<>(conf.getRetryTimes(),
+        conf.getBackOffClass());
     RespT resp =
         builder.create(handler)
             .callWithRetry(
@@ -73,7 +75,8 @@ public abstract class AbstractGRPCClient<
       ErrorHandler<RespT> handler) {
     logger.debug(String.format("Calling %s...", method.getFullMethodName()));
 
-    RetryPolicy.Builder<RespT> builder = new Builder<>(conf.getRetryTimes(), conf.getBackOffClass());
+    RetryPolicy.Builder<RespT> builder = new Builder<>(conf.getRetryTimes(),
+        conf.getBackOffClass());
     builder.create(handler)
         .callWithRetry(
             () -> {
@@ -94,7 +97,8 @@ public abstract class AbstractGRPCClient<
       ErrorHandler<StreamObserver<ReqT>> handler) {
     logger.debug(String.format("Calling %s...", method.getFullMethodName()));
 
-    RetryPolicy.Builder<StreamObserver<ReqT>> builder = new Builder<>(conf.getRetryTimes(), conf.getBackOffClass());
+    RetryPolicy.Builder<StreamObserver<ReqT>> builder = new Builder<>(conf.getRetryTimes(),
+        conf.getBackOffClass());
     StreamObserver<ReqT> observer =
         builder.create(handler)
             .callWithRetry(

@@ -38,6 +38,7 @@ import com.pingcap.tikv.util.Pair;
 import java.util.List;
 
 public class RegionManager {
+
   private RegionCache cache;
   private final ReadOnlyPDClient pdClient;
 
@@ -49,10 +50,11 @@ public class RegionManager {
   }
 
   public static class RegionCache {
-    private static final int MAX_CACHE_CAPACITY =     4096;
-    private final Cache<Long, TiRegion>               regionCache;
-    private final Cache<Long, Store>                  storeCache;
-    private final RangeMap<Comparable, Long>          keyToRegionIdCache;
+
+    private static final int MAX_CACHE_CAPACITY = 4096;
+    private final Cache<Long, TiRegion> regionCache;
+    private final Cache<Long, Store> storeCache;
+    private final RangeMap<Comparable, Long> keyToRegionIdCache;
     private final ReadOnlyPDClient pdClient;
 
     public RegionCache(ReadOnlyPDClient pdClient) {
@@ -86,7 +88,9 @@ public class RegionManager {
 
     @SuppressWarnings("unchecked")
     private synchronized boolean putRegion(TiRegion region) {
-      if (!region.hasStartKey() || !region.hasEndKey()) return false;
+      if (!region.hasStartKey() || !region.hasEndKey()) {
+        return false;
+      }
 
       regionCache.put(region.getId(), region);
       keyToRegionIdCache.put(makeRange(region.getStartKey(), region.getEndKey()), region.getId());
@@ -120,7 +124,7 @@ public class RegionManager {
 
     public synchronized void invalidateAllRegionForStore(long storeId) {
       for (TiRegion r : regionCache.asMap().values()) {
-        if(r.getLeader().getStoreId() == storeId) {
+        if (r.getLeader().getStoreId() == storeId) {
           regionCache.invalidate(r.getId());
         }
       }
@@ -184,9 +188,15 @@ public class RegionManager {
     return cache.getStoreById(id);
   }
 
-  public void onRegionStale(long regionID, List<Region> regions) {
+  /**
+   * invalidate old regionID and insert new regions to region manager.
+   *
+   * @param regionID region's id
+   * @param newRegions new regions that will be inserted into region manager.
+   */
+  public void onRegionStale(long regionID, List<Region> newRegions) {
     cache.invalidateRegion(regionID);
-    for (Region r : regions) {
+    for (Region r : newRegions) {
       cache.putRegion(new TiRegion(r, r.getPeers(0), IsolationLevel.RC));
     }
   }
@@ -203,6 +213,7 @@ public class RegionManager {
 
   /**
    * Clears all cache when a TiKV server does not respond
+   *
    * @param regionID region's id
    * @param storeID TiKV store's id
    */
