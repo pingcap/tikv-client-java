@@ -12,7 +12,7 @@ import com.pingcap.tikv.meta.MetaUtils.MetaMockHelper;
 import com.pingcap.tikv.meta.TiDBInfo;
 import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.region.TiRegion;
-import com.pingcap.tikv.util.RefelctionWrapper;
+import com.pingcap.tikv.util.ReflectionWrapper;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.junit.Before;
@@ -47,7 +47,7 @@ public class CatalogTest {
     TiSession session = TiSession.create(conf);
     Catalog cat = session.getCatalog();
     List<TiDBInfo> dbs = cat.listDatabases();
-    List<String> names = dbs.stream().map(db -> db.getName()).sorted().collect(Collectors.toList());
+    List<String> names = dbs.stream().map(TiDBInfo::getName).sorted().collect(Collectors.toList());
     assertEquals(2, dbs.size());
     assertEquals("global_temp", names.get(0));
     assertEquals("tpch_001", names.get(1));
@@ -55,12 +55,12 @@ public class CatalogTest {
     helper.addDatabase(265, "other");
     helper.setSchemaVersion(667);
 
-    RefelctionWrapper wrapper = new RefelctionWrapper(cat);
+    ReflectionWrapper wrapper = new ReflectionWrapper(cat);
     wrapper.call("reloadCache");
 
     dbs = cat.listDatabases();
     assertEquals(3, dbs.size());
-    names = dbs.stream().map(db -> db.getName()).sorted().collect(Collectors.toList());
+    names = dbs.stream().map(TiDBInfo::getName).sorted().collect(Collectors.toList());
     assertEquals("global_temp", names.get(0));
     assertEquals("other", names.get(1));
     assertEquals("tpch_001", names.get(2));
@@ -97,7 +97,7 @@ public class CatalogTest {
     helper.addTable(130, 44, "other");
     helper.setSchemaVersion(667);
 
-    RefelctionWrapper wrapper = new RefelctionWrapper(cat);
+    ReflectionWrapper wrapper = new ReflectionWrapper(cat);
     wrapper.call("reloadCache");
 
     tables = cat.listTables(db);

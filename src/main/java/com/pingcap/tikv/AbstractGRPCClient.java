@@ -111,4 +111,5 @@ public abstract class AbstractGRPCClient<
   protected abstract BlockingStubT getBlockingStub();
 
   protected abstract StubT getAsyncStub();
+
 }
