@@ -21,6 +21,7 @@ import java.util.List;
 
 import static com.pingcap.tikv.types.Types.TYPE_BLOB;
 import static com.pingcap.tikv.types.Types.TYPE_LONG;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -132,10 +133,10 @@ public class TableStatsTest {
 
     TableStats tableStats = new TableStats();
     tableStats.build(mockDBReader);
-    System.out.println("id = " + t1TableInfo.getId());
+//    System.out.println("id = " + t1TableInfo.getId());
     Table t = tableStats.tableStatsFromStorage(mockDBReader, t1TableInfo);
     assertTrue(t.getColumns().size() > 0);
-    System.out.println("name=" + t.getColumns().values().iterator().next().getColumnInfo().getName());
+//    System.out.println("name=" + t.getColumns().values().iterator().next().getColumnInfo().getName());
     List<TiExpr> exprs = ImmutableList.of(
         new GreaterEqual(TiColumnRef.create("c1", t1TableInfo), TiConstant.create(1)));
     System.out.println("selectivity = " + t.Selectivity(mockDBReader, exprs));
@@ -174,10 +175,15 @@ public class TableStatsTest {
   private Histogram mockStatsHistogram(long id, ByteString[] values, long repeat) {
     int ndv = values.length;
     Histogram histogram = new Histogram(id, ndv, new ArrayList<>());
+    byte[] byte0 = new byte[1];
+    byte0[0] = (byte) 0;
     for(int i = 0; i < ndv; i ++) {
       Bucket bucket = new Bucket(TiKey.create(values[i]));
       bucket.setRepeats(repeat);
       bucket.setCount(repeat * (i + 1));
+      if(i > 0) {
+        bucket.setLowerBound(TiKey.create(values[i - 1].concat(ByteString.copyFrom(byte0))));
+      }
       histogram.getBuckets().add(bucket);
     }
     return histogram;
@@ -213,7 +219,6 @@ public class TableStatsTest {
             mockDBReader.createMockColumn("e", TYPE_LONG)
         ),
         ImmutableList.of(
-          mockDBReader.createMockIndex("pk_idx", ImmutableList.of("a"), true),
           mockDBReader.createMockIndex("idx_cd", ImmutableList.of("c", "d")),
           mockDBReader.createMockIndex("idx_de", ImmutableList.of("d", "e"))
         ),
@@ -232,6 +237,12 @@ public class TableStatsTest {
     statsTbl.putIndices(2, new IndexWithHistogram(mockStatsHistogram(2, idxValues, 60), tbl.getIndices().get(1)));
 
     final test[] tests = {
+        new test(
+            ImmutableList.of(
+                new Equal(TiColumnRef.create("a", tbl), TiConstant.create((long) 1))
+            ),
+            0.01851851851
+        ),
         new test(
             ImmutableList.of(
                 new GreaterThan(TiColumnRef.create("a", tbl), TiConstant.create((long) 0)),
@@ -289,14 +300,24 @@ public class TableStatsTest {
             ),
             0.33333333333
         ),
+        new test(
+            ImmutableList.of(
+                new GreaterThan(TiColumnRef.create("a", tbl), TiConstant.create((long) 1)),
+                new LessThan(TiColumnRef.create("b", tbl), TiConstant.create((long) 2)),
+                new GreaterThan(TiColumnRef.create("c", tbl), TiConstant.create((long) 3)),
+                new LessThan(TiColumnRef.create("d", tbl), TiConstant.create((long) 4)),
+                new GreaterThan(TiColumnRef.create("e", tbl), TiConstant.create((long) 5))
+            ),
+            0.00123287439
+        ),
     };
 
     int testCount = 0;
     for(test g: tests) {
-      double selectivity = statsTbl.Selectivity(mockDBReader, g.exprs);
       System.out.println("TEST #" + ++testCount + ": " + g.exprs);
+      double selectivity = statsTbl.Selectivity(mockDBReader, g.exprs);
       System.out.println("selectivity = " + selectivity);
-//      assertEquals(selectivity, g.selectivity, 0.000001);
+      assertEquals(selectivity, g.selectivity, 0.000001);
     }
 
   }

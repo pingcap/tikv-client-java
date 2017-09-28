@@ -278,8 +278,24 @@ public class ScanBuilder {
       this.rangeType = rangeType;
     }
 
+    public List<TiExpr> getResidualConditions() {
+      return this.residualConditions;
+    }
+
     public List<TiExpr> getAccessConditions() {
       return this.accessConditions;
+    }
+
+    public List<TiExpr> getAccessPoints() {
+      return this.accessPoints;
+    }
+
+    public List<DataType> getAccessPointTypes() {
+      return this.accessPointsTypes;
+    }
+
+    public DataType getRangeType() {
+      return this.rangeType;
     }
 
     public static IndexMatchingResult create(List<TiExpr> residualConditions) {

@@ -45,7 +45,7 @@ public class RangeBuilder {
    * @param rangeType type of the range
    * @return Index Range for scan
    */
-  List<IndexRange> exprsToIndexRanges(
+  public static List<IndexRange> exprsToIndexRanges(
       List<TiExpr> accessPoints,
       List<DataType> accessPointsTypes,
       List<TiExpr> accessConditions,
@@ -67,7 +67,7 @@ public class RangeBuilder {
    * @param types index column types
    * @return access points for each index
    */
-  List<IndexRange> exprsToPoints(List<TiExpr> accessPoints, List<DataType> types) {
+  static List<IndexRange> exprsToPoints(List<TiExpr> accessPoints, List<DataType> types) {
     requireNonNull(accessPoints, "accessPoints cannot be null");
     requireNonNull(types, "Types cannot be null");
     checkArgument(
@@ -115,7 +115,7 @@ public class RangeBuilder {
    * @param type index column type
    * @return access ranges
    */
-  public static List<Range> exprToRanges(List<TiExpr> accessConditions, DataType type) {
+  static List<Range> exprToRanges(List<TiExpr> accessConditions, DataType type) {
     if (accessConditions == null || accessConditions.size() == 0) {
       return ImmutableList.of();
     }
@@ -150,7 +150,7 @@ public class RangeBuilder {
     return ImmutableList.copyOf(ranges.asRanges());
   }
 
-  public static List<IndexRange> appendRanges(
+  static List<IndexRange> appendRanges(
       List<IndexRange> indexRanges, List<Range> ranges, DataType rangeType) {
     requireNonNull(ranges);
     List<IndexRange> resultRanges = new ArrayList<>();
@@ -251,6 +251,18 @@ public class RangeBuilder {
 
     public DataType getRangeType() {
       return rangeType;
+    }
+
+    @Override
+    public String toString() {
+      String ret = "";
+      for(Object x: accessPoints) {
+        ret = ret.concat(Range.singleton((TiKey.create(x))).toString() + ",");
+      }
+      if(range != null) {
+        ret = ret.concat(range.toString());
+      }
+      return ret;
     }
   }
 }

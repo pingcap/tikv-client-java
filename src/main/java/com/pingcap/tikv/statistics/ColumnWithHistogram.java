@@ -2,7 +2,9 @@ package com.pingcap.tikv.statistics;
 
 import com.google.common.collect.BoundType;
 import com.google.common.collect.Range;
+import com.google.protobuf.ByteString;
 import com.pingcap.tikv.codec.CodecDataOutput;
+import com.pingcap.tikv.codec.KeyUtils;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.meta.TiColumnInfo;
 import com.pingcap.tikv.meta.TiKey;
@@ -54,37 +56,47 @@ public class ColumnWithHistogram {
         boolean rOpen = rNull || rg.upperBoundType().equals(BoundType.OPEN);
         String l = lOpen ? "(" : "[";
         String r = rOpen ? ")" : "]";
-
-
         CodecDataOutput cdo = new CodecDataOutput();
         Object lower = TiKey.unwrap(!lNull ? rg.lowerEndpoint() : DataType.indexMinValue());
         Object upper = TiKey.unwrap(!rNull ? rg.upperEndpoint() : DataType.indexMaxValue());
-
-//        System.out.println("=>" + l + (!lNull ? lower : "-∞") + "," + (!rNull ? upper : "∞") + r);
-
+//        System.out.println("=>Column " + l + (!lNull ? TiKey.create(lower) : "-∞")
+//            + "," + (!rNull ? TiKey.create(upper) : "∞") + r);
         t = DataTypeFactory.of(TYPE_LONG);
         if(lNull) {
           t.encodeMinValue(cdo);
         } else {
-          t.encode(cdo, DataType.EncodeType.KEY, lower);
+          if(lower instanceof Number) {
+            t.encode(cdo, DataType.EncodeType.KEY, lower);
+          } else {
+            cdo.write(((ByteString) lower).toByteArray());
+          }
           if(lOpen) {
             cdo.writeByte(0);
           }
         }
-        lowerBound = TiKey.create(cdo.toByteString());
+        if(!lNull && lOpen) {
+          lowerBound = TiKey.create(ByteString.copyFrom(KeyUtils.prefixNext(cdo.toBytes())));
+        } else {
+          lowerBound = TiKey.create(cdo.toByteString());
+        }
 
         cdo.reset();
         if(rNull) {
           t.encodeMaxValue(cdo);
         } else {
-          t.encode(cdo, DataType.EncodeType.KEY, upper);
-          if(!rOpen) {
-            cdo.writeByte(0);
+          if(upper instanceof Number) {
+            t.encode(cdo, DataType.EncodeType.KEY, upper);
+          } else {
+            cdo.write(((ByteString) upper).toByteArray());
           }
         }
-        upperBound = TiKey.create(cdo.toByteString());
+        if(!rNull && !rOpen) {
+          upperBound = TiKey.create(ByteString.copyFrom(KeyUtils.prefixNext(cdo.toBytes())));
+        } else {
+          upperBound = TiKey.create(cdo.toByteString());
+        }
 
-        System.out.print(l + lowerBound + "," + upperBound + r);
+
         cnt += hg.betweenRowCount(lowerBound, upperBound);
       }
       rowCount += cnt;

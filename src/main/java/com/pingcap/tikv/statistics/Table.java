@@ -182,7 +182,9 @@ public class Table {
     if (Pseudo || hist == null || hist.getBuckets().isEmpty()) {
       return getPseudoRowCountByIndexRanges(indexRanges, Count);
     }
-    return i.getRowCount(indexRanges, getTableID());
+    double ret = i.getRowCount(indexRanges, getTableID());
+    ret *= hist.getIncreaseFactor(Count);
+    return ret;
   }
 
   static Table PseudoTable(long tableID) {
@@ -292,7 +294,7 @@ public class Table {
     public String toString() {
       String ans = retrieve(tp) + "#" + String.valueOf(ID) + "_" + mask + "_";
       for(IndexRange ir: ranges) {
-        ans = ans.concat("," + ir.getRange().toString());
+        ans = ans.concat("," + ir);
       }
       return ans;
     }
@@ -369,7 +371,6 @@ public class Table {
       }
     }
     for(IndexWithHistogram idxInfo: Indices.values()) {
-      System.out.println(idxInfo.getIndexInfo());
       List<TiColumnRef> idxCols = TiColumnRef.indexInfo2Cols(extractedCols, idxInfo.getIndexInfo());
       // This index should have histogram.
       if(idxCols.size() > 0 && !idxInfo.getHistogram().getBuckets().isEmpty()) {
@@ -377,16 +378,13 @@ public class Table {
         List<IndexRange> ranges = new ArrayList<>();
         ranges = getMaskAndRanges(exprs, idxCols, maskCovered, ranges, table, idxInfo.getIndexInfo());
         exprSet tmp = new exprSet(indexType, idxInfo.getIndexInfo().getId(), maskCovered, ranges);
-        if(idxInfo.getIndexInfo().getId() == 2) {
-          System.out.println(tmp + " " + maskCovered);
-        }
         sets.add(tmp);
       }
     }
     sets.sort(new exprSetCompare());
-    System.out.println(">>>" + sets + "<<<");
+//    System.out.println(">>>" + sets + "<<<");
     sets = getUsableSetsByGreedy(sets, len);
-    System.out.println("<<<" + sets + ">>>");
+//    System.out.println("<<<" + sets + ">>>");
     double ret = 1.0;
     BitSet mask = new BitSet(len);
     mask.clear();
@@ -404,7 +402,7 @@ public class Table {
           break;
         default:
       }
-      System.out.println("Rowcount=" + rowCount + " getCount()=" + getCount());
+//      System.out.println("Rowcount=" + rowCount + " getCount()=" + getCount());
       ret *= rowCount / getCount();
     }
     if(mask.cardinality() > 0) {
@@ -419,16 +417,17 @@ public class Table {
     exprsClone.addAll(exprs);
     IndexMatchingResult result = ScanBuilder.extractConditions(exprsClone, table, columnRef.getColumnInfo());
     List<TiExpr> accessConditions = result.getAccessConditions();
+    List<TiExpr> accessPoints = result.getAccessPoints();
     int i = 0;
     for(TiExpr x: exprsClone) {
-      for(TiExpr y: accessConditions) {
-        if(x.equals(y)) {
-          mask.set(i);
-        }
+      if(accessConditions.contains(x) || accessPoints.contains(x)) {
+        mask.set(i);
       }
       i ++;
     }
-    return RangeBuilder.appendRanges(ranges, RangeBuilder.exprToRanges(accessConditions, columnRef.getType()), columnRef.getType());
+    ranges = RangeBuilder.exprsToIndexRanges(accessPoints,
+        result.getAccessPointTypes(), result.getAccessConditions(), result.getRangeType());
+    return ranges;
   }
 
   private List<IndexRange> getMaskAndRanges(List<TiExpr> exprs, List<TiColumnRef> indexColumnRef, BitSet mask, List<IndexRange> ranges,
@@ -437,17 +436,17 @@ public class Table {
     exprsClone.addAll(exprs);
     IndexMatchingResult result = ScanBuilder.extractConditions(exprsClone, table, index);
     List<TiExpr> accessConditions = result.getAccessConditions();
+    List<TiExpr> accessPoints = result.getAccessPoints();
     int i = 0;
     for(TiExpr x: exprsClone) {
-      for(TiExpr y: accessConditions) {
-        if(x.equals(y)) {
-          mask.set(i);
-        }
+      if(accessConditions.contains(x) || accessPoints.contains(x)) {
+        mask.set(i);
       }
       i ++;
     }
-    return RangeBuilder.appendRanges(ranges, RangeBuilder.exprToRanges(accessConditions,
-        indexColumnRef.get(0).getType()), indexColumnRef.get(0).getType());
+    ranges = RangeBuilder.exprsToIndexRanges(accessPoints,
+        result.getAccessPointTypes(), result.getAccessConditions(), result.getRangeType());
+    return ranges;
   }
 
   private List<exprSet> getUsableSetsByGreedy(List<exprSet> sets, int len) {
@@ -461,21 +460,17 @@ public class Table {
       int bestCount = 0;
       int bestTp = colType;
       int id = 0;
-//      System.out.println("origin: " + mask);
-//      System.out.println("sets now: " + sets);
       for(exprSet set: sets) {
         st = (BitSet) set.mask.clone();
         st.and(mask);
         int bits = st.cardinality();
         if((bestTp == colType && set.tp < colType && bestCount <= bits) || bestCount < bits) {
-//          System.out.println("update: " + set + " #" + id);
           bestID = id;
           bestCount = bits;
           bestTp = set.tp;
         }
         id ++;
       }
-//      System.out.println("wiped: " + bestCount + " bits");
       if(bestCount == 0) {
         break;
       } else {
@@ -489,7 +484,6 @@ public class Table {
         }
         sets.remove(sets.size() - 1);
       }
-//      System.out.println("new: " + newBlocks + "\nold: " + sets);
     }
     return newBlocks;
   }

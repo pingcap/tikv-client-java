@@ -56,18 +56,18 @@ public class TiKey<T> implements Comparable<TiKey<T>> {
     return new TiKey<>(data.longValue());
   }
 
-  public static TiKey<?> create(@Nonnull Object data) {
+  public static TiKey<ByteString> create(@Nonnull Object data) {
     if(data instanceof TiKey) {
       return create(((TiKey) data).data);
     } else {
       if(data instanceof Number) {
-        return create(((Number) data));
+        return create(toByteString(data));
       } else if(data instanceof ByteString) {
         return create(((ByteString) data));
       } else if(data instanceof byte[]) {
         return create(ByteString.copyFrom(((byte[]) data)));
       } else {
-        return new TiKey<>(data);
+        return new TiKey<>(toByteString(data));
       }
     }
   }
@@ -93,7 +93,6 @@ public class TiKey<T> implements Comparable<TiKey<T>> {
     } else {
       return create(ByteString.EMPTY);
     }
-
     tp.encode(cdo, DataType.EncodeType.KEY, o);
     return create(cdo.toByteString());
   }
@@ -112,7 +111,6 @@ public class TiKey<T> implements Comparable<TiKey<T>> {
         return cmp;
       }
     }
-    // one is the prefix of other then the longer is larger
     return data.size() - o.size();
   }
 
@@ -127,11 +125,33 @@ public class TiKey<T> implements Comparable<TiKey<T>> {
   @SuppressWarnings("unchecked")
   public int compareTo(@Nonnull TiKey<T> o) {
     if (data instanceof Comparable) {
-      return ((Comparable<T>)data).compareTo(((T) unwrap(o.data)));
+      return TiKey.create(toByteString(data)).compareTo(toByteString(o.data));
     } else if (data instanceof byte[]) {
-      return compareTo((byte[]) o.data);
+      return compareTo(toByteArray(o.data));
     } else if (data instanceof ByteString) {
-      return compareTo((ByteString) o.data);
+      return compareTo(toByteString(o.data));
+    } else {
+      throw new HistogramException("data type not supported to compare");
+    }
+  }
+
+  private static ByteString toByteString(Object o) {
+    if(o instanceof ByteString) {
+      return ((ByteString) o);
+    } else if(o instanceof Number) {
+      return encode(o).getByteString();
+    } else if(o instanceof byte[]) {
+      return ByteString.copyFrom(((byte[]) o));
+    } else {
+      throw new HistogramException("data type not supported to compare");
+    }
+  }
+
+  private static byte[] toByteArray(Object o) {
+    if(o instanceof byte[]) {
+      return (byte[]) o;
+    } else if(o instanceof ByteString) {
+      return ((ByteString) o).toByteArray();
     } else {
       throw new HistogramException("data type not supported to compare");
     }

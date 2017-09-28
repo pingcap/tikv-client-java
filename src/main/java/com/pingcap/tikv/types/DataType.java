@@ -94,6 +94,10 @@ public abstract class DataType implements Serializable {
     this.tp = tp;
   }
 
+  public void setLength(int length) {
+    this.length = length;
+  }
+
   protected boolean isNullFlag(int flag) {
     return flag == NULL_FLAG;
   }

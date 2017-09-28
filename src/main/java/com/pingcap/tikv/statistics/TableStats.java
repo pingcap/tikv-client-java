@@ -46,7 +46,7 @@ public class TableStats {
     long id = tableInfo.getId();
     Table table = statsCache.get(id);
 
-    tableInfo.printIndices();
+//    tableInfo.printIndices();
 
     if(table == null) {
       int sz = tableInfo.getIndices() == null ? 0 : tableInfo.getIndices().size();
@@ -76,7 +76,6 @@ public class TableStats {
         for (TiIndexInfo idxInfo : tableInfo.getIndices()) {
           if (histID == idxInfo.getId()) {
             if (idx == null || idx.getLastUpdateVersion() < histVer) {
-              System.out.println("found index" + histID);
               Histogram hg = new Histogram();
               hg = hg.histogramFromStorage(id, histID, is_index, distinct, histVer,
                   nullCount, dbReader, null);

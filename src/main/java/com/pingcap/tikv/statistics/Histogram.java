@@ -254,6 +254,9 @@ public class Histogram {
 
   /** betweenRowCount estimates the row count where column greater than or equal to a and less than b. */
   double betweenRowCount(TiKey a, TiKey b) {
+//    CodecDataInput c = new CodecDataInput(a.getByteString());
+//    CodecDataInput d = new CodecDataInput(b.getByteString());
+//    System.out.println(c.readLine() + " with " + d.readLine());
     double lessCountA = lessRowCount(a);
     double lessCountB = lessRowCount(b);
     if (lessCountA >= lessCountB) {
@@ -285,9 +288,9 @@ public class Histogram {
    */
   protected int lowerBound(TiKey key) {
     assert key.getClass() == buckets.get(0).getUpperBound().getClass();
-//    System.out.println(">>>>>>>>>>>>");
+//    System.out.println(">>>>>>>>>>>>" + TiKey.unwrap(key).getClass() + " " + TiKey.unwrap(buckets.get(0).getUpperBound()).getClass());
 //    for(Bucket bucket: buckets) {
-//      System.out.println(bucket.toString());
+//      System.out.println(bucket);
 //    }
 //    System.out.println("<<<<<<<<<<<<");
     return Arrays.binarySearch(buckets.toArray(), new Bucket(key));
