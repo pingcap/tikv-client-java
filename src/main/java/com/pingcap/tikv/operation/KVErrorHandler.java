@@ -27,6 +27,7 @@ import java.util.function.Function;
 import org.apache.log4j.Logger;
 
 public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
+
   private static final Logger logger = Logger.getLogger(KVErrorHandler.class);
   private Function<RespT, Errorpb.Error> getRegionError;
   private RegionManager regionManager;
@@ -46,35 +47,38 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
 
   private void onNotLeader(Errorpb.Error error) {
     // update Leader here
-        logger.warn(String.format("Thread %s: NotLeader Error with region id %d",
-                                  Thread.currentThread().getId(), error.getNotLeader().getRegionId()));
-        logger.warn(String.format("Thread %s: origin call with region id %d and store id %d",
-                                  Thread.currentThread().getId(),
-                                  ctxRegion.getId(),
-            ctxRegion.getLeader().getStoreId()));
-        long newStoreId = error.getNotLeader().getLeader().getStoreId();
-        regionManager.updateLeader(ctxRegion.getId(), newStoreId);
+    logger.warn(String.format("Thread %s: NotLeader Error with region id %d",
+        Thread.currentThread().getId(), error.getNotLeader().getRegionId()));
+    logger.warn(String.format("Thread %s: origin call with region id %d and store id %d",
+        Thread.currentThread().getId(),
+        ctxRegion.getId(),
+        ctxRegion.getLeader().getStoreId()));
+    long newStoreId = error.getNotLeader().getLeader().getStoreId();
+    regionManager.updateLeader(ctxRegion.getId(), newStoreId);
 
-        recv.onNotLeader(this.regionManager.getRegionById(ctxRegion.getId()),
-                         this.regionManager.getStoreById(newStoreId));
-        throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
+    recv.onNotLeader(this.regionManager.getRegionById(ctxRegion.getId()),
+        this.regionManager.getStoreById(newStoreId));
+    throw new StatusRuntimeException(
+        Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
   }
 
   private void onStoreNotMatch(Errorpb.Error error) {
     logger.warn(String.format("Thread %s: Store Not Match happened with region id %d, store id %d",
-                                  Thread.currentThread().getId(), ctxRegion.getId(),
-                                  ctxRegion.getLeader().getStoreId()));
+        Thread.currentThread().getId(), ctxRegion.getId(),
+        ctxRegion.getLeader().getStoreId()));
 
-        regionManager.invalidateRegion(ctxRegion.getId());
-        regionManager.invalidateStore(ctxRegion.getLeader().getStoreId());
-        recv.onStoreNotMatch();
-        throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
+    regionManager.invalidateRegion(ctxRegion.getId());
+    regionManager.invalidateStore(ctxRegion.getLeader().getStoreId());
+    recv.onStoreNotMatch();
+    throw new StatusRuntimeException(
+        Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
   }
 
   private void onStaleEpoch(Errorpb.Error error) {
     this.regionManager.onRegionStale(
         ctxRegion.getId(), error.getStaleEpoch().getNewRegionsList());
-    throw new StatusRuntimeException(Status.fromCode(Status.Code.CANCELLED).withDescription(error.toString()));
+    throw new StatusRuntimeException(
+        Status.fromCode(Status.Code.CANCELLED).withDescription(error.toString()));
   }
 
   public void handle(RespT resp) {
@@ -102,20 +106,23 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
       // such exception is caught outside and #RetryPolicy takes care retry and backoff.
       if (error.hasServerIsBusy()) {
         logger.warn("TiKV reports ServerIsBusy");
-        throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
+        throw new StatusRuntimeException(
+            Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
       }
 
       if (error.hasStaleCommand()) {
         logger.warn("TiKV reports StalesCommand");
-        throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
+        throw new StatusRuntimeException(
+            Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
       }
 
       if (error.hasRaftEntryTooLarge()) {
         logger.warn("TiKV reports RaftEntryTooLarge");
-        throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
+        throw new StatusRuntimeException(
+            Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
       }
       // for other errors, we only drop cache here and throw a retryable exception.
-      logger.warn("TiKV reports Region error: "+  error.getMessage());
+      logger.warn("TiKV reports Region error: " + error.getMessage());
       regionManager.invalidateRegion(ctxRegion.getId());
     }
   }
