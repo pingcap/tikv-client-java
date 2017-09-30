@@ -74,6 +74,15 @@ public class TableCodec {
     return cdo.toByteString();
   }
 
+  public static long decodeRowKey(ByteString rowKey) {
+    CodecDataInput cdi = new CodecDataInput(rowKey);
+    cdi.skipBytes(TBL_PREFIX.length);
+    IntegerType.readLong(cdi);
+    cdi.skipBytes(REC_PREFIX_SEP.length);
+
+    return IntegerType.readLong(cdi);
+  }
+
   public static void writeRowKeyWithHandle(CodecDataOutput cdo, long tableId, long handle) {
     appendTableRecordPrefix(cdo, tableId);
     IntegerType.writeLong(cdo, handle);

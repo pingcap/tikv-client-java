@@ -364,7 +364,7 @@ public class TiSelectRequest implements Serializable {
   public String toString() {
     StringBuilder sb = new StringBuilder();
     if (tableInfo != null) {
-      sb.append(String.format("[table: %s] ", tableInfo.toString()));
+      sb.append(String.format("[table: %s] ", tableInfo.getName()));
     }
 
     if (getRanges().size() != 0) {
