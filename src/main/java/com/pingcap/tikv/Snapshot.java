@@ -76,18 +76,24 @@ public class Snapshot {
   }
 
   /**
-   * Issue a select request to TiKV and PD.
+   * Issue a select request
    *
-   * @param selReq is SelectRequest.
+   * @param selReq select request for coporcessor
    * @return a Iterator that contains all result from this select request.
    */
   public Iterator<Row> select(TiSelectRequest selReq) {
     return new SelectIterator(selReq, getSession(), session.getRegionManager(), false);
   }
 
-  public Iterator<Row> selectByIndex(TiSelectRequest selReq) {
+  /**
+   * Issue a select request for index read
+   * @param selReq select request for coporcessor
+   * @param singleRead if perform single read
+   * @return a Iterator that contains all result from this select request.
+   */
+  public Iterator<Row> selectByIndex(TiSelectRequest selReq, boolean singleRead) {
     Iterator<Row> iter = new SelectIterator(selReq, getSession(), session.getRegionManager(), true);
-    return new IndexScanIterator(this, selReq, iter);
+    return new IndexScanIterator(this, selReq, iter, singleRead);
   }
 
   /**
@@ -110,10 +116,10 @@ public class Snapshot {
    * @param task RegionTask of the coprocessor request to send
    * @return Row iterator to iterate over resulting rows
    */
-  public Iterator<Row> selectByIndex(TiSelectRequest req, RegionTask task) {
+  public Iterator<Row> selectByIndex(TiSelectRequest req, RegionTask task, boolean singleRead) {
     Iterator<Row> iter =
         new SelectIterator(req, ImmutableList.of(task), getSession(), true);
-    return new IndexScanIterator(this, req, iter);
+    return new IndexScanIterator(this, req, iter, singleRead);
   }
 
   public Iterator<KvPair> scan(ByteString startKey) {

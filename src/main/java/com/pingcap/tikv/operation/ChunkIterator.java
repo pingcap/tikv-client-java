@@ -19,7 +19,9 @@ package com.pingcap.tikv.operation;
 
 import com.google.protobuf.ByteString;
 import com.pingcap.tidb.tipb.Chunk;
+import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.exception.TiClientInternalException;
+import com.pingcap.tikv.types.IntegerType;
 import java.util.Iterator;
 import java.util.List;
 
@@ -29,8 +31,9 @@ public class ChunkIterator implements Iterator<ByteString> {
     private int metaIndex;
     private int bufOffset;
     private boolean eof;
+    private boolean indexScan;
 
-    ChunkIterator(List<Chunk> chunks) {
+    ChunkIterator(List<Chunk> chunks, boolean indexScan) {
       // Read and then advance semantics
       this.chunks = chunks;
       chunkIndex = 0;
@@ -73,8 +76,15 @@ public class ChunkIterator implements Iterator<ByteString> {
       if (endOffset > Integer.MAX_VALUE) {
         throw new TiClientInternalException("Offset exceeded MAX_INT.");
       }
-      ByteString rowData = c.getRowsData();
-      ByteString result = rowData.substring(bufOffset, (int) endOffset);
+      ByteString result;
+      if (indexScan) {
+        CodecDataOutput cdo = new CodecDataOutput();
+        IntegerType.writeLongFull(cdo, c.getRowsMeta(metaIndex).getHandle(), true);
+        result = cdo.toByteString();
+      } else {
+        ByteString rowData = c.getRowsData();
+        result = rowData.substring(bufOffset, (int) endOffset);
+      }
       advance();
       return result;
     }

@@ -86,8 +86,7 @@ public class SelectIterator implements Iterator<Row> {
     }
   }
 
-  public SelectIterator(TiSelectRequest req, TiSession session, RegionManager rm,
-      boolean indexScan) {
+  public SelectIterator(TiSelectRequest req, TiSession session, RegionManager rm, boolean indexScan) {
     this(req, RangeSplitter.newSplitter(rm).splitRangeByRegion(req.getRanges()), session, indexScan);
   }
 
@@ -101,7 +100,7 @@ public class SelectIterator implements Iterator<Row> {
     if (chunks == null) {
       return false;
     }
-    chunkIterator = new ChunkIterator(chunks);
+    chunkIterator = new ChunkIterator(chunks, false);
     return true;
   }
 
