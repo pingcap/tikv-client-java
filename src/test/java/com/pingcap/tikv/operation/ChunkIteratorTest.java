@@ -49,9 +49,10 @@ public class ChunkIteratorTest {
         .build();
     chunks.add(chunk);
   }
+
   @Test
   public void chunkTest() {
-    ChunkIterator chunkIterator = new ChunkIterator(chunks);
+    ChunkIterator chunkIterator = new ChunkIterator(chunks, false);
     DataType bytes = DataTypeFactory.of(TYPE_VARCHAR);
     DataType ints = DataTypeFactory.of(TYPE_LONG);
     Row row = ObjectRowImpl.create(6);

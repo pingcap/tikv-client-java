@@ -15,15 +15,15 @@
 
 package com.pingcap.tikv.operation;
 
-import com.google.protobuf.ByteString;
 import com.pingcap.tikv.Snapshot;
-import com.pingcap.tikv.codec.KeyUtils;
-import com.pingcap.tikv.codec.TableCodec;
 import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
 import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.row.Row;
+import com.pingcap.tikv.util.KeyRangeUtils;
 import gnu.trove.list.array.TLongArrayList;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 
 public class IndexScanIterator implements Iterator<Row> {
@@ -43,35 +43,37 @@ public class IndexScanIterator implements Iterator<Row> {
   }
 
   private List<KeyRange> mergeKeyRangeList(TLongArrayList handles) {
-    List<KeyRange> newKeyRanges = new LinkedList<>();
-    // guard. only allow handles size larger than 2 pursues further.
-    if (handles.size() < 2) {
-      ByteString startKey = TableCodec.encodeRowKeyWithHandle(selReq.getTableInfo().getId(), handles.get(0));
-      ByteString endKey = KeyUtils.getNextKeyInByteOrder(startKey);
-      newKeyRanges.add(KeyRange.newBuilder().setStart(startKey).setEnd(endKey).build());
+    List<KeyRange> newKeyRanges = new ArrayList<>(handles.size());
+    // guard. only allow handles size larger than 1 pursues further.
+    if (handles.size() <= 1) {
+      long handle = handles.get(0);
+      newKeyRanges.add(KeyRangeUtils.makeCoprocRangeWithHandle(selReq.getTableInfo().getId(), handle, handle + 1));
       return newKeyRanges;
     }
     // sort handles first
     handles.sort();
     // merge all discrete key ranges.
     // e.g.
-    // original key range is [1, 2), [2, 3), [3, 4)
+    // original key range is 1 as [1, 2), 2 as [2, 3), 3 as [3, 4)
     // after merge, the result is [1, 4)
-    // original key range is [1, 2), [3, 4), [4, 5)
+    // original key range is 1 as [1, 2), 3 as [3, 4), 4 as [4, 5)
     // after merge, the result is [1, 2), [3, 5)
-    TLongArrayList startKeys = new TLongArrayList(64);
-    for (int i = 0; i < handles.size() - 1; i++) {
-      startKeys.add(handles.get(i));
-      long nextStart = handles.get(i + 1);
-      long end = handles.get(i) + 1;
-      if (nextStart <= end) {
+    long startHandle = handles.get(0);
+    long endHandle = startHandle;
+    for (int i = 1; i < handles.size(); i++) {
+      long curHandle = handles.get(i);
+      if (endHandle + 1 == curHandle) {
+        endHandle = curHandle;
         continue;
+      } else {
+        newKeyRanges.add(KeyRangeUtils.makeCoprocRangeWithHandle(selReq.getTableInfo().getId(),
+                                                                 startHandle,
+                                                                 endHandle + 1));
+        startHandle = curHandle;
+        endHandle = startHandle;
       }
-
-      ByteString startKey = TableCodec.encodeRowKeyWithHandle(selReq.getTableInfo().getId(), startKeys.get(0));
-      ByteString endKey = TableCodec.encodeRowKeyWithHandle(selReq.getTableInfo().getId(), end);
-      newKeyRanges.add(KeyRange.newBuilder().setStart(startKey).setEnd(endKey).build());
     }
+    newKeyRanges.add(KeyRangeUtils.makeCoprocRangeWithHandle(selReq.getTableInfo().getId(), startHandle, endHandle + 1));
     return newKeyRanges;
   }
 
