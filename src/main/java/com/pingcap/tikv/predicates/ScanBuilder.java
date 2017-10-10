@@ -227,7 +227,7 @@ public class ScanBuilder {
           type.encode(cdo, DataType.EncodeType.KEY, ub);
           uKey = cdo.toBytes();
           if (r.upperBoundType().equals(BoundType.CLOSED)) {
-            uKey = KeyUtils.prefixNext(lKey);
+            uKey = KeyUtils.prefixNext(uKey);
           }
         }
 
