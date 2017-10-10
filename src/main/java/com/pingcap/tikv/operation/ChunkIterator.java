@@ -19,74 +19,82 @@ package com.pingcap.tikv.operation;
 
 import com.google.protobuf.ByteString;
 import com.pingcap.tidb.tipb.Chunk;
-import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.exception.TiClientInternalException;
-import com.pingcap.tikv.types.IntegerType;
 import java.util.Iterator;
 import java.util.List;
 
-public class ChunkIterator implements Iterator<ByteString> {
-    private final List<Chunk> chunks;
-    private int chunkIndex;
-    private int metaIndex;
-    private int bufOffset;
-    private boolean eof;
-    private boolean indexScan;
+public abstract class ChunkIterator<T> implements Iterator<T> {
 
-    ChunkIterator(List<Chunk> chunks, boolean indexScan) {
-      // Read and then advance semantics
-      this.chunks = chunks;
-      this.chunkIndex = 0;
-      this.metaIndex = 0;
-      this.bufOffset = 0;
-      this.indexScan = indexScan;
-      if (chunks.size() == 0
-          || chunks.get(0).getRowsMetaCount() == 0
-          || chunks.get(0).getRowsData().size() == 0) {
-        eof = true;
-      }
-    }
+  private final List<Chunk> chunks;
+  protected int chunkIndex;
+  protected int metaIndex;
+  protected int bufOffset;
+  protected boolean eof;
 
-    @Override
-    public boolean hasNext() {
-      return !eof;
-    }
-
-    private void advance() {
-      if (eof) return;
-      Chunk c = chunks.get(chunkIndex);
-      bufOffset += c.getRowsMeta(metaIndex++).getLength();
-      if (metaIndex >= c.getRowsMetaCount()) {
-        // seek for next non-empty chunk
-        do {
-          chunkIndex += 1;
-        } while (chunkIndex < chunks.size() && chunks.get(chunkIndex).getRowsMetaCount() == 0);
-        if (chunkIndex >= chunks.size()) {
-          eof = true;
-          return;
+  public static ChunkIterator<ByteString> getRawBytesChunkIterator(List<Chunk> chunks) {
+    return new ChunkIterator<ByteString>(chunks) {
+      @Override
+      public ByteString next() {
+        Chunk c = chunks.get(chunkIndex);
+        long endOffset = c.getRowsMeta(metaIndex).getLength() + bufOffset;
+        if (endOffset > Integer.MAX_VALUE) {
+          throw new TiClientInternalException("Offset exceeded MAX_INT.");
         }
-        metaIndex = 0;
-        bufOffset = 0;
-      }
-    }
 
-    @Override
-    public ByteString next() {
-      Chunk c = chunks.get(chunkIndex);
-      long endOffset = c.getRowsMeta(metaIndex).getLength() + bufOffset;
-      if (endOffset > Integer.MAX_VALUE) {
-        throw new TiClientInternalException("Offset exceeded MAX_INT.");
+        ByteString result = c.getRowsData().substring(bufOffset, (int) endOffset);
+        advance();
+        return result;
       }
-      ByteString result;
-      if (indexScan) {
-        CodecDataOutput cdo = new CodecDataOutput();
-        IntegerType.writeLongFull(cdo, c.getRowsMeta(metaIndex).getHandle(), true);
-        result = cdo.toByteString();
-      } else {
-        ByteString rowData = c.getRowsData();
-        result = rowData.substring(bufOffset, (int) endOffset);
+    };
+  }
+
+  public static ChunkIterator<Long> getHandleChunkIterator(List<Chunk> chunks) {
+    return new ChunkIterator<Long>(chunks) {
+      @Override
+      public Long next() {
+        Chunk c = chunks.get(chunkIndex);
+        long result = c.getRowsMeta(metaIndex).getHandle();
+        advance();
+        return result;
       }
-      advance();
-      return result;
+    };
+  }
+
+  protected ChunkIterator(List<Chunk> chunks) {
+    // Read and then advance semantics
+    this.chunks = chunks;
+    this.chunkIndex = 0;
+    this.metaIndex = 0;
+    this.bufOffset = 0;
+    if (chunks.size() == 0
+        || chunks.get(0).getRowsMetaCount() == 0
+        || chunks.get(0).getRowsData().size() == 0) {
+      eof = true;
     }
+  }
+
+  @Override
+  public boolean hasNext() {
+    return !eof;
+  }
+
+  protected void advance() {
+    if (eof) {
+      return;
+    }
+    Chunk c = chunks.get(chunkIndex);
+    bufOffset += c.getRowsMeta(metaIndex++).getLength();
+    if (metaIndex >= c.getRowsMetaCount()) {
+      // seek for next non-empty chunk
+      do {
+        chunkIndex += 1;
+      } while (chunkIndex < chunks.size() && chunks.get(chunkIndex).getRowsMetaCount() == 0);
+      if (chunkIndex >= chunks.size()) {
+        eof = true;
+        return;
+      }
+      metaIndex = 0;
+      bufOffset = 0;
+    }
+  }
 }

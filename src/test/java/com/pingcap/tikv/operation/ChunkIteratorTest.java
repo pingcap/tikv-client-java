@@ -52,7 +52,7 @@ public class ChunkIteratorTest {
 
   @Test
   public void chunkTest() {
-    ChunkIterator chunkIterator = new ChunkIterator(chunks, false);
+    ChunkIterator<ByteString> chunkIterator = ChunkIterator.getRawBytesChunkIterator(chunks);
     DataType bytes = DataTypeFactory.of(TYPE_VARCHAR);
     DataType ints = DataTypeFactory.of(TYPE_LONG);
     Row row = ObjectRowImpl.create(6);

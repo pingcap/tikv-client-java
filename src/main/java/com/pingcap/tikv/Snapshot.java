@@ -33,6 +33,7 @@ import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.util.Comparables;
 import com.pingcap.tikv.util.Pair;
+import com.pingcap.tikv.util.RangeSplitter;
 import com.pingcap.tikv.util.RangeSplitter.RegionTask;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -82,7 +83,10 @@ public class Snapshot {
    * @return a Iterator that contains all result from this select request.
    */
   public Iterator<Row> select(TiSelectRequest selReq) {
-    return new SelectIterator(selReq, getSession(), session.getRegionManager(), false);
+    return SelectIterator.getRowIterator(
+        selReq,
+        RangeSplitter.newSplitter(session.getRegionManager()).splitRangeByRegion(selReq.getRanges()),
+        session);
   }
 
   /**
@@ -92,34 +96,45 @@ public class Snapshot {
    * @return a Iterator that contains all result from this select request.
    */
   public Iterator<Row> selectByIndex(TiSelectRequest selReq, boolean singleRead) {
-    Iterator<Row> iter = new SelectIterator(selReq, getSession(), session.getRegionManager(), true);
-    return new IndexScanIterator(this, selReq, iter, singleRead);
+
+    Iterator<Long> iter = SelectIterator.getHandleIterator(
+        selReq,
+        RangeSplitter.newSplitter(session.getRegionManager()).splitRangeByRegion(selReq.getRanges()),
+        session);
+        // new SelectIterator(selReq, getSession(), session.getRegionManager());
+    return new IndexScanIterator(this, selReq, iter);
   }
 
   /**
    * Below is lower level API for env like Spark which already did key range split Perform table
    * scan
    *
-   * @param req SelectRequest for coprocessor
+   * @param selReq SelectRequest for coprocessor
    * @param task RegionTask of the coprocessor request to send
    * @return Row iterator to iterate over resulting rows
    */
-  public Iterator<Row> select(TiSelectRequest req, RegionTask task) {
-    return new SelectIterator(req, ImmutableList.of(task), getSession(), false);
+  public Iterator<Row> select(TiSelectRequest selReq, RegionTask task) {
+    return SelectIterator.getRowIterator(
+        selReq,
+        ImmutableList.of(task),
+        session);
   }
 
   /**
    * Below is lower level API for env like Spark which already did key range split Perform index
    * double read
    *
-   * @param req SelectRequest for coprocessor
+   * @param selReq SelectRequest for coprocessor
    * @param task RegionTask of the coprocessor request to send
    * @return Row iterator to iterate over resulting rows
    */
-  public Iterator<Row> selectByIndex(TiSelectRequest req, RegionTask task, boolean singleRead) {
-    Iterator<Row> iter =
-        new SelectIterator(req, ImmutableList.of(task), getSession(), true);
-    return new IndexScanIterator(this, req, iter, singleRead);
+  public Iterator<Row> selectByIndex(TiSelectRequest selReq, RegionTask task, boolean singleRead) {
+    Iterator<Long> iter = SelectIterator.getHandleIterator(
+        selReq,
+        ImmutableList.of(task),
+        session);
+    // new SelectIterator(selReq, getSession(), session.getRegionManager());
+    return new IndexScanIterator(this, selReq, iter);
   }
 
   public Iterator<KvPair> scan(ByteString startKey) {

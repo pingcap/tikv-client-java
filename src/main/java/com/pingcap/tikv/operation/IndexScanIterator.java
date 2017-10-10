@@ -27,19 +27,15 @@ import java.util.List;
 
 
 public class IndexScanIterator implements Iterator<Row> {
-  private Iterator<Row> iter;
+  private final Iterator<Long> handleIterator;
   private final TiSelectRequest selReq;
   private final Snapshot snapshot;
+  private Iterator<Row> rowIterator;
 
-  public IndexScanIterator(Snapshot snapshot, TiSelectRequest req, Iterator<Row> iter, boolean singleRead) {
-    this.iter = iter;
+  public IndexScanIterator(Snapshot snapshot, TiSelectRequest req, Iterator<Long> handleIterator) {
     this.selReq = req;
+    this.handleIterator = handleIterator;
     this.snapshot = snapshot;
-    if (singleRead) {
-      this.iter = singleRead();
-    } else {
-      this.iter = doubleRead();
-    }
   }
 
   private List<KeyRange> mergeKeyRangeList(TLongArrayList handles) {
@@ -76,30 +72,21 @@ public class IndexScanIterator implements Iterator<Row> {
     return newKeyRanges;
   }
 
-  private Iterator<Row> doubleRead() {
-    // first read of double read's result are handles.
-    // This is actually keys of our second read.
-    TLongArrayList handles = new TLongArrayList(64);
-    while (iter.hasNext()) {
-      Row r = iter.next();
-      handles.add(r.getLong(0));
-    }
-
-    selReq.resetRanges(mergeKeyRangeList(handles));
-    return snapshot.select(selReq);
-  }
-
-  private Iterator<Row> singleRead() {
-    return iter;
-  }
-
   @Override
   public boolean hasNext() {
-    return iter.hasNext();
+    if (rowIterator == null) {
+      TLongArrayList handles = new TLongArrayList(4096);
+      while (handleIterator.hasNext()) {
+        handles.add(handleIterator.next());
+      }
+      selReq.resetRanges(mergeKeyRangeList(handles));
+      rowIterator = snapshot.select(selReq);
+    }
+    return rowIterator.hasNext();
   }
 
   @Override
   public Row next() {
-    return iter.next();
+    return rowIterator.next();
   }
 }
