@@ -80,7 +80,7 @@ public class TableStatsTest {
 
     bucketsInfo = mockDBReader.getTableInfo("stats_buckets");
     List<TiExpr> exprs = ImmutableList.of(
-        new Equal(TiColumnRef.create("table_id", bucketsInfo), TiConstant.create(27)));
+        new NotEqual(TiColumnRef.create("table_id", bucketsInfo), TiConstant.create(1)));
     List<String> returnFields = ImmutableList.of(
         "table_id", "is_index", "hist_id", "bucket_id", "count", "repeats", "upper_bound", "lower_bound");
     mockDBReader.printRows("stats_buckets", exprs, returnFields);

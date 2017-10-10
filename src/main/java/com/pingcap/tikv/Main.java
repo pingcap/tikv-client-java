@@ -7,7 +7,6 @@ import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiConstant;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.expression.scalar.GreaterThan;
-import com.pingcap.tikv.expression.scalar.NotEqual;
 import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.statistics.Table;
@@ -38,17 +37,7 @@ public class Main {
     Catalog cat = cluster.getCatalog();
     DBReader dbReader = new DBReader(cat, "mysql", snapshot, cluster.getRegionManager(), conf);
 
-    TiTableInfo table = dbReader.getTableInfo("t1");
-    List<TiExpr> exprs =
-        ImmutableList.of(
-            new NotEqual(TiColumnRef.create("s1", table), TiConstant.create("xxxxx")));
-
-    List<String> returnFields =
-        ImmutableList.of("c1", "s1");
-
-    dbReader.printRows("t1", exprs, returnFields);
-
-//    System.out.println(table.getIndices().get(0).getId());
+    TiTableInfo table = dbReader.getTableInfo("t2");
 
     System.out.println(table.getId());
 
@@ -62,7 +51,7 @@ public class Main {
     System.out.println();
 
     List<TiExpr> myExprs = ImmutableList.of(
-        new GreaterThan(TiColumnRef.create("c1", table), TiConstant.create((long) 2)));
+        new GreaterThan(TiColumnRef.create("s1", table), TiConstant.create((long) 20)));
     System.out.println(myExprs.size());
     System.out.println(t.Selectivity(dbReader, myExprs));
 

@@ -5,8 +5,10 @@ import com.pingcap.tikv.TiConfiguration;
 import com.pingcap.tikv.catalog.Catalog;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiExpr;
-import com.pingcap.tikv.meta.*;
-import com.pingcap.tikv.operation.SchemaInfer;
+import com.pingcap.tikv.meta.TiDBInfo;
+import com.pingcap.tikv.meta.TiIndexInfo;
+import com.pingcap.tikv.meta.TiSelectRequest;
+import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.predicates.PredicateUtils;
 import com.pingcap.tikv.predicates.ScanBuilder;
 import com.pingcap.tikv.region.RegionManager;
@@ -114,39 +116,11 @@ public class DBReader {
         rowList.add(row);
       }
     }
-    printRows(rowList, selReq);
-    System.out.println("altogether " + rowList.size() + " rows from "
-        + selReq.getTableInfo().getName() + "#" + selReq.getTableInfo().getId());
     return rowList;
   }
 
   public List<Row> getSelectedRows(String tableName, List<TiExpr> exprs, List<String> returnFields) {
     return getSelectedRows(getSelectRequest(tableName, exprs, returnFields));
   }
-
-  private void printRows(List<Row> rows, TiSelectRequest selReq) {
-    System.out.println(">>>>>>>>>>>>>" + selReq.getTableInfo().getName());
-    for(TiColumnRef f: selReq.getFields()) {
-      System.out.print(f.getName() + " ");
-    }
-    System.out.println();
-    for(Row r: rows) {
-      SchemaInfer schemaInfer = SchemaInfer.create(selReq);
-      for (int i = 0; i < r.fieldCount(); i++) {
-        Object c = r.get(i, schemaInfer.getType(i));
-        System.out.print(TiKey.create(c));
-        System.out.print(" ");
-      }
-      System.out.print("\n");
-    }
-    System.out.println("<<<<<<<<<<<<<");
-  }
-
-  public void printRows(String tableName, List<TiExpr> exprs, List<String> returnFields) {
-    TiSelectRequest selectRequest = getSelectRequest(tableName, exprs, returnFields);
-    List<Row> rows = getSelectedRows(selectRequest);
-    printRows(rows, selectRequest);
-  }
-
 
 }

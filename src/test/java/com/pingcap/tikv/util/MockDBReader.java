@@ -410,8 +410,8 @@ public class MockDBReader extends DBReader {
       boolean ok = false;
 
       if(e0 instanceof TiConstant && e1 instanceof TiColumnRef && ((TiColumnRef) e1).getName().equalsIgnoreCase(columnName)) {
-        TiKey r = TiKey.encode(row.get(i, e0.getType()));
-        TiKey c = TiKey.encode(((TiConstant) e0).getValue());
+        TiKey<ByteString> r = TiKey.encode(row.get(i, e0.getType()));
+        TiKey<ByteString> c = TiKey.encode(((TiConstant) e0).getValue());
 
         switch (Op) {
           case "=":
@@ -431,14 +431,17 @@ public class MockDBReader extends DBReader {
             break;
           case "<":
             ok = r.compareTo(c) > 0;
+            break;
+          case "<>":
+            ok = r.compareTo(c) != 0;
             break;
           default:
             // shouldn't be here
             System.out.println("unknown or unsupported operator " + Op);
         }
       } else if(e1 instanceof TiConstant && e0 instanceof TiColumnRef && ((TiColumnRef) e0).getName().equalsIgnoreCase(columnName)) {
-        TiKey r = TiKey.encode(row.get(i, e1.getType()));
-        TiKey c = TiKey.encode(((TiConstant) e1).getValue());
+        TiKey<ByteString> r = TiKey.encode(row.get(i, e1.getType()));
+        TiKey<ByteString> c = TiKey.encode(((TiConstant) e1).getValue());
 
         switch (Op) {
           case "=":
@@ -458,6 +461,9 @@ public class MockDBReader extends DBReader {
             break;
           case "<":
             ok = r.compareTo(c) < 0;
+            break;
+          case "<>":
+            ok = r.compareTo(c) != 0;
             break;
           default:
             // shouldn't be here
@@ -503,13 +509,24 @@ public class MockDBReader extends DBReader {
     return ret;
   }
 
-  @Override
+  // TODO: will be extremely slow on large data set
   public void printRows(String tableName, List<TiExpr> exprs, List<String> returnFields) {
     table t = getTable(tableName);
     System.out.println(">>>>>>>>>>>>>" + tableName);
     if(t != null) {
       System.out.println(returnFields);
+      next:
       for (Row r : t.rows) {
+        for(TiExpr expr: exprs) {
+          if (expr instanceof TiBinaryFunctionExpresson) {
+            List<TiExpr> e = ((TiBinaryFunctionExpresson) expr).getArgs();
+            if (Table.checkColumnConstant(e)) {
+              if(!checkOps(e, r, t.columnInfoList, ((TiBinaryFunctionExpresson) expr).getName())) {
+                continue next;
+              }
+            }
+          }
+        }
         for(String s: returnFields) {
           for (int i = 0; i < r.fieldCount(); i++) {
             Object val = r.get(i, t.getType(i));
