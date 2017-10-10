@@ -100,7 +100,7 @@ public class SelectIterator implements Iterator<Row> {
     if (chunks == null) {
       return false;
     }
-    chunkIterator = new ChunkIterator(chunks, false);
+    chunkIterator = new ChunkIterator(chunks, indexScan);
     return true;
   }
 

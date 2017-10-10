@@ -36,9 +36,10 @@ public class ChunkIterator implements Iterator<ByteString> {
     ChunkIterator(List<Chunk> chunks, boolean indexScan) {
       // Read and then advance semantics
       this.chunks = chunks;
-      chunkIndex = 0;
-      metaIndex = 0;
-      bufOffset = 0;
+      this.chunkIndex = 0;
+      this.metaIndex = 0;
+      this.bufOffset = 0;
+      this.indexScan = indexScan;
       if (chunks.size() == 0
           || chunks.get(0).getRowsMetaCount() == 0
           || chunks.get(0).getRowsData().size() == 0) {

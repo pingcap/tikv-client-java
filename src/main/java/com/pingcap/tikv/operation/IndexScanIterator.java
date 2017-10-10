@@ -45,11 +45,10 @@ public class IndexScanIterator implements Iterator<Row> {
   private List<KeyRange> mergeKeyRangeList(TLongArrayList handles) {
     List<KeyRange> newKeyRanges = new ArrayList<>(handles.size());
     // guard. only allow handles size larger than 1 pursues further.
-    if (handles.size() <= 1) {
-      long handle = handles.get(0);
-      newKeyRanges.add(KeyRangeUtils.makeCoprocRangeWithHandle(selReq.getTableInfo().getId(), handle, handle + 1));
+    if (handles.size() == 0) {
       return newKeyRanges;
     }
+
     // sort handles first
     handles.sort();
     // merge all discrete key ranges.

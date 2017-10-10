@@ -15,7 +15,6 @@
 
 package com.pingcap.tikv.util;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.pingcap.tikv.util.KeyRangeUtils.formatByteString;
 import static java.util.Objects.requireNonNull;
 
@@ -27,7 +26,10 @@ import com.pingcap.tikv.kvproto.Metapb;
 import com.pingcap.tikv.region.RegionManager;
 import com.pingcap.tikv.region.TiRegion;
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class RangeSplitter {
   public static class RegionTask implements Serializable {
@@ -114,7 +116,10 @@ public class RangeSplitter {
   }
 
   public List<RegionTask> splitRangeByRegion(List<KeyRange> keyRanges) {
-    checkArgument(keyRanges != null && keyRanges.size() != 0);
+    if (keyRanges == null || keyRanges.size() == 0) {
+      return ImmutableList.of();
+    }
+
     int i = 0;
     KeyRange range = keyRanges.get(i++);
     Map<Long, List<KeyRange>> idToRange = new HashMap<>(); // region id to keyRange list
