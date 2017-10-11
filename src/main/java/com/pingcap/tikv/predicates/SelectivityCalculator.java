@@ -25,20 +25,21 @@ import com.pingcap.tikv.expression.scalar.LessThan;
 import com.pingcap.tikv.expression.scalar.NullEqual;
 
 public class SelectivityCalculator {
-  public static final double SELECTION_FACTOR = 0.8;
-  public static final double EQUAL_RATE = 1000;
-  public static final double LESS_RATE = 3;
+  public static final double SELECTION_FACTOR = 100;
+  public static final double EQUAL_RATE = 0.01;
+  public static final double LESS_RATE = 0.1;
 
   public static double calcPseudoSelectivity(Iterable<TiExpr> exprs) {
     double minFactor = SELECTION_FACTOR;
     for (TiExpr expr : exprs) {
       if (expr instanceof Equal || expr instanceof NullEqual) {
-        minFactor = Math.min(minFactor, 1.0 / EQUAL_RATE);
-      } else if (expr instanceof GreaterEqual ||
+        minFactor *= EQUAL_RATE;
+      } else if (
+          expr instanceof GreaterEqual ||
           expr instanceof GreaterThan ||
           expr instanceof LessEqual ||
           expr instanceof LessThan) {
-        minFactor = Math.min(minFactor, 1.0 / LESS_RATE);
+        minFactor *= LESS_RATE;
       }
     }
     return minFactor;

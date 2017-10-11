@@ -93,6 +93,7 @@ public class ScanBuilder {
       ScanPlan plan = buildScan(conditions, index, table);
       if (plan.getCost() < minCost) {
         minPlan = plan;
+        minCost = plan.getCost();
       }
     }
     return minPlan;
