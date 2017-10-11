@@ -21,6 +21,7 @@ import static java.util.Objects.requireNonNull;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.BoundType;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Range;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.codec.CodecDataOutput;
@@ -44,13 +45,15 @@ import java.util.Set;
 // TODO: Rethink value binding part since we abstract away datum of TiDB
 public class ScanBuilder {
   public static class ScanPlan {
-    public ScanPlan(List<KeyRange> keyRanges, List<TiExpr> filters) {
+    public ScanPlan(List<KeyRange> keyRanges, List<TiExpr> filters, double cost) {
       this.filters = filters;
       this.keyRanges = keyRanges;
+      this.cost = cost;
     }
 
     private final List<KeyRange> keyRanges;
     private final List<TiExpr> filters;
+    private final double cost;
 
     public List<KeyRange> getKeyRanges() {
       return keyRanges;
@@ -59,6 +62,10 @@ public class ScanBuilder {
     public List<TiExpr> getFilters() {
       return filters;
     }
+
+    public double getCost() {
+      return cost;
+    }
   }
 
   private static final KeyRange INDEX_FULL_RANGE =
@@ -66,6 +73,20 @@ public class ScanBuilder {
           .setStart(DataType.indexMinValue())
           .setEnd(DataType.indexMaxValue())
           .build();
+
+  // Build scan plan picking access path with lowest cost by estimation
+  public ScanPlan buildScan(List<TiExpr> conditions, TiTableInfo table) {
+    TiIndexInfo pkIndex = TiIndexInfo.generateFakePrimaryKeyIndex(table);
+    ScanPlan minPlan = buildScan(conditions, pkIndex, table);
+    double minCost = minPlan.getCost();
+    for (TiIndexInfo index : table.getIndices()) {
+      ScanPlan plan = buildScan(conditions, index, table);
+      if (plan.getCost() < minCost) {
+        minPlan = plan;
+      }
+    }
+    return minPlan;
+  }
 
   public ScanPlan buildScan(List<TiExpr> conditions, TiIndexInfo index, TiTableInfo table) {
     requireNonNull(table, "Table cannot be null to encoding keyRange");
@@ -76,6 +97,9 @@ public class ScanBuilder {
     }
 
     IndexMatchingResult result = extractConditions(conditions, table, index);
+    double cost = SelectivityCalculator.calcPseudoSelectivity(Iterables.concat(result.accessConditions,
+                                                                               result.accessPoints));
+
     RangeBuilder builder = new RangeBuilder();
     List<IndexRange> irs =
         builder.exprsToIndexRanges(
@@ -89,7 +113,7 @@ public class ScanBuilder {
       keyRanges = buildIndexScanKeyRange(table, index, irs);
     }
 
-    return new ScanPlan(keyRanges, result.residualConditions);
+    return new ScanPlan(keyRanges, result.residualConditions, cost);
   }
 
   private List<KeyRange> buildTableScanKeyRange(TiTableInfo table, List<IndexRange> indexRanges) {
