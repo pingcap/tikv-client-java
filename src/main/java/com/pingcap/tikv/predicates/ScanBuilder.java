@@ -70,7 +70,7 @@ public class ScanBuilder {
     }
 
     public boolean isIndexScan() {
-      return index == null || index.isFakePrimaryKey();
+      return index != null && !index.isFakePrimaryKey();
     }
 
     public TiIndexInfo getIndex() {
