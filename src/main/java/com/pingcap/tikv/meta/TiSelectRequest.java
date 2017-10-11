@@ -67,7 +67,7 @@ public class TiSelectRequest implements Serializable {
   private TiExpr having;
   private boolean distinct;
 
-  public void bind() {
+  public void resolve() {
     getFields().forEach(expr -> expr.bind(tableInfo));
     getWhere().forEach(expr -> expr.bind(tableInfo));
     getGroupByItems().forEach(item -> item.getExpr().bind(tableInfo));
