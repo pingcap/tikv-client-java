@@ -45,15 +45,17 @@ import java.util.Set;
 // TODO: Rethink value binding part since we abstract away datum of TiDB
 public class ScanBuilder {
   public static class ScanPlan {
-    public ScanPlan(List<KeyRange> keyRanges, List<TiExpr> filters, double cost) {
+    public ScanPlan(List<KeyRange> keyRanges, List<TiExpr> filters, TiIndexInfo index, double cost) {
       this.filters = filters;
       this.keyRanges = keyRanges;
       this.cost = cost;
+      this.index = index;
     }
 
     private final List<KeyRange> keyRanges;
     private final List<TiExpr> filters;
     private final double cost;
+    private TiIndexInfo index;
 
     public List<KeyRange> getKeyRanges() {
       return keyRanges;
@@ -65,6 +67,14 @@ public class ScanBuilder {
 
     public double getCost() {
       return cost;
+    }
+
+    public boolean isIndexScan() {
+      return index == null || index.isFakePrimaryKey();
+    }
+
+    public TiIndexInfo getIndex() {
+      return index;
     }
   }
 
@@ -113,7 +123,7 @@ public class ScanBuilder {
       keyRanges = buildIndexScanKeyRange(table, index, irs);
     }
 
-    return new ScanPlan(keyRanges, result.residualConditions, cost);
+    return new ScanPlan(keyRanges, result.residualConditions, index, cost);
   }
 
   private List<KeyRange> buildTableScanKeyRange(TiTableInfo table, List<IndexRange> indexRanges) {

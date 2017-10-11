@@ -77,32 +77,24 @@ public class Snapshot {
   }
 
   /**
-   * Issue a select request
+   * Issue a table read request
    *
    * @param selReq select request for coporcessor
    * @return a Iterator that contains all result from this select request.
    */
-  public Iterator<Row> select(TiSelectRequest selReq) {
-    return SelectIterator.getRowIterator(
-        selReq,
-        RangeSplitter.newSplitter(session.getRegionManager()).splitRangeByRegion(selReq.getRanges()),
-        session);
-  }
-
-  /**
-   * Issue a select request for index read
-   * @param selReq select request for coporcessor
-   * @param singleRead if perform single read
-   * @return a Iterator that contains all result from this select request.
-   */
-  public Iterator<Row> selectByIndex(TiSelectRequest selReq, boolean singleRead) {
-
-    Iterator<Long> iter = SelectIterator.getHandleIterator(
-        selReq,
-        RangeSplitter.newSplitter(session.getRegionManager()).splitRangeByRegion(selReq.getRanges()),
-        session);
-        // new SelectIterator(selReq, getSession(), session.getRegionManager());
-    return new IndexScanIterator(this, selReq, iter);
+  public Iterator<Row> tableRead(TiSelectRequest selReq) {
+    if (selReq.isIndexScan()) {
+      Iterator<Long> iter = SelectIterator.getHandleIterator(
+          selReq,
+          RangeSplitter.newSplitter(session.getRegionManager()).splitRangeByRegion(selReq.getRanges()),
+          session);
+      return new IndexScanIterator(this, selReq, iter);
+    } else {
+      return SelectIterator.getRowIterator(
+          selReq,
+          RangeSplitter.newSplitter(session.getRegionManager()).splitRangeByRegion(selReq.getRanges()),
+          session);
+    }
   }
 
   /**
@@ -113,28 +105,19 @@ public class Snapshot {
    * @param task RegionTask of the coprocessor request to send
    * @return Row iterator to iterate over resulting rows
    */
-  public Iterator<Row> select(TiSelectRequest selReq, RegionTask task) {
-    return SelectIterator.getRowIterator(
-        selReq,
-        ImmutableList.of(task),
-        session);
-  }
-
-  /**
-   * Below is lower level API for env like Spark which already did key range split Perform index
-   * double read
-   *
-   * @param selReq SelectRequest for coprocessor
-   * @param task RegionTask of the coprocessor request to send
-   * @return Row iterator to iterate over resulting rows
-   */
-  public Iterator<Row> selectByIndex(TiSelectRequest selReq, RegionTask task, boolean singleRead) {
-    Iterator<Long> iter = SelectIterator.getHandleIterator(
-        selReq,
-        ImmutableList.of(task),
-        session);
-    // new SelectIterator(selReq, getSession(), session.getRegionManager());
-    return new IndexScanIterator(this, selReq, iter);
+  public Iterator<Row> tableRead(TiSelectRequest selReq, RegionTask task) {
+    if (selReq.isIndexScan()) {
+      Iterator<Long> iter = SelectIterator.getHandleIterator(
+          selReq,
+          ImmutableList.of(task),
+          session);
+      return new IndexScanIterator(this, selReq, iter);
+    } else {
+      return SelectIterator.getRowIterator(
+          selReq,
+          ImmutableList.of(task),
+          session);
+    }
   }
 
   public Iterator<KvPair> scan(ByteString startKey) {

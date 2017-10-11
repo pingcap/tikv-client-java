@@ -157,6 +157,10 @@ public class TiSelectRequest implements Serializable {
         .build();
   }
 
+  public boolean isIndexScan() {
+    return indexInfo != null;
+  }
+
   public TiSelectRequest setTableInfo(TiTableInfo tableInfo) {
     this.tableInfo = requireNonNull(tableInfo, "tableInfo is null");
     return this;

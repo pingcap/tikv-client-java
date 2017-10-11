@@ -16,10 +16,12 @@
 package com.pingcap.tikv.operation;
 
 import com.pingcap.tikv.Snapshot;
+import com.pingcap.tikv.TiSession;
 import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
 import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.util.KeyRangeUtils;
+import com.pingcap.tikv.util.RangeSplitter;
 import gnu.trove.list.array.TLongArrayList;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -80,7 +82,11 @@ public class IndexScanIterator implements Iterator<Row> {
         handles.add(handleIterator.next());
       }
       selReq.resetRanges(mergeKeyRangeList(handles));
-      rowIterator = snapshot.select(selReq);
+      TiSession session = snapshot.getSession();
+      rowIterator = SelectIterator.getRowIterator(
+          selReq,
+          RangeSplitter.newSplitter(session.getRegionManager()).splitRangeByRegion(selReq.getRanges()),
+          snapshot.getSession());
     }
     return rowIterator.hasNext();
   }
