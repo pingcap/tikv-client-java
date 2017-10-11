@@ -370,6 +370,10 @@ public class TiSelectRequest implements Serializable {
       sb.append(tableInfo.toString());
     }
 
+    if (indexInfo != null) {
+      sb.append(String.format("index: [%s] ", indexInfo.toString()));
+    }
+
     for (TiColumnRef ref : fields) {
       sb.append(String.format("ColumnRef:[%s]", ref.toProto().toString()));
     }
