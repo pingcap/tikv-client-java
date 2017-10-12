@@ -16,11 +16,14 @@
 package com.pingcap.tikv.operation;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.pingcap.tidb.tipb.Chunk;
 import com.pingcap.tidb.tipb.SelectResponse;
 import com.pingcap.tikv.TiSession;
 import com.pingcap.tikv.codec.CodecDataInput;
+import com.pingcap.tikv.exception.SelectException;
 import com.pingcap.tikv.exception.TiClientInternalException;
+import com.pingcap.tikv.kvproto.Coprocessor;
 import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
 import com.pingcap.tikv.kvproto.Metapb.Store;
 import com.pingcap.tikv.meta.TiSelectRequest;
@@ -35,7 +38,9 @@ import com.pingcap.tikv.types.DataTypeFactory;
 import com.pingcap.tikv.types.Types;
 import com.pingcap.tikv.util.RangeSplitter;
 import com.pingcap.tikv.util.RangeSplitter.RegionTask;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -50,6 +55,7 @@ public class SelectIterator implements Iterator<Row> {
   private SchemaInfer schemaInfer;
   private final boolean indexScan;
   private TiSelectRequest tiReq;
+  private RegionManager regionManager;
   private static final DataType[] handleTypes =
       new DataType[]{DataTypeFactory.of(Types.TYPE_LONG)};
 
@@ -65,30 +71,67 @@ public class SelectIterator implements Iterator<Row> {
     this.indexScan = indexScan;
   }
 
+  public SelectIterator(
+      TiSelectRequest req,
+      RegionManager rm,
+      TiSession session,
+      boolean indexScan) {
+    this.regionTasks = RangeSplitter.newSplitter(rm).splitRangeByRegion(req.getRanges());
+    this.tiReq = req;
+    this.session = session;
+    this.regionManager = rm;
+    this.schemaInfer = SchemaInfer.create(req);
+    this.indexScan = indexScan;
+  }
+
+  public SelectIterator(TiSelectRequest req, TiSession session, RegionManager rm,
+      boolean indexScan) {
+    this(req, rm, session, indexScan);
+  }
+
+  private void handleOnRegionSplit(RegionTask regionTask, TiSelectRequest req, List<Chunk> chunks) {
+    List<RegionTask> regionTasks = RangeSplitter.newSplitter(this.regionManager).splitRangeByRegion(regionTask.getRanges());
+    for(RegionTask t : regionTasks) {
+      chunks.addAll(createClientAndSendReq(t, req));
+    }
+  }
+
   private List<Chunk> createClientAndSendReq(RegionTask regionTask,
       TiSelectRequest req) {
     List<KeyRange> ranges = regionTask.getRanges();
+    List<Chunk> chunks = new LinkedList<>();
     TiRegion region = regionTask.getRegion();
     Store store = regionTask.getStore();
 
     RegionStoreClient client;
     try {
       client = RegionStoreClient.create(region, store, session);
-      SelectResponse resp = client.coprocess(req.buildScan(indexScan), ranges);
+      Coprocessor.Response resp = client.coprocess(req.buildScan(indexScan), ranges);
       // if resp is null, then indicates eof.
       if (resp == null) {
         eof = true;
         return null;
       }
-      return resp.getChunksList();
+      if(resp.hasRegionError()) {
+        handleOnRegionSplit(regionTask, req, chunks);
+      }
+      chunks.addAll(coprocessorHelper(resp).getChunksList());
+      return chunks;
     } catch (Exception e) {
       throw new TiClientInternalException("Error Closing Store client.", e);
     }
   }
 
-  public SelectIterator(TiSelectRequest req, TiSession session, RegionManager rm,
-      boolean indexScan) {
-    this(req, RangeSplitter.newSplitter(rm).splitRangeByRegion(req.getRanges()), session, indexScan);
+  public static SelectResponse coprocessorHelper(Coprocessor.Response resp) {
+    try {
+      SelectResponse selectResp = SelectResponse.parseFrom(resp.getData());
+      if (selectResp.hasError()) {
+        throw new SelectException(selectResp.getError(), selectResp.getError().getMsg());
+      }
+      return selectResp;
+    } catch (InvalidProtocolBufferException e) {
+      throw new TiClientInternalException("Error parsing protobuf for coprocessor response.", e);
+    }
   }
 
   private boolean readNextRegion() {
@@ -124,7 +167,6 @@ public class SelectIterator implements Iterator<Row> {
     if (hasNext()) {
       ByteString rowData = chunkIterator.next();
       RowReader reader = RowReaderFactory.createRowReader(new CodecDataInput(rowData));
-      // TODO: Make sure if only handle returned
       if (indexScan) {
         return reader.readRow(handleTypes);
       } else {

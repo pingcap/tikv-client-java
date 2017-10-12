@@ -28,6 +28,7 @@ import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
 import com.pingcap.tikv.kvproto.Kvrpcpb;
 import com.pingcap.tikv.kvproto.Kvrpcpb.IsolationLevel;
 import com.pingcap.tikv.kvproto.Metapb;
+import com.pingcap.tikv.operation.SelectIterator;
 import com.pingcap.tikv.region.RegionStoreClient;
 import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.util.ZeroBackOff;
@@ -218,7 +219,7 @@ public class RegionStoreClientTest {
             createByteStringRange(
                 ByteString.copyFromUtf8("key6"), ByteString.copyFromUtf8("key7")));
 
-    SelectResponse resp = client.coprocess(builder.build(), keyRanges);
+    SelectResponse resp = SelectIterator.coprocessorHelper(client.coprocess(builder.build(), keyRanges));
     assertEquals(5, resp.getChunksCount());
     Set<String> results =
         ImmutableSet.copyOf(
