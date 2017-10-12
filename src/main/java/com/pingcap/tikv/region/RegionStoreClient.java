@@ -20,6 +20,7 @@ package com.pingcap.tikv.region;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.pingcap.tidb.tipb.SelectRequest;
@@ -32,6 +33,7 @@ import com.pingcap.tikv.exception.SelectException;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.kvproto.Coprocessor;
 import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
+import com.pingcap.tikv.kvproto.Coprocessor.Response;
 import com.pingcap.tikv.kvproto.Kvrpcpb.BatchGetRequest;
 import com.pingcap.tikv.kvproto.Kvrpcpb.BatchGetResponse;
 import com.pingcap.tikv.kvproto.Kvrpcpb.Context;
@@ -53,6 +55,7 @@ import com.pingcap.tikv.kvproto.TikvGrpc.TikvStub;
 import com.pingcap.tikv.operation.KVErrorHandler;
 import com.pingcap.tikv.util.Pair;
 import io.grpc.ManagedChannel;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -169,7 +172,7 @@ public class RegionStoreClient extends AbstractGRPCClient<TikvBlockingStub, Tikv
     return resp.getPairsList();
   }
 
-  public SelectResponse coprocess(SelectRequest req, List<KeyRange> ranges) {
+  public Coprocessor.Response coprocess(SelectRequest req, List<KeyRange> ranges) {
     Supplier<Coprocessor.Request> reqToSend = () ->
         Coprocessor.Request.newBuilder()
             .setContext(region.getContext())
@@ -181,21 +184,10 @@ public class RegionStoreClient extends AbstractGRPCClient<TikvBlockingStub, Tikv
     KVErrorHandler<Coprocessor.Response> handler =
         new KVErrorHandler<>(
             regionManager, this, region, resp -> resp.hasRegionError() ? resp.getRegionError() : null);
-    Coprocessor.Response resp = callWithRetry(TikvGrpc.METHOD_COPROCESSOR, reqToSend, handler);
-    return coprocessorHelper(resp);
+    return callWithRetry(TikvGrpc.METHOD_COPROCESSOR, reqToSend, handler);
   }
 
-  private SelectResponse coprocessorHelper(Coprocessor.Response resp) {
-    try {
-      SelectResponse selectResp = SelectResponse.parseFrom(resp.getData());
-      if (selectResp.hasError()) {
-        throw new SelectException(selectResp.getError(), selectResp.getError().getMsg());
-      }
-      return selectResp;
-    } catch (InvalidProtocolBufferException e) {
-      throw new TiClientInternalException("Error parsing protobuf for coprocessor response.", e);
-    }
-  }
+
 
   @Override
   public void close() throws Exception {
