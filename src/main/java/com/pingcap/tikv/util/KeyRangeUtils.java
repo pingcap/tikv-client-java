@@ -15,11 +15,18 @@
 
 package com.pingcap.tikv.util;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.codec.TableCodec;
 import com.pingcap.tikv.kvproto.Coprocessor;
 import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
+import com.pingcap.tikv.meta.TiColumnInfo;
+import com.pingcap.tikv.meta.TiIndexColumn;
+import com.pingcap.tikv.meta.TiIndexInfo;
+import com.pingcap.tikv.meta.TiTableInfo;
+import com.pingcap.tikv.types.DataType;
+import java.util.List;
 
 public class KeyRangeUtils {
   public static Range toRange(Coprocessor.KeyRange range) {
@@ -39,6 +46,21 @@ public class KeyRangeUtils {
     return String.format("[%s, %s]",
         TableCodec.decodeRowKey(range.getStart()),
         TableCodec.decodeRowKey(range.getEnd()));
+  }
+
+  public static String toString(Coprocessor.KeyRange range, List<DataType> types) {
+    return String.format("[%s, %s]",
+        TableCodec.decodeIndexSeekKey(range.getStart(), types),
+        TableCodec.decodeIndexSeekKey(range.getEnd(), types));
+  }
+
+  public static List<DataType> getIndexColumnTypes(TiTableInfo table, TiIndexInfo index) {
+    ImmutableList.Builder<DataType> types = ImmutableList.builder();
+    for (TiIndexColumn indexColumn : index.getIndexColumns()) {
+      TiColumnInfo tableColumn = table.getColumns().get(indexColumn.getOffset());
+      types.add(tableColumn.getType());
+    }
+    return types.build();
   }
 
   public static Range makeRange(ByteString startKey, ByteString endKey) {

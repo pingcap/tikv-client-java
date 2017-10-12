@@ -368,15 +368,27 @@ public class TiSelectRequest implements Serializable {
   public String toString() {
     StringBuilder sb = new StringBuilder();
     if (tableInfo != null) {
-      sb.append(String.format("[table: %s] ", tableInfo.getName()));
+      sb.append(String.format("[table: %s]", tableInfo.getName()));
+    }
+    if (indexInfo != null) {
+      sb.append(String.format("[index: %s]", indexInfo.toString()));
     }
 
     if (getRanges().size() != 0) {
       sb.append(", Ranges: ");
-      List<String> rangeStrings = getRanges()
-          .stream()
-          .map(r -> KeyRangeUtils.toString(r))
-          .collect(Collectors.toList());
+      List<String> rangeStrings;
+      if (indexInfo == null) {
+        rangeStrings = getRanges()
+            .stream()
+            .map(r -> KeyRangeUtils.toString(r))
+            .collect(Collectors.toList());
+      } else {
+        List<DataType> types = KeyRangeUtils.getIndexColumnTypes(tableInfo, indexInfo);
+        rangeStrings = getRanges()
+            .stream()
+            .map(r -> KeyRangeUtils.toString(r, types))
+            .collect(Collectors.toList());
+      }
       sb.append(Joiner.on(", ").skipNulls().join(rangeStrings));
     }
 
@@ -386,7 +398,7 @@ public class TiSelectRequest implements Serializable {
     }
 
     if (getWhere().size() != 0) {
-      sb.append(", Aggregates: ");
+      sb.append(", Filter: ");
       sb.append(Joiner.on(", ").skipNulls().join(getWhere()));
     }
 

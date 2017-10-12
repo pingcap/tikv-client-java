@@ -15,9 +15,12 @@
 
 package com.pingcap.tikv.codec;
 
+import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
+import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.IntegerType;
 import com.pingcap.tikv.util.Pair;
+import java.util.List;
 import java.util.Objects;
 
 // Basically all protobuf ByteString involves buffer copy
@@ -52,6 +55,23 @@ public class TableCodec {
         cdo.write(data);
       }
     }
+  }
+
+  public static List<Object> decodeIndexSeekKey(ByteString indexKey, List<DataType> types) {
+    Objects.requireNonNull(indexKey, "indexKey cannot be null");
+    CodecDataInput cdi = new CodecDataInput(indexKey);
+    cdi.skipBytes(TBL_PREFIX.length);
+    IntegerType.readLong(cdi);
+    cdi.skipBytes(IDX_PREFIX_SEP.length);
+    IntegerType.readLong(cdi);
+
+    ImmutableList.Builder<Object> vals = ImmutableList.builder();
+    for (DataType type : types) {
+      Object v = type.decode(cdi);
+      vals.add(v);
+    }
+
+    return vals.build();
   }
 
   // appendTableRecordPrefix appends table record prefix  "t[tableID]_r".
