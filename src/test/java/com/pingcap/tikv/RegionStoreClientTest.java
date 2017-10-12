@@ -241,7 +241,7 @@ public class RegionStoreClientTest {
 
     server.putError("error1", KVMockServer.ABORT);
     try {
-      client.coprocess(builder.build(), keyRanges);
+      SelectIterator.coprocessorHelper(client.coprocess(builder.build(), keyRanges));
       fail();
     } catch (Exception e) {
       assertTrue(true);
