@@ -97,7 +97,7 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
         onStoreNotMatch(error);
       }
 
-      // no need retry. NewRegions is returned in this response. we just need update RegionManage's region cache.
+      // no need retry. NewRegions is returned in this response. we just need update RegionManager's region cache.
       if (error.hasStaleEpoch()) {
         onStaleEpoch(error);
       }
