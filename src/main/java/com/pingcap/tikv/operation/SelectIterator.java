@@ -92,14 +92,16 @@ public class SelectIterator implements Iterator<Row> {
   private void handleOnRegionSplit(RegionTask regionTask, TiSelectRequest req, List<Chunk> chunks) {
     List<RegionTask> regionTasks = RangeSplitter.newSplitter(this.regionManager).splitRangeByRegion(regionTask.getRanges());
     for(RegionTask t : regionTasks) {
-      chunks.addAll(createClientAndSendReq(t, req));
+      List<Chunk> resFromCurTask = createClientAndSendReq(t, req, chunks);
+      if(resFromCurTask != null) {
+        chunks.addAll(resFromCurTask);
+      }
     }
   }
 
   private List<Chunk> createClientAndSendReq(RegionTask regionTask,
-      TiSelectRequest req) {
+      TiSelectRequest req, List<Chunk> chunks) {
     List<KeyRange> ranges = regionTask.getRanges();
-    List<Chunk> chunks = new LinkedList<>();
     TiRegion region = regionTask.getRegion();
     Store store = regionTask.getStore();
 
@@ -140,8 +142,9 @@ public class SelectIterator implements Iterator<Row> {
     }
 
     RegionTask regionTask = regionTasks.get(index++);
-    List<Chunk> chunks = createClientAndSendReq(regionTask, this.tiReq);
-    if (chunks == null) {
+    List<Chunk> chunks = new ArrayList<>();
+    createClientAndSendReq(regionTask, this.tiReq, chunks);
+    if (chunks.isEmpty()) {
       return false;
     }
     chunkIterator = new ChunkIterator(chunks);
