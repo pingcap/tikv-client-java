@@ -80,8 +80,8 @@ public class ScanBuilder {
 
   private static final KeyRange INDEX_FULL_RANGE =
       KeyRange.newBuilder()
-          .setStart(DataType.indexMinValue())
-          .setEnd(DataType.indexMaxValue())
+          .setStart(DataType.encodeIndexMinValue())
+          .setEnd(DataType.encodeIndexMaxValue())
           .build();
 
   // Build scan plan picking access path with lowest cost by estimation

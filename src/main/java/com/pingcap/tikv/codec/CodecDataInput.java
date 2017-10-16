@@ -179,6 +179,17 @@ public class CodecDataInput implements DataInput {
     }
   }
 
+  public int peekByte() {
+    mark(currentPos());
+    int b = readByte() & 0xFF;
+    reset();
+    return b;
+  }
+
+  public int currentPos() {
+    return size() - available();
+  }
+
   public void mark(int givenPos) {
     this.backingStream.mark(givenPos);
   }

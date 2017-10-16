@@ -50,8 +50,8 @@ public class KeyRangeUtils {
 
   public static String toString(Coprocessor.KeyRange range, List<DataType> types) {
     return String.format("[%s, %s]",
-        TableCodec.decodeIndexSeekKey(range.getStart(), types),
-        TableCodec.decodeIndexSeekKey(range.getEnd(), types));
+        TableCodec.decodeIndexSeekKeyToString(range.getStart(), types),
+        TableCodec.decodeIndexSeekKeyToString(range.getEnd(), types));
   }
 
   public static List<DataType> getIndexColumnTypes(TiTableInfo table, TiIndexInfo index) {

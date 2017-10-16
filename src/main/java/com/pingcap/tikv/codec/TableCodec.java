@@ -15,7 +15,6 @@
 
 package com.pingcap.tikv.codec;
 
-import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.IntegerType;
@@ -57,7 +56,7 @@ public class TableCodec {
     }
   }
 
-  public static List<Object> decodeIndexSeekKey(ByteString indexKey, List<DataType> types) {
+  public static String decodeIndexSeekKeyToString(ByteString indexKey, List<DataType> types) {
     Objects.requireNonNull(indexKey, "indexKey cannot be null");
     CodecDataInput cdi = new CodecDataInput(indexKey);
     cdi.skipBytes(TBL_PREFIX.length);
@@ -65,13 +64,34 @@ public class TableCodec {
     cdi.skipBytes(IDX_PREFIX_SEP.length);
     IntegerType.readLong(cdi);
 
-    ImmutableList.Builder<Object> vals = ImmutableList.builder();
-    for (DataType type : types) {
-      Object v = type.decode(cdi);
-      vals.add(v);
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < types.size(); i++) {
+      DataType type = types.get(i);
+      // Here is a hack since range is always on last position
+      // If last flag is min flag without any other bytes,
+      // then we don't try decoding as bytes type
+      int flag = cdi.peekByte();
+      int remaining = cdi.available();
+      if (flag == DataType.indexMinValueFlag() && remaining == 1) {
+        sb.append("-INF");
+        cdi.skipBytes(1);
+      } else if (flag == DataType.indexMaxValueFlag() && remaining == 1) {
+        sb.append("+INF");
+        cdi.skipBytes(1);
+      } else {
+        Object v = type.decode(cdi);
+        if (v == null) {
+          sb.append("NULL");
+        } else {
+          sb.append(v.toString());
+        }
+      }
+      if (i != types.size() - 1) {
+        sb.append(",");
+      }
     }
 
-    return vals.build();
+    return sb.toString();
   }
 
   // appendTableRecordPrefix appends table record prefix  "t[tableID]_r".
