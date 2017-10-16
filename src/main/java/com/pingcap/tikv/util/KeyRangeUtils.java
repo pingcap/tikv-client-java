@@ -43,15 +43,21 @@ public class KeyRangeUtils {
   }
 
   public static String toString(Coprocessor.KeyRange range) {
-    return String.format("[%s, %s]",
+    return String.format("Start:[%s], End: [%s]",
         TableCodec.decodeRowKey(range.getStart()),
         TableCodec.decodeRowKey(range.getEnd()));
   }
 
   public static String toString(Coprocessor.KeyRange range, List<DataType> types) {
-    return String.format("[%s, %s]",
-        TableCodec.decodeIndexSeekKeyToString(range.getStart(), types),
-        TableCodec.decodeIndexSeekKeyToString(range.getEnd(), types));
+    if (range == null || types == null) {
+      return "";
+    }
+    try {
+      return String.format("{[%s], [%s]}",
+          TableCodec.decodeIndexSeekKeyToString(range.getStart(), types),
+          TableCodec.decodeIndexSeekKeyToString(range.getEnd(), types));
+    } catch (Exception ignore) {}
+    return range.toString();
   }
 
   public static List<DataType> getIndexColumnTypes(TiTableInfo table, TiIndexInfo index) {

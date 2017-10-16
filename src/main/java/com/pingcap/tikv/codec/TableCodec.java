@@ -70,12 +70,17 @@ public class TableCodec {
       // Here is a hack since range is always on last position
       // If last flag is min flag without any other bytes,
       // then we don't try decoding as bytes type
-      int flag = cdi.peekByte();
       int remaining = cdi.available();
-      if (flag == DataType.indexMinValueFlag() && remaining == 1) {
+      if (remaining == 0) break;
+
+      if (i != 0) {
+        sb.append(", ");
+      }
+      int flag = cdi.peekByte();
+      if (remaining == 1 && flag == DataType.indexMinValueFlag()) {
         sb.append("-INF");
         cdi.skipBytes(1);
-      } else if (flag == DataType.indexMaxValueFlag() && remaining == 1) {
+      } else if (remaining == 1 && flag == DataType.indexMaxValueFlag()) {
         sb.append("+INF");
         cdi.skipBytes(1);
       } else {
@@ -85,9 +90,6 @@ public class TableCodec {
         } else {
           sb.append(v.toString());
         }
-      }
-      if (i != types.size() - 1) {
-        sb.append(",");
       }
     }
 
