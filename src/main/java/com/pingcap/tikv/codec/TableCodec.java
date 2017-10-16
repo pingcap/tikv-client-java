@@ -19,6 +19,8 @@ import com.google.protobuf.ByteString;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.IntegerType;
 import com.pingcap.tikv.util.Pair;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
@@ -88,7 +90,12 @@ public class TableCodec {
         if (v == null) {
           sb.append("NULL");
         } else {
-          sb.append(v.toString());
+          if (v instanceof Date) {
+            SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd");
+            sb.append(fmt.format((Date)v));
+          } else {
+            sb.append(v.toString());
+          }
         }
       }
     }

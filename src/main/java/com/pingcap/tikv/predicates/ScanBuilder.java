@@ -78,12 +78,6 @@ public class ScanBuilder {
     }
   }
 
-  private static final KeyRange INDEX_FULL_RANGE =
-      KeyRange.newBuilder()
-          .setStart(DataType.encodeIndexMinValue())
-          .setEnd(DataType.encodeIndexMaxValue())
-          .build();
-
   // Build scan plan picking access path with lowest cost by estimation
   public ScanPlan buildScan(List<TiExpr> conditions, TiTableInfo table) {
     TiIndexInfo pkIndex = TiIndexInfo.generateFakePrimaryKeyIndex(table);
@@ -280,7 +274,24 @@ public class ScanBuilder {
     }
 
     if (ranges.isEmpty()) {
-      ranges.add(INDEX_FULL_RANGE);
+      CodecDataOutput cdo = new CodecDataOutput();
+      DataType.encodeIndexMinValue(cdo);
+      byte[] bytesMin = cdo.toBytes();
+      cdo.reset();
+
+      DataType.encodeIndexMaxValue(cdo);
+      byte[] bytesMax = cdo.toBytes();
+      cdo.reset();
+
+      TableCodec.writeIndexSeekKey(cdo, table.getId(), index.getId(), bytesMin);
+      ByteString rangeMin = cdo.toByteString();
+
+      cdo.reset();
+
+      TableCodec.writeIndexSeekKey(cdo, table.getId(), index.getId(), bytesMax);
+      ByteString rangeMax = cdo.toByteString();
+
+      ranges.add(KeyRange.newBuilder().setStart(rangeMin).setEnd(rangeMax).build());
     }
     return ranges;
   }
