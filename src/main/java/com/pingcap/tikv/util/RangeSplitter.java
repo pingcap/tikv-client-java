@@ -134,7 +134,7 @@ public class RangeSplitter {
       TableCodec.tryDecodeRowKey(tableId, endKey, decodeResult);
       if (decodeResult.status == Status.MIN) {
         throw new TiClientInternalException("EndKey is less than current rowKey");
-      } else if (decodeResult.status == Status.MAX) {
+      } else if (decodeResult.status == Status.MAX || decodeResult.status == Status.UNKNOWN_INF) {
         createTask(startPos, handles.size(), tableId, handles, regionStorePair, regionTasks);
         break;
       }
@@ -186,8 +186,7 @@ public class RangeSplitter {
       }
     }
     newKeyRanges.add(KeyRangeUtils.makeCoprocRangeWithHandle(tableId, startHandle, endHandle + 1));
-    regionTasks.add(
-        new RegionTask(regionStorePair.first, regionStorePair.second, newKeyRanges));
+    regionTasks.add(new RegionTask(regionStorePair.first, regionStorePair.second, newKeyRanges));
   }
 
 

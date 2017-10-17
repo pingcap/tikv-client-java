@@ -22,12 +22,11 @@ import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.util.KeyRangeUtils;
 import com.pingcap.tikv.util.RangeSplitter;
-import com.pingcap.tikv.util.Timer;
+import com.pingcap.tikv.util.RangeSplitter.RegionTask;
 import gnu.trove.list.array.TLongArrayList;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 
 public class IndexScanIterator implements Iterator<Row> {
@@ -84,22 +83,11 @@ public class IndexScanIterator implements Iterator<Row> {
         handles.add(handleIterator.next());
       }
       TiSession session = snapshot.getSession();
-      RangeSplitter splitter = RangeSplitter.newSplitter(session.getRegionManager());
+      List<RegionTask> tasks = RangeSplitter
+          .newSplitter(session.getRegionManager())
+          .splitHandlesByRegion(selReq.getTableInfo().getId(), handles);
 
-      Timer timer = new Timer();
-      splitter.splitHandlesByRegion(selReq.getTableInfo().getId(), handles);
-      System.out.println("t1: " + timer.stop(TimeUnit.MILLISECONDS));
-
-      timer.reset();
-      selReq.resetRanges(mergeKeyRangeList(handles));
-      splitter.splitRangeByRegion(selReq.getRanges());
-      System.out.println("t2: " + timer.stop(TimeUnit.MILLISECONDS));
-      System.exit(0);
-
-      rowIterator = SelectIterator.getRowIterator(
-          selReq,
-          RangeSplitter.newSplitter(session.getRegionManager()).splitRangeByRegion(selReq.getRanges()),
-          snapshot.getSession());
+      rowIterator = SelectIterator.getRowIterator(selReq, tasks, session);
     }
     return rowIterator.hasNext();
   }

@@ -152,20 +152,25 @@ public class TableCodec {
       MAX,
       EQUAL,
       LESS,
-      GREATER
+      GREATER,
+      UNKNOWN_INF
     }
     public Status status;
   }
 
   public static void tryDecodeRowKey(long tableId, byte[] rowKey, DecodeResult outResult) {
     Objects.requireNonNull(rowKey, "rowKey cannot be null");
+    if (rowKey.length == 0) {
+      outResult.status = Status.UNKNOWN_INF;
+      return;
+    }
     CodecDataOutput cdo = new CodecDataOutput();
     appendTableRecordPrefix(cdo, tableId);
     byte [] tablePredix = cdo.toBytes();
 
     int res = FastByteComparisons.compareTo(
         tablePredix, 0, tablePredix.length,
-        rowKey, 0, rowKey.length);
+        rowKey, 0, Math.min(rowKey.length, tablePredix.length));
 
     if (res > 0) {
       outResult.status = Status.MIN;
@@ -178,7 +183,6 @@ public class TableCodec {
 
     CodecDataInput cdi = new CodecDataInput(rowKey);
     cdi.skipBytes(tablePredix.length);
-    outResult.handle = IntegerType.readPartialLong(cdi);
     if (cdi.available() == 8) {
       outResult.status = Status.EQUAL;
     } else if (cdi.available() < 8) {
@@ -186,6 +190,7 @@ public class TableCodec {
     } else if (cdi.available() > 8) {
       outResult.status = Status.GREATER;
     }
+    outResult.handle = IntegerType.readPartialLong(cdi);
   }
 
   public static long decodeRowKey(ByteString rowKey) {
