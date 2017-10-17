@@ -228,6 +228,10 @@ public class IntegerType extends DataType {
     return TableCodec.flipSignBit(cdi.readLong());
   }
 
+  public static long readPartialLong(CodecDataInput cdi) {
+    return TableCodec.flipSignBit(cdi.readPartialLong());
+  }
+
   /**
    * Decode as unsigned long without any binary manipulation
    *

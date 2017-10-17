@@ -21,10 +21,14 @@ import static java.util.Objects.requireNonNull;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.HostAndPort;
 import com.google.protobuf.ByteString;
+import com.pingcap.tikv.codec.TableCodec;
+import com.pingcap.tikv.codec.TableCodec.DecodeResult.Status;
+import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
 import com.pingcap.tikv.kvproto.Metapb;
 import com.pingcap.tikv.region.RegionManager;
 import com.pingcap.tikv.region.TiRegion;
+import gnu.trove.list.array.TLongArrayList;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -114,6 +118,79 @@ public class RangeSplitter {
 
     return Comparables.wrap(lhs).compareTo(Comparables.wrap(rhs));
   }
+
+  public List<RegionTask> splitHandlesByRegion(long tableId, TLongArrayList handles) {
+    // Max value for current index handle range
+    ImmutableList.Builder<RegionTask> regionTasks = ImmutableList.builder();
+    handles.sort();
+
+    int startPos = 0;
+    TableCodec.DecodeResult decodeResult = new TableCodec.DecodeResult();
+    while (startPos < handles.size()) {
+      long curHandle = handles.get(startPos);
+      byte[] key = TableCodec.encodeRowKeyWithHandleBytes(tableId, curHandle);
+      Pair<TiRegion, Metapb.Store> regionStorePair = regionManager.getRegionStorePairByKey(ByteString.copyFrom(key));
+      byte[] endKey = regionStorePair.first.getEndKey().toByteArray();
+      TableCodec.tryDecodeRowKey(tableId, endKey, decodeResult);
+      if (decodeResult.status == Status.MIN) {
+        throw new TiClientInternalException("EndKey is less than current rowKey");
+      } else if (decodeResult.status == Status.MAX) {
+        createTask(startPos, handles.size(), tableId, handles, regionStorePair, regionTasks);
+        break;
+      }
+
+      // Region range is a close-open range
+      // If region end key match exactly or slightly less than a handle,
+      // that handle should be excluded from current region
+      // If region end key is greater than the handle, that handle should be included
+      long regionEndHandle = decodeResult.handle;
+      int pos = handles.binarySearch(regionEndHandle, startPos, handles.size());
+      if (pos < 0) {
+        // not found in handles, pos is the next greater pos
+        // [startPos, pos) all included
+        pos = -(pos + 1);
+      } else if (decodeResult.status == Status.GREATER) {
+        // found handle and then further consider decode status
+        // End key decode to a value v: regionEndHandle < v < regionEndHandle + 1
+        // handle at pos included
+        pos ++;
+      }
+      createTask(startPos, pos, tableId, handles, regionStorePair, regionTasks);
+      startPos = pos;
+    }
+    return regionTasks.build();
+  }
+
+  private void createTask(
+      int startPos,
+      int endPos,
+      long tableId,
+      TLongArrayList handles,
+      Pair<TiRegion, Metapb.Store> regionStorePair,
+      ImmutableList.Builder<RegionTask> regionTasks) {
+    List<KeyRange> newKeyRanges = new ArrayList<>(endPos - startPos + 1);
+    long startHandle = handles.get(startPos);
+    long endHandle = startHandle;
+    for (int i = startPos + 1; i < endPos; i++) {
+      long curHandle = handles.get(i);
+      if (endHandle + 1 == curHandle) {
+        endHandle = curHandle;
+        continue;
+      } else {
+        newKeyRanges.add(KeyRangeUtils.makeCoprocRangeWithHandle(
+            tableId,
+            startHandle,
+            endHandle + 1));
+        startHandle = curHandle;
+        endHandle = startHandle;
+      }
+    }
+    newKeyRanges.add(KeyRangeUtils.makeCoprocRangeWithHandle(tableId, startHandle, endHandle + 1));
+    regionTasks.add(
+        new RegionTask(regionStorePair.first, regionStorePair.second, newKeyRanges));
+  }
+
+
 
   public List<RegionTask> splitRangeByRegion(List<KeyRange> keyRanges) {
     if (keyRanges == null || keyRanges.size() == 0) {

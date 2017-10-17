@@ -16,8 +16,10 @@
 package com.pingcap.tikv.codec;
 
 import com.google.protobuf.ByteString;
+import com.pingcap.tikv.codec.TableCodec.DecodeResult.Status;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.IntegerType;
+import com.pingcap.tikv.util.FastByteComparisons;
 import com.pingcap.tikv.util.Pair;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -123,12 +125,17 @@ public class TableCodec {
 
   // encodeRowKeyWithHandle encodes the table id, row handle into a bytes buffer/array
   public static ByteString encodeRowKeyWithHandle(long tableId, long handle) {
-    CodecDataOutput cdo = new CodecDataOutput();
-    writeRowKeyWithHandle(cdo, tableId, handle);
-    return cdo.toByteString();
+    return ByteString.copyFrom(encodeRowKeyWithHandleBytes(tableId, handle));
   }
 
-  public static long decodeRowKey(ByteString rowKey) {
+  // encodeRowKeyWithHandle encodes the table id, row handle into a bytes buffer/array
+  public static byte [] encodeRowKeyWithHandleBytes(long tableId, long handle) {
+    CodecDataOutput cdo = new CodecDataOutput();
+    writeRowKeyWithHandle(cdo, tableId, handle);
+    return cdo.toBytes();
+  }
+
+  public static long decodeRowKey(byte[] rowKey) {
     Objects.requireNonNull(rowKey, "rowKey cannot be null");
     CodecDataInput cdi = new CodecDataInput(rowKey);
     cdi.skipBytes(TBL_PREFIX.length);
@@ -136,6 +143,53 @@ public class TableCodec {
     cdi.skipBytes(REC_PREFIX_SEP.length);
 
     return IntegerType.readLong(cdi);
+  }
+
+  public static class DecodeResult {
+    public long handle;
+    public enum Status {
+      MIN,
+      MAX,
+      EQUAL,
+      LESS,
+      GREATER
+    }
+    public Status status;
+  }
+
+  public static void tryDecodeRowKey(long tableId, byte[] rowKey, DecodeResult outResult) {
+    Objects.requireNonNull(rowKey, "rowKey cannot be null");
+    CodecDataOutput cdo = new CodecDataOutput();
+    appendTableRecordPrefix(cdo, tableId);
+    byte [] tablePredix = cdo.toBytes();
+
+    int res = FastByteComparisons.compareTo(
+        tablePredix, 0, tablePredix.length,
+        rowKey, 0, rowKey.length);
+
+    if (res > 0) {
+      outResult.status = Status.MIN;
+      return;
+    }
+    if (res < 0) {
+      outResult.status = Status.MAX;
+      return;
+    }
+
+    CodecDataInput cdi = new CodecDataInput(rowKey);
+    cdi.skipBytes(tablePredix.length);
+    outResult.handle = IntegerType.readPartialLong(cdi);
+    if (cdi.available() == 8) {
+      outResult.status = Status.EQUAL;
+    } else if (cdi.available() < 8) {
+      outResult.status = Status.LESS;
+    } else if (cdi.available() > 8) {
+      outResult.status = Status.GREATER;
+    }
+  }
+
+  public static long decodeRowKey(ByteString rowKey) {
+    return decodeRowKey(rowKey.toByteArray());
   }
 
   public static void writeRowKeyWithHandle(CodecDataOutput cdo, long tableId, long handle) {
