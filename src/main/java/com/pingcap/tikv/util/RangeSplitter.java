@@ -189,8 +189,6 @@ public class RangeSplitter {
     regionTasks.add(new RegionTask(regionStorePair.first, regionStorePair.second, newKeyRanges));
   }
 
-
-
   public List<RegionTask> splitRangeByRegion(List<KeyRange> keyRanges) {
     if (keyRanges == null || keyRanges.size() == 0) {
       return ImmutableList.of();
