@@ -29,7 +29,7 @@ import com.google.common.primitives.UnsignedBytes;
 
 /**
  * Utility code to do optimized byte-array comparison.
- * This is borrowed from Apache Cassandra which was borrowed from Guava in turn...
+ * This is borrowed from Apache Cassandra which was borrowed from Guava in turn with minor change
  */
 public abstract class FastByteComparisons {
 
@@ -39,6 +39,11 @@ public abstract class FastByteComparisons {
   public static int compareTo(byte[] b1, int s1, int l1, byte[] b2, int s2, int l2) {
     return LexicographicalComparerHolder.BEST_COMPARER.compareTo(
         b1, s1, l1, b2, s2, l2);
+  }
+
+  public static int compareTo(byte[] b1, byte[] b2) {
+    return LexicographicalComparerHolder.BEST_COMPARER.compareTo(
+        b1, 0, b1.length, b2, 0, b2.length);
   }
 
   private interface Comparer<T> {

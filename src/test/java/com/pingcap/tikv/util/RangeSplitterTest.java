@@ -76,23 +76,29 @@ public class RangeSplitterTest {
   }
 
   private static KeyRange keyRangeByHandle(long tableId, Long s, Status ss, Long e, Status es) {
-    ByteString sKey = ByteString.EMPTY;
-    ByteString eKey = ByteString.EMPTY;
-    if (s != null) {
-      ByteString rowKey = TableCodec.encodeRowKeyWithHandle(tableId, s);
-      sKey = shiftByStatus(rowKey, ss);
-    }
-
-    if (e != null) {
-      ByteString rowKey = TableCodec.encodeRowKeyWithHandle(tableId, e);
-      eKey = shiftByStatus(rowKey, es);
-    }
+    ByteString sKey = shiftByStatus(handleToByteString(tableId, s), ss);
+    ByteString eKey = shiftByStatus(handleToByteString(tableId, e), es);
 
     return KeyRange.newBuilder().setStart(sKey).setEnd(eKey).build();
   }
 
+  private static ByteString handleToByteString(long tableId, Long k) {
+    if (k != null) {
+      return TableCodec.encodeRowKeyWithHandle(tableId, k);
+    }
+    return ByteString.EMPTY;
+  }
+
   private static KeyRange keyRangeByHandle(long tableId, Long s, Long e) {
     return keyRangeByHandle(tableId, s, Status.EQUAL, e, Status.EQUAL);
+  }
+
+  private static KeyRange keyRangeByHandle(long tableId, Long s, ByteString regionEndKey) {
+    return KeyRange
+        .newBuilder()
+        .setStart(handleToByteString(tableId, s))
+        .setEnd(regionEndKey)
+        .build();
   }
 
   private static TiRegion region(long id, KeyRange range) {
@@ -137,7 +143,7 @@ public class RangeSplitterTest {
     final long tableId = 1;
     TLongArrayList handles = new TLongArrayList();
     handles.add(new long[] {
-        1, 5, 4, 3, 10, 2, 100, 101, 99, 88, -1, -255, -100, -99, -98, Long.MIN_VALUE, 9000, 19999, 15001
+        1, 5, 4, 3, 10, 2, 100, 101, 99, 88, -1, -255, -100, -99, -98, Long.MIN_VALUE, 8960, 8959, 19999, 15001
     });
 
     MockRegionManager mgr = new MockRegionManager(ImmutableList.of(
@@ -146,7 +152,8 @@ public class RangeSplitterTest {
         keyRangeByHandle(tableId, 10L, Status.GREATER, 50L, Status.EQUAL),
         keyRangeByHandle(tableId, 50L, Status.EQUAL, 100L, Status.GREATER),
         keyRangeByHandle(tableId, 100L, Status.GREATER, 9000L, Status.LESS),
-        keyRangeByHandle(tableId, 9000L, Status.LESS, null, Status.EQUAL)
+        keyRangeByHandle(tableId, 0x2300L /*8960*/, Status.LESS, 16000L, Status.EQUAL),
+        keyRangeByHandle(tableId, 16000L, Status.EQUAL, null, Status.EQUAL)
     ));
 
     RangeSplitter s = RangeSplitter.newSplitter(mgr);
@@ -158,31 +165,39 @@ public class RangeSplitterTest {
     assertEquals(tasks.get(0).getRanges().get(0), keyRangeByHandle(tableId, Long.MIN_VALUE, Long.MIN_VALUE + 1));
     assertEquals(tasks.get(0).getRanges().get(1), keyRangeByHandle(tableId, -255L, -254L));
 
-    // [-100, 10.x): [-100, -97), [-1, 0), [1, 6), [10, 11)
+    // [-100, 10.x): [-100, -97), [-1, 0), [1, 6), [10, 10.x)
+    ByteString regionEndKey = tasks.get(1).getRegion().getEndKey();
     assertEquals(tasks.get(1).getRegion().getId(), 1);
     assertEquals(tasks.get(1).getRanges().size(), 4);
     assertEquals(tasks.get(1).getRanges().get(0), keyRangeByHandle(tableId, -100L, -97L));
     assertEquals(tasks.get(1).getRanges().get(1), keyRangeByHandle(tableId, -1L, 0L));
     assertEquals(tasks.get(1).getRanges().get(2), keyRangeByHandle(tableId, 1L, 6L));
-    assertEquals(tasks.get(1).getRanges().get(3), keyRangeByHandle(tableId, 10L, 11L));
+    assertEquals(tasks.get(1).getRanges().get(3), keyRangeByHandle(tableId, 10L, regionEndKey));
 
     // [10.x, 50): empty
-    // [50, 100.x): [88, 89) [99, 101)
+    // [50, 100.x): [88, 89) [99, 100.x)
+    regionEndKey = tasks.get(2).getRegion().getEndKey();
     assertEquals(tasks.get(2).getRegion().getId(), 3);
     assertEquals(tasks.get(2).getRanges().size(), 2);
     assertEquals(tasks.get(2).getRanges().get(0), keyRangeByHandle(tableId, 88L, 89L));
-    assertEquals(tasks.get(2).getRanges().get(1), keyRangeByHandle(tableId, 99L, 101L));
+    assertEquals(tasks.get(2).getRanges().get(1), keyRangeByHandle(tableId, 99L, regionEndKey));
 
-    // [100.x, less than 9000): [101, 102)
+    // [100.x, less than 8960): [101, 102) [8959, regionEndKey)
+    regionEndKey = tasks.get(3).getRegion().getEndKey();
     assertEquals(tasks.get(3).getRegion().getId(), 4);
-    assertEquals(tasks.get(3).getRanges().size(), 1);
+    assertEquals(tasks.get(3).getRanges().size(), 2);
     assertEquals(tasks.get(3).getRanges().get(0), keyRangeByHandle(tableId, 101L, 102L));
+    assertEquals(tasks.get(3).getRanges().get(1), keyRangeByHandle(tableId, 8959L, regionEndKey));
 
-    // [less than 9000, INF): [9000, 9001), [15001, 15002), [19999, 20000)
+    // [less than 8960, 16000): [9000, 9001), [15001, 15002)
     assertEquals(tasks.get(4).getRegion().getId(), 5);
-    assertEquals(tasks.get(4).getRanges().size(), 3);
-    assertEquals(tasks.get(4).getRanges().get(0), keyRangeByHandle(tableId, 9000L, 9001L));
+    assertEquals(tasks.get(4).getRanges().size(), 2);
+    assertEquals(tasks.get(4).getRanges().get(0), keyRangeByHandle(tableId, 8960L, 8961L));
     assertEquals(tasks.get(4).getRanges().get(1), keyRangeByHandle(tableId, 15001L, 15002L));
-    assertEquals(tasks.get(4).getRanges().get(2), keyRangeByHandle(tableId, 19999L, 20000L));
+
+    // [16000, INF): [19999, 20000)
+    assertEquals(tasks.get(5).getRegion().getId(), 6);
+    assertEquals(tasks.get(5).getRanges().size(), 1);
+    assertEquals(tasks.get(5).getRanges().get(0), keyRangeByHandle(tableId, 19999L, 20000L));
   }
 }

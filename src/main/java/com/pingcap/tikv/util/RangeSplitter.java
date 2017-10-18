@@ -26,6 +26,7 @@ import com.pingcap.tikv.codec.TableCodec.DecodeResult.Status;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
 import com.pingcap.tikv.kvproto.Metapb;
+import com.pingcap.tikv.kvproto.Metapb.Store;
 import com.pingcap.tikv.region.RegionManager;
 import com.pingcap.tikv.region.TiRegion;
 import gnu.trove.list.array.TLongArrayList;
@@ -145,6 +146,7 @@ public class RangeSplitter {
       // If region end key is greater than the handle, that handle should be included
       long regionEndHandle = decodeResult.handle;
       int pos = handles.binarySearch(regionEndHandle, startPos, handles.size());
+
       if (pos < 0) {
         // not found in handles, pos is the next greater pos
         // [startPos, pos) all included
@@ -156,6 +158,13 @@ public class RangeSplitter {
         pos ++;
       }
       createTask(startPos, pos, tableId, handles, regionStorePair, regionTasks);
+      // pos equals to start leads to an dead loop
+      // startPos and its handle is used for searching region in PD.
+      // The returning close-open range should at least include startPos's handle
+      // so only if PD error and startPos is not included in current region then startPos == pos
+      if (startPos >= pos) {
+        throw new TiClientInternalException("searchKey is not included in region returned by PD");
+      }
       startPos = pos;
     }
     return regionTasks.build();
@@ -168,6 +177,8 @@ public class RangeSplitter {
       TLongArrayList handles,
       Pair<TiRegion, Metapb.Store> regionStorePair,
       ImmutableList.Builder<RegionTask> regionTasks) {
+    TiRegion region = regionStorePair.first;
+    Store store = regionStorePair.second;
     List<KeyRange> newKeyRanges = new ArrayList<>(endPos - startPos + 1);
     long startHandle = handles.get(startPos);
     long endHandle = startHandle;
@@ -185,8 +196,26 @@ public class RangeSplitter {
         endHandle = startHandle;
       }
     }
-    newKeyRanges.add(KeyRangeUtils.makeCoprocRangeWithHandle(tableId, startHandle, endHandle + 1));
-    regionTasks.add(new RegionTask(regionStorePair.first, regionStorePair.second, newKeyRanges));
+
+    ByteString startKeyBS = TableCodec.encodeRowKeyWithHandle(tableId, startHandle);
+    ByteString endKeyBS;
+    ByteString regionEndKey = region.getEndKey();
+
+    byte[] endKey = TableCodec.encodeRowKeyWithHandleBytes(tableId, endHandle + 1);
+    if (!regionEndKey.isEmpty() && FastByteComparisons.compareTo(endKey, regionEndKey.toByteArray()) > 0) {
+      endKeyBS = region.getEndKey();
+    } else {
+      endKeyBS = ByteString.copyFrom(endKey);
+    }
+
+    newKeyRanges.add(KeyRange
+        .newBuilder()
+        .setStart(startKeyBS)
+        .setEnd(endKeyBS)
+        .build()
+    );
+
+    regionTasks.add(new RegionTask(region, store, newKeyRanges));
   }
 
   public List<RegionTask> splitRangeByRegion(List<KeyRange> keyRanges) {

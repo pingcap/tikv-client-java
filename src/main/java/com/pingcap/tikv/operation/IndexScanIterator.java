@@ -17,14 +17,11 @@ package com.pingcap.tikv.operation;
 
 import com.pingcap.tikv.Snapshot;
 import com.pingcap.tikv.TiSession;
-import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
 import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.row.Row;
-import com.pingcap.tikv.util.KeyRangeUtils;
 import com.pingcap.tikv.util.RangeSplitter;
 import com.pingcap.tikv.util.RangeSplitter.RegionTask;
 import gnu.trove.list.array.TLongArrayList;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -39,40 +36,6 @@ public class IndexScanIterator implements Iterator<Row> {
     this.selReq = req;
     this.handleIterator = handleIterator;
     this.snapshot = snapshot;
-  }
-
-  private List<KeyRange> mergeKeyRangeList(TLongArrayList handles) {
-    List<KeyRange> newKeyRanges = new ArrayList<>(handles.size());
-    // guard. only allow handles size larger than 1 pursues further.
-    if (handles.size() == 0) {
-      return newKeyRanges;
-    }
-
-    // sort handles first
-    handles.sort();
-    // merge all discrete key ranges.
-    // e.g.
-    // original key range is 1 as [1, 2), 2 as [2, 3), 3 as [3, 4)
-    // after merge, the result is [1, 4)
-    // original key range is 1 as [1, 2), 3 as [3, 4), 4 as [4, 5)
-    // after merge, the result is [1, 2), [3, 5)
-    long startHandle = handles.get(0);
-    long endHandle = startHandle;
-    for (int i = 1; i < handles.size(); i++) {
-      long curHandle = handles.get(i);
-      if (endHandle + 1 == curHandle) {
-        endHandle = curHandle;
-        continue;
-      } else {
-        newKeyRanges.add(KeyRangeUtils.makeCoprocRangeWithHandle(selReq.getTableInfo().getId(),
-                                                                 startHandle,
-                                                                 endHandle + 1));
-        startHandle = curHandle;
-        endHandle = startHandle;
-      }
-    }
-    newKeyRanges.add(KeyRangeUtils.makeCoprocRangeWithHandle(selReq.getTableInfo().getId(), startHandle, endHandle + 1));
-    return newKeyRanges;
   }
 
   @Override
