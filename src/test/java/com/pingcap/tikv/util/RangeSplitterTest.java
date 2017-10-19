@@ -66,8 +66,8 @@ public class RangeSplitterTest {
     return new TiRegion(
         Metapb.Region.newBuilder()
             .setId(id)
-            .setStartKey(encodeKey(range.getStart().toByteArray()))
-            .setEndKey(encodeKey(range.getEnd().toByteArray()))
+            .setStartKey(ByteString.copyFrom(range.getStart().toByteArray()))
+            .setEndKey(ByteString.copyFrom(range.getEnd().toByteArray()))
             .addPeers(Peer.getDefaultInstance())
             .build(),
         null, IsolationLevel.RC);
