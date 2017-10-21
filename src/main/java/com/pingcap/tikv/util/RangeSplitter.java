@@ -196,26 +196,8 @@ public class RangeSplitter {
         endHandle = startHandle;
       }
     }
-
-    ByteString startKeyBS = TableCodec.encodeRowKeyWithHandle(tableId, startHandle);
-    ByteString endKeyBS;
-    ByteString regionEndKey = region.getEndKey();
-
-    byte[] endKey = TableCodec.encodeRowKeyWithHandleBytes(tableId, endHandle + 1);
-    if (!regionEndKey.isEmpty() && FastByteComparisons.compareTo(endKey, regionEndKey.toByteArray()) > 0) {
-      endKeyBS = region.getEndKey();
-    } else {
-      endKeyBS = ByteString.copyFrom(endKey);
-    }
-
-    newKeyRanges.add(KeyRange
-        .newBuilder()
-        .setStart(startKeyBS)
-        .setEnd(endKeyBS)
-        .build()
-    );
-
-    regionTasks.add(new RegionTask(region, store, newKeyRanges));
+    newKeyRanges.add(KeyRangeUtils.makeCoprocRangeWithHandle(tableId, startHandle, endHandle + 1));
+    regionTasks.add(new RegionTask(regionStorePair.first, regionStorePair.second, newKeyRanges));
   }
 
   public List<RegionTask> splitRangeByRegion(List<KeyRange> keyRanges) {

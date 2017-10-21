@@ -122,6 +122,7 @@ public class RegionManager {
       for (TiRegion r : regionCache.asMap().values()) {
         if(r.getLeader().getStoreId() == storeId) {
           regionCache.invalidate(r.getId());
+          keyToRegionIdCache.remove(makeRange(r.getStartKey(), r.getEndKey()));
         }
       }
     }
@@ -162,6 +163,9 @@ public class RegionManager {
 
   public Pair<TiRegion, Store> getRegionStorePairByKey(ByteString key) {
     TiRegion region = cache.getRegionByKey(key);
+    if (region == null) {
+      throw new TiClientInternalException("Region not exist for key:" + key);
+    }
     if (!region.isValid()) {
       throw new TiClientInternalException("Region invalid: " + region.toString());
     }

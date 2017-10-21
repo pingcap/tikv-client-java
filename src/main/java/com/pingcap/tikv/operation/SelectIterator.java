@@ -15,6 +15,7 @@
 
 package com.pingcap.tikv.operation;
 
+import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import com.pingcap.tidb.tipb.Chunk;
 import com.pingcap.tidb.tipb.SelectRequest;
@@ -32,9 +33,14 @@ import com.pingcap.tikv.row.RowReader;
 import com.pingcap.tikv.row.RowReaderFactory;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.util.RangeSplitter.RegionTask;
+import com.pingcap.tikv.util.Timer;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 public abstract class SelectIterator<T, RawT> implements Iterator<T> {
@@ -48,6 +54,8 @@ public abstract class SelectIterator<T, RawT> implements Iterator<T> {
   protected SchemaInfer schemaInfer;
   protected final Function<List<Chunk>, ChunkIterator<RawT>> chunkIteratorFactory;
   protected final SelectRequest request;
+  final ExecutorService pool = Executors.newFixedThreadPool(100);
+  final ExecutorCompletionService<ChunkIterator<RawT>> completionService = new ExecutorCompletionService<>(pool);
 
   public static SelectIterator<Row, ByteString> getRowIterator(TiSelectRequest req,
                                                    List<RegionTask> regionTasks,
@@ -100,6 +108,20 @@ public abstract class SelectIterator<T, RawT> implements Iterator<T> {
     this.session = session;
     this.schemaInfer = infer;
     this.chunkIteratorFactory = chunkIteratorFactory;
+    submitTasks();
+  }
+
+  public void submitTasks() {
+    for (RegionTask task : regionTasks) {
+      completionService.submit(() -> {
+        List<Chunk> chunks = createClientAndSendReq(task);
+        if (chunks == null) {
+          chunks = ImmutableList.of();
+        }
+
+        return chunkIteratorFactory.apply(chunks);
+      });
+    }
   }
 
   private List<Chunk> createClientAndSendReq(RegionTask regionTask) {
@@ -109,13 +131,17 @@ public abstract class SelectIterator<T, RawT> implements Iterator<T> {
 
     RegionStoreClient client;
     try {
+      System.out.println("task start:" + regionTask.getRegion().getId() + " size " + regionTask.getRanges().size());
+      Timer t = new Timer();
       client = RegionStoreClient.create(region, store, session);
-      SelectResponse resp = client.coprocess(request, ranges);
+      SelectResponse resp = client.coprocessAsync(request, ranges).get();
+      //SelectResponse resp = client.coprocess(request, ranges);
       // if resp is null, then indicates eof.
       if (resp == null) {
         eof = true;
         return null;
       }
+      System.out.println("task:" + regionTask.getRegion().getId() + " elapsed " + t.stop(TimeUnit.SECONDS));
       return resp.getChunksList();
     } catch (Exception e) {
       throw new TiClientInternalException("Error Closing Store client.", e);
@@ -127,13 +153,13 @@ public abstract class SelectIterator<T, RawT> implements Iterator<T> {
       return false;
     }
 
-    RegionTask regionTask = regionTasks.get(index++);
-    List<Chunk> chunks = createClientAndSendReq(regionTask);
-    if (chunks == null) {
-      return false;
+    try {
+      chunkIterator = completionService.take().get();
+      index++;
+    } catch (Exception e) {
+      throw new TiClientInternalException("Error reading region", e);
     }
 
-    chunkIterator = chunkIteratorFactory.apply(chunks);
     return true;
   }
 
