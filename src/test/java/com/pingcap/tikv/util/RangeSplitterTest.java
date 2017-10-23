@@ -165,29 +165,26 @@ public class RangeSplitterTest {
     assertEquals(tasks.get(0).getRanges().get(0), keyRangeByHandle(tableId, Long.MIN_VALUE, Long.MIN_VALUE + 1));
     assertEquals(tasks.get(0).getRanges().get(1), keyRangeByHandle(tableId, -255L, -254L));
 
-    // [-100, 10.x): [-100, -97), [-1, 0), [1, 6), [10, 10.x)
-    ByteString regionEndKey = tasks.get(1).getRegion().getEndKey();
+    // [-100, 10.x): [-100, -97), [-1, 0), [1, 6), [10, 11)
     assertEquals(tasks.get(1).getRegion().getId(), 1);
     assertEquals(tasks.get(1).getRanges().size(), 4);
     assertEquals(tasks.get(1).getRanges().get(0), keyRangeByHandle(tableId, -100L, -97L));
     assertEquals(tasks.get(1).getRanges().get(1), keyRangeByHandle(tableId, -1L, 0L));
     assertEquals(tasks.get(1).getRanges().get(2), keyRangeByHandle(tableId, 1L, 6L));
-    assertEquals(tasks.get(1).getRanges().get(3), keyRangeByHandle(tableId, 10L, regionEndKey));
+    assertEquals(tasks.get(1).getRanges().get(3), keyRangeByHandle(tableId, 10L, 11L));
 
     // [10.x, 50): empty
-    // [50, 100.x): [88, 89) [99, 100.x)
-    regionEndKey = tasks.get(2).getRegion().getEndKey();
+    // [50, 100.x): [88, 89) [99, 101)
     assertEquals(tasks.get(2).getRegion().getId(), 3);
     assertEquals(tasks.get(2).getRanges().size(), 2);
     assertEquals(tasks.get(2).getRanges().get(0), keyRangeByHandle(tableId, 88L, 89L));
-    assertEquals(tasks.get(2).getRanges().get(1), keyRangeByHandle(tableId, 99L, regionEndKey));
+    assertEquals(tasks.get(2).getRanges().get(1), keyRangeByHandle(tableId, 99L, 101L));
 
-    // [100.x, less than 8960): [101, 102) [8959, regionEndKey)
-    regionEndKey = tasks.get(3).getRegion().getEndKey();
+    // [100.x, less than 8960): [101, 102) [8959, 8960)
     assertEquals(tasks.get(3).getRegion().getId(), 4);
     assertEquals(tasks.get(3).getRanges().size(), 2);
     assertEquals(tasks.get(3).getRanges().get(0), keyRangeByHandle(tableId, 101L, 102L));
-    assertEquals(tasks.get(3).getRanges().get(1), keyRangeByHandle(tableId, 8959L, regionEndKey));
+    assertEquals(tasks.get(3).getRanges().get(1), keyRangeByHandle(tableId, 8959L, 8960L));
 
     // [less than 8960, 16000): [9000, 9001), [15001, 15002)
     assertEquals(tasks.get(4).getRegion().getId(), 5);
