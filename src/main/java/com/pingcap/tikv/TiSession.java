@@ -20,7 +20,10 @@ import com.pingcap.tikv.catalog.Catalog;
 import com.pingcap.tikv.meta.TiTimestamp;
 import com.pingcap.tikv.region.RegionManager;
 import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
+import io.grpc.netty.NettyChannelBuilder;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.util.concurrent.DefaultThreadFactory;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -95,6 +98,9 @@ public class TiSession implements AutoCloseable {
     return res;
   }
 
+  static private final EventLoopGroup elg =
+      new NioEventLoopGroup(32, new DefaultThreadFactory("tikv-client-worker", true));
+
   public synchronized ManagedChannel getChannel(String addressStr) {
     ManagedChannel channel = connPool.get(addressStr);
     if (channel == null) {
@@ -104,12 +110,15 @@ public class TiSession implements AutoCloseable {
       } catch (Exception e) {
         throw new IllegalArgumentException("failed to form address");
       }
+
       // Channel should be lazy without actual connection until first call
       // So a coarse grain lock is ok here
-      channel = ManagedChannelBuilder.forAddress(address.getHostText(), address.getPort())
+      channel = NettyChannelBuilder.forAddress(address.getHostText(), address.getPort())
           .maxInboundMessageSize(conf.getMaxFrameSize())
           .usePlaintext(true)
           .idleTimeout(60, TimeUnit.SECONDS)
+          .eventLoopGroup(elg)
+          .directExecutor()
           .build();
       connPool.put(addressStr, channel);
     }

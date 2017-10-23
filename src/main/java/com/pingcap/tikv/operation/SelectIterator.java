@@ -54,7 +54,7 @@ public abstract class SelectIterator<T, RawT> implements Iterator<T> {
   protected SchemaInfer schemaInfer;
   protected final Function<List<Chunk>, ChunkIterator<RawT>> chunkIteratorFactory;
   protected final SelectRequest request;
-  final ExecutorService pool = Executors.newFixedThreadPool(100);
+  private static final ExecutorService pool = Executors.newFixedThreadPool(500);
   final ExecutorCompletionService<ChunkIterator<RawT>> completionService = new ExecutorCompletionService<>(pool);
 
   public static SelectIterator<Row, ByteString> getRowIterator(TiSelectRequest req,
@@ -113,6 +113,7 @@ public abstract class SelectIterator<T, RawT> implements Iterator<T> {
 
   public void submitTasks() {
     for (RegionTask task : regionTasks) {
+      System.out.println("task submit:" + task.getRegion().getId());
       completionService.submit(() -> {
         List<Chunk> chunks = createClientAndSendReq(task);
         if (chunks == null) {
@@ -134,14 +135,14 @@ public abstract class SelectIterator<T, RawT> implements Iterator<T> {
       System.out.println("task start:" + regionTask.getRegion().getId() + " size " + regionTask.getRanges().size());
       Timer t = new Timer();
       client = RegionStoreClient.create(region, store, session);
-      SelectResponse resp = client.coprocessAsync(request, ranges).get();
-      //SelectResponse resp = client.coprocess(request, ranges);
+      // SelectResponse resp = client.coprocessAsync(request, ranges).get();
+      SelectResponse resp = client.coprocess(request, ranges);
       // if resp is null, then indicates eof.
       if (resp == null) {
         eof = true;
         return null;
       }
-      System.out.println("task:" + regionTask.getRegion().getId() + " elapsed " + t.stop(TimeUnit.SECONDS));
+      System.out.println("task:" + regionTask.getRegion().getId() + " elapsed " + t.stop(TimeUnit.MILLISECONDS));
       return resp.getChunksList();
     } catch (Exception e) {
       throw new TiClientInternalException("Error Closing Store client.", e);

@@ -36,10 +36,10 @@ public class IndexScanIterator implements Iterator<Row> {
   private final TiSelectRequest selReq;
   private final Snapshot snapshot;
   private Iterator<Row> rowIterator;
-  final ExecutorService pool = Executors.newFixedThreadPool(10);
+  final ExecutorService pool = Executors.newFixedThreadPool(1);
   final ExecutorCompletionService<Iterator<Row>> completionService = new ExecutorCompletionService<>(pool);
 
-  private final int MAX_BATCH = 10000 * 1000;
+  private final int MAX_BATCH = 1000000;
   private int batchCount = 0;
   public static boolean old = true;
 
