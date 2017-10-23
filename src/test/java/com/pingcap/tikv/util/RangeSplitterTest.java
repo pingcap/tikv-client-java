@@ -71,8 +71,9 @@ public class RangeSplitterTest {
         return v.substring(0, v.size() - 1);
       case GREATER:
         return v.concat(ByteString.copyFrom(new byte[] {1, 0}));
+      default:
+    	throw new IllegalArgumentException("Only EQUAL,LESS,GREATER allowed");
     }
-    throw new IllegalArgumentException("Only EQUAL,LESS,GREATER allowed");
   }
 
   private static KeyRange keyRangeByHandle(long tableId, Long s, Status ss, Long e, Status es) {
