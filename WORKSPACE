@@ -33,16 +33,6 @@ maven_jar(
     artifact = "log4j:log4j:1.2.17",
 )
 
-# maven_jar(
-    # name = "com_google_errorprone_error_prone_annotations",
-    # artifact = "com.google.errorprone:error_prone_annotations:2.0.11",
-# )
-
-# maven_jar(
-    # name = "com_google_instrumentation_instrumentation_api",
-    # artifact = "com.google.instrumentation:instrumentation-api:0.4.2",
-# )
-
 maven_jar(
     name = "junit_junit",
     artifact = "junit:junit:4.12",
@@ -102,11 +92,6 @@ maven_jar(
     name = "org_powermock_powermock_api_support",
     artifact = "org.powermock:powermock-api-support:1.6.6",
 )
-
-# maven_jar(
-# 	name = "io_netty_netty_codec_socks",
-# 	artifact = "io.netty:netty-codec-socks:4.1.8.Final",
-# )
 
 maven_jar(
    name = "net_sf_trove4j_trove4j",

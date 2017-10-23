@@ -37,10 +37,10 @@ load("@org_pubref_rules_protobuf//java:rules.bzl", "java_proto_library")
 java_proto_library(
     name = "java",
     imports = [
-        "external/com_google_protobuf/src/",
-        "kvproto/proto",
-	      "kvproto/_vendor/src/github.com/gogo/protobuf",
-	      "tipb/proto",
+            "external/com_google_protobuf/src/",
+            "kvproto/proto",
+            "kvproto/_vendor/src/github.com/gogo/protobuf",
+            "tipb/proto",
     ],
     inputs = ["@com_google_protobuf//:well_known_protos"],
     protos = [":protos"],
