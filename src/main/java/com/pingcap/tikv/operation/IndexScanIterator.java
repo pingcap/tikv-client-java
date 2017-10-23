@@ -16,6 +16,7 @@
 package com.pingcap.tikv.operation;
 
 import com.pingcap.tikv.Snapshot;
+import com.pingcap.tikv.TiConfiguration;
 import com.pingcap.tikv.TiSession;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.meta.TiSelectRequest;
@@ -36,52 +37,35 @@ public class IndexScanIterator implements Iterator<Row> {
   private final TiSelectRequest selReq;
   private final Snapshot snapshot;
   private Iterator<Row> rowIterator;
-  final ExecutorService pool = Executors.newFixedThreadPool(1);
-  final ExecutorCompletionService<Iterator<Row>> completionService = new ExecutorCompletionService<>(pool);
+  private final ExecutorService pool;
+  private final ExecutorCompletionService<Iterator<Row>> completionService;
 
-  private final int MAX_BATCH = 1000000;
   private int batchCount = 0;
-  public static boolean old = true;
+  private final int batchSize;
 
   public IndexScanIterator(Snapshot snapshot, TiSelectRequest req, Iterator<Long> handleIterator) {
+    TiConfiguration conf = snapshot.getSession().getConf();
     this.selReq = req;
     this.handleIterator = handleIterator;
     this.snapshot = snapshot;
+    this.batchSize = conf.getIndexScanBatchSize();
+    this.pool = Executors.newFixedThreadPool(conf.getIndexScanConcurrency());
+    this.completionService = new ExecutorCompletionService(pool);
   }
 
   private TLongArrayList feedBatch() {
-    TLongArrayList handles = new TLongArrayList(MAX_BATCH);
+    TLongArrayList handles = new TLongArrayList(1000000);
     while (handleIterator.hasNext()) {
       handles.add(handleIterator.next());
-      if (handles.size() == MAX_BATCH) {
+      if (batchSize <= handles.size()) {
         break;
       }
     }
     return handles;
   }
 
-  public boolean hasNextOld() {
-    if (rowIterator == null) {
-      TLongArrayList handles = new TLongArrayList(4096);
-      while (handleIterator.hasNext()) {
-        handles.add(handleIterator.next());
-      }
-      TiSession session = snapshot.getSession();
-      RangeSplitter splitter = RangeSplitter.newSplitter(session.getRegionManager());
-
-      rowIterator = SelectIterator.getRowIterator(
-          selReq,
-          splitter.splitHandlesByRegion(selReq.getTableInfo().getId(), handles),
-          snapshot.getSession());
-    }
-    return rowIterator.hasNext();
-  }
-
   @Override
   public boolean hasNext() {
-    if (old) {
-      return hasNextOld();
-    }
     try {
       if (rowIterator == null) {
         TiSession session = snapshot.getSession();

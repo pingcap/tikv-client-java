@@ -32,7 +32,6 @@ import com.pingcap.tikv.exception.SelectException;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.kvproto.Coprocessor;
 import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
-import com.pingcap.tikv.kvproto.Coprocessor.Response;
 import com.pingcap.tikv.kvproto.Kvrpcpb.BatchGetRequest;
 import com.pingcap.tikv.kvproto.Kvrpcpb.BatchGetResponse;
 import com.pingcap.tikv.kvproto.Kvrpcpb.Context;
@@ -52,11 +51,9 @@ import com.pingcap.tikv.kvproto.TikvGrpc;
 import com.pingcap.tikv.kvproto.TikvGrpc.TikvBlockingStub;
 import com.pingcap.tikv.kvproto.TikvGrpc.TikvStub;
 import com.pingcap.tikv.operation.KVErrorHandler;
-import com.pingcap.tikv.util.FutureObserver;
 import com.pingcap.tikv.util.Pair;
 import io.grpc.ManagedChannel;
 import java.util.List;
-import java.util.concurrent.Future;
 import java.util.function.Supplier;
 
 // RegionStore itself is not thread-safe
@@ -186,23 +183,6 @@ public class RegionStoreClient extends AbstractGRPCClient<TikvBlockingStub, Tikv
             regionManager, this, region, resp -> resp.hasRegionError() ? resp.getRegionError() : null);
     Coprocessor.Response resp = callWithRetry(TikvGrpc.METHOD_COPROCESSOR, reqToSend, handler);
     return coprocessorHelper(resp);
-  }
-
-  public Future<SelectResponse> coprocessAsync(SelectRequest req, List<KeyRange> ranges) {
-    FutureObserver<SelectResponse, Response> responseObserver = new FutureObserver<>(this::coprocessorHelper);
-    Supplier<Coprocessor.Request> reqToSend = () ->
-        Coprocessor.Request.newBuilder()
-            .setContext(region.getContext())
-            .setTp(req.hasIndexInfo() ? ReqTypeIndex : ReqTypeSelect)
-            .setData(req.toByteString())
-            .addAllRanges(ranges)
-            .build();
-    KVErrorHandler<Coprocessor.Response> handler =
-        new KVErrorHandler<>(
-            regionManager, this, region, resp -> resp.hasRegionError() ? resp.getRegionError() : null);
-
-    callAsyncWithRetry(TikvGrpc.METHOD_COPROCESSOR, reqToSend, responseObserver, handler);
-    return responseObserver.getFuture();
   }
 
   private SelectResponse coprocessorHelper(Coprocessor.Response resp) {

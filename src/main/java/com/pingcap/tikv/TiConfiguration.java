@@ -36,6 +36,9 @@ public class TiConfiguration implements Serializable {
   private static final int DEF_RETRY_TIMES = 3;
   private static final Class<? extends BackOff> DEF_BACKOFF_CLASS = ExponentialBackOff.class;
   private static final int DEF_MAX_FRAME_SIZE = 268435456 * 2; // 256 * 2 MB
+  private static final int DEF_INDEX_SCAN_BATCH_SIZE = 2000000;
+  private static final int DEF_INDEX_SCAN_CONCURRENCY = 5;
+  private static final int DEF_TABLE_SCAN_CONCURRENCY = 10;
 
   private int retryTimes = DEF_RETRY_TIMES;
   private int timeout = DEF_TIMEOUT;
@@ -47,6 +50,9 @@ public class TiConfiguration implements Serializable {
   private int maxFrameSize = DEF_MAX_FRAME_SIZE;
   private Class<? extends BackOff> backOffClass = DEF_BACKOFF_CLASS;
   private List<HostAndPort> pdAddrs = new ArrayList<>();
+  private int indexScanBatchSize = DEF_INDEX_SCAN_BATCH_SIZE;
+  private int indexScanConcurrency = DEF_INDEX_SCAN_CONCURRENCY;
+  private int tableScanConcurrency = DEF_TABLE_SCAN_CONCURRENCY;
 
   public static TiConfiguration createDefault(String pdAddrsStr) {
     Objects.requireNonNull(pdAddrsStr, "pdAddrsStr is null");
@@ -158,5 +164,29 @@ public class TiConfiguration implements Serializable {
 
   public void setBackOffClass(Class<? extends BackOff> backOffClass) {
     this.backOffClass = backOffClass;
+  }
+
+  public int getIndexScanBatchSize() {
+    return indexScanBatchSize;
+  }
+
+  public void setIndexScanBatchSize(int indexScanBatchSize) {
+    this.indexScanBatchSize = indexScanBatchSize;
+  }
+
+  public int getIndexScanConcurrency() {
+    return indexScanConcurrency;
+  }
+
+  public void setIndexScanConcurrency(int indexScanConcurrency) {
+    this.indexScanConcurrency = indexScanConcurrency;
+  }
+
+  public int getTableScanConcurrency() {
+    return tableScanConcurrency;
+  }
+
+  public void setTableScanConcurrency(int tableScanConcurrency) {
+    this.tableScanConcurrency = tableScanConcurrency;
   }
 }
