@@ -28,8 +28,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 
 public class IndexScanIterator implements Iterator<Row> {
@@ -37,20 +35,19 @@ public class IndexScanIterator implements Iterator<Row> {
   private final TiSelectRequest selReq;
   private final Snapshot snapshot;
   private Iterator<Row> rowIterator;
-  private final ExecutorService pool;
   private final ExecutorCompletionService<Iterator<Row>> completionService;
 
   private int batchCount = 0;
   private final int batchSize;
 
   public IndexScanIterator(Snapshot snapshot, TiSelectRequest req, Iterator<Long> handleIterator) {
-    TiConfiguration conf = snapshot.getSession().getConf();
+    TiSession session = snapshot.getSession();
+    TiConfiguration conf = session.getConf();
     this.selReq = req;
     this.handleIterator = handleIterator;
     this.snapshot = snapshot;
     this.batchSize = conf.getIndexScanBatchSize();
-    this.pool = Executors.newFixedThreadPool(conf.getIndexScanConcurrency());
-    this.completionService = new ExecutorCompletionService(pool);
+    this.completionService = new ExecutorCompletionService(session.getThreadPoolForIndexScan());
   }
 
   private TLongArrayList feedBatch() {
@@ -79,19 +76,18 @@ public class IndexScanIterator implements Iterator<Row> {
             return SelectIterator.getRowIterator(selReq, tasks, session);
           });
         }
-        rowIterator = completionService.take().get();
-        batchCount--;
-      }
+        while (batchCount > 0) {
+          rowIterator = completionService.take().get();
+          batchCount--;
 
-      if (rowIterator.hasNext()) {
-        return true;
+          if (rowIterator.hasNext()) {
+            return true;
+          }
+        }
       }
-
-      if (batchCount == 0) {
+      if (rowIterator == null) {
         return false;
       }
-      rowIterator = completionService.take().get();
-      batchCount--;
     } catch (Exception e) {
       throw new TiClientInternalException("Error reading rows from handle", e);
     }

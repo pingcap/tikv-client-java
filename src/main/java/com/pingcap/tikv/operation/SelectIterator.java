@@ -20,7 +20,6 @@ import com.google.protobuf.ByteString;
 import com.pingcap.tidb.tipb.Chunk;
 import com.pingcap.tidb.tipb.SelectRequest;
 import com.pingcap.tidb.tipb.SelectResponse;
-import com.pingcap.tikv.TiConfiguration;
 import com.pingcap.tikv.TiSession;
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.exception.TiClientInternalException;
@@ -38,8 +37,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.function.Function;
 
 public abstract class SelectIterator<T, RawT> implements Iterator<T> {
@@ -53,7 +50,6 @@ public abstract class SelectIterator<T, RawT> implements Iterator<T> {
   protected SchemaInfer schemaInfer;
   protected final Function<List<Chunk>, ChunkIterator<RawT>> chunkIteratorFactory;
   protected final SelectRequest request;
-  private final ExecutorService pool;
   private final ExecutorCompletionService<ChunkIterator<RawT>> completionService;
 
   public static SelectIterator<Row, ByteString> getRowIterator(TiSelectRequest req,
@@ -102,14 +98,12 @@ public abstract class SelectIterator<T, RawT> implements Iterator<T> {
       TiSession session,
       SchemaInfer infer,
       Function<List<Chunk>, ChunkIterator<RawT>> chunkIteratorFactory) {
-    TiConfiguration conf = session.getConf();
     this.regionTasks = regionTasks;
     this.request = req;
     this.session = session;
     this.schemaInfer = infer;
     this.chunkIteratorFactory = chunkIteratorFactory;
-    this.pool = Executors.newFixedThreadPool(conf.getTableScanConcurrency());
-    this.completionService = new ExecutorCompletionService<>(pool);
+    this.completionService = new ExecutorCompletionService<>(session.getThreadPoolForTableScan());
     submitTasks();
   }
 

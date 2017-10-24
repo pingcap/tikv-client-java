@@ -23,6 +23,8 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 
@@ -33,6 +35,8 @@ public class TiSession implements AutoCloseable {
   private volatile RegionManager regionManager;
   private volatile PDClient client;
   private volatile Catalog catalog;
+  private volatile ExecutorService indexScanThreadPool;
+  private volatile ExecutorService tableScanThreadPool;
 
   public TiSession(TiConfiguration conf) {
     this.conf = conf;
@@ -117,12 +121,40 @@ public class TiSession implements AutoCloseable {
     return channel;
   }
 
+  public synchronized ExecutorService getThreadPoolForIndexScan() {
+    ExecutorService res = indexScanThreadPool;
+    if (res == null) {
+      synchronized (this) {
+        if (indexScanThreadPool == null) {
+          indexScanThreadPool = Executors.newFixedThreadPool(conf.getIndexScanConcurrency());
+          res = indexScanThreadPool;
+        }
+      }
+    }
+    return res;
+  }
+
+  public synchronized ExecutorService getThreadPoolForTableScan() {
+    ExecutorService res = tableScanThreadPool;
+    if (res == null) {
+      synchronized (this) {
+        if (tableScanThreadPool == null) {
+          tableScanThreadPool = Executors.newFixedThreadPool(conf.getTableScanConcurrency());
+          res = tableScanThreadPool;
+        }
+      }
+    }
+    return res;
+  }
+
   public static TiSession create(TiConfiguration conf) {
     return new TiSession(conf);
   }
 
   @Override
   public void close() throws Exception {
+    getThreadPoolForTableScan().shutdownNow();
+    getThreadPoolForIndexScan().shutdownNow();
     connPool.values().forEach(ManagedChannel::shutdown);
   }
 }
