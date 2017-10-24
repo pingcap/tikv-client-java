@@ -54,7 +54,7 @@ public class IndexScanIterator implements Iterator<Row> {
   }
 
   private TLongArrayList feedBatch() {
-    TLongArrayList handles = new TLongArrayList(1000000);
+    TLongArrayList handles = new TLongArrayList(512);
     while (handleIterator.hasNext()) {
       handles.add(handleIterator.next());
       if (batchSize <= handles.size()) {
