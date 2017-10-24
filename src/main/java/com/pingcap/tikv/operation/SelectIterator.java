@@ -34,7 +34,6 @@ import com.pingcap.tikv.row.RowReader;
 import com.pingcap.tikv.row.RowReaderFactory;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.util.RangeSplitter.RegionTask;
-import com.pingcap.tikv.util.Timer;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -134,7 +133,6 @@ public abstract class SelectIterator<T, RawT> implements Iterator<T> {
 
     RegionStoreClient client;
     try {
-      Timer t = new Timer();
       client = RegionStoreClient.create(region, store, session);
       SelectResponse resp = client.coprocess(request, ranges);
       // if resp is null, then indicates eof.

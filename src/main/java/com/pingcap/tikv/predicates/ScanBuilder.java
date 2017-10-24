@@ -93,6 +93,12 @@ public class ScanBuilder {
     return minPlan;
   }
 
+  public ScanPlan buildTableScan(List<TiExpr> conditions, TiTableInfo table) {
+    TiIndexInfo pkIndex = TiIndexInfo.generateFakePrimaryKeyIndex(table);
+    ScanPlan plan = buildScan(conditions, pkIndex, table);
+    return plan;
+  }
+
   public ScanPlan buildScan(List<TiExpr> conditions, TiIndexInfo index, TiTableInfo table) {
     requireNonNull(table, "Table cannot be null to encoding keyRange");
     requireNonNull(conditions, "conditions cannot be null to encoding keyRange");
