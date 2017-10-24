@@ -155,6 +155,5 @@ public class TiSession implements AutoCloseable {
   public void close() throws Exception {
     getThreadPoolForTableScan().shutdownNow();
     getThreadPoolForIndexScan().shutdownNow();
-    connPool.values().forEach(ManagedChannel::shutdown);
   }
 }
