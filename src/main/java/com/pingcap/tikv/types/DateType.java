@@ -26,7 +26,7 @@ import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.meta.TiColumnInfo;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
-import java.util.Date;
+import java.sql.Date;
 
 public class DateType extends DataType {
   static DateType of(int tp) {
@@ -59,10 +59,11 @@ public class DateType extends DataType {
       if (value instanceof Date) {
         in = (Date) value;
       } else {
-        in = format.parse(value.toString());
+        // format ensure only date part without time
+        in = new Date(format.parse(value.toString()).getTime());
       }
     } catch (Exception e) {
-      throw new TiClientInternalException("Can not cast Object to LocalDateTime ", e);
+      throw new TiClientInternalException("Can not cast Object to LocalDateTime: " + value, e);
     }
     long val = toPackedLong(in);
     codecObject.encodeNotNull(cdo, encodeType, val);
