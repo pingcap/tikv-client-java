@@ -200,6 +200,27 @@ public class RangeSplitter {
     regionTasks.add(new RegionTask(regionStorePair.first, regionStorePair.second, newKeyRanges));
   }
 
+  public List<RegionTask> splitRangeByRegion(List<KeyRange> keyRanges, int splitFactor) {
+    List<RegionTask> tempResult = splitRangeByRegion(keyRanges);
+    // rule out query within one region
+    if (tempResult.size() <= 1) {
+      return tempResult;
+    }
+
+    ImmutableList.Builder<RegionTask> splitTasks = ImmutableList.builder();
+    for (RegionTask task : tempResult) {
+      // rule out queries already split
+      if (task.getRanges().size() != 1) {
+        continue;
+      }
+      List<KeyRange> splitRange = KeyRangeUtils.split(task.getRanges().get(0), splitFactor);
+      for (KeyRange range : splitRange) {
+        splitTasks.add(new RegionTask(task.getRegion(), task.getStore(), ImmutableList.of(range)));
+      }
+    }
+    return splitTasks.build();
+  }
+
   public List<RegionTask> splitRangeByRegion(List<KeyRange> keyRanges) {
     if (keyRanges == null || keyRanges.size() == 0) {
       return ImmutableList.of();

@@ -19,6 +19,7 @@ import com.google.protobuf.ByteString;
 import java.io.ByteArrayInputStream;
 import java.io.DataInput;
 import java.io.DataInputStream;
+import java.io.IOException;
 
 public class CodecDataInput implements DataInput {
   private final DataInputStream inputStream;
@@ -112,6 +113,16 @@ public class CodecDataInput implements DataInput {
     try {
       return inputStream.readUnsignedShort();
     } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public int readPartialUnsignedShort() {
+    try {
+      byte readBuffer[] = new byte[2];
+      inputStream.read(readBuffer, 0, 2);
+      return ((readBuffer[0] & 0xff) << 8) + ((readBuffer[1] & 0xff) << 0);
+    } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }

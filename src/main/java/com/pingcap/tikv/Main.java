@@ -31,9 +31,9 @@ public class Main {
       conf.setTableScanConcurrency(Integer.parseInt(args[1]));
       conf.setIndexScanBatchSize(Integer.parseInt(args[2]));
     }
-    testUniqueIndex();
+    //testUniqueIndex();
     //tableScan();
-    //indexScan();
+    indexScan();
     session.close();
     System.exit(0);
   }
