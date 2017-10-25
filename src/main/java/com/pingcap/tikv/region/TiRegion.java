@@ -37,8 +37,9 @@ public class TiRegion implements Serializable {
   private final Set<Long> unreachableStores;
   private Peer peer;
   private final IsolationLevel isolationLevel;
+  private final Kvrpcpb.CommandPri commandPri;
 
-  public TiRegion(Region meta, Peer peer, IsolationLevel isolationLevel) {
+  public TiRegion(Region meta, Peer peer, IsolationLevel isolationLevel, Kvrpcpb.CommandPri commandPri) {
     Objects.requireNonNull(meta, "meta is null");
     this.meta = decodeRegion(meta);
     if (peer == null || peer.getId() == 0) {
@@ -51,6 +52,7 @@ public class TiRegion implements Serializable {
     }
     this.unreachableStores = new HashSet<>();
     this.isolationLevel = isolationLevel;
+    this.commandPri = commandPri;
   }
 
   private Region decodeRegion(Region region) {

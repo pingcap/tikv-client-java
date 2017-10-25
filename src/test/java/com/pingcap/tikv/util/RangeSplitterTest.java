@@ -9,6 +9,7 @@ import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.codec.TableCodec;
 import com.pingcap.tikv.codec.TableCodec.DecodeResult.Status;
 import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
+import com.pingcap.tikv.kvproto.Kvrpcpb.CommandPri;
 import com.pingcap.tikv.kvproto.Kvrpcpb.IsolationLevel;
 import com.pingcap.tikv.kvproto.Metapb;
 import com.pingcap.tikv.kvproto.Metapb.Peer;
@@ -110,7 +111,7 @@ public class RangeSplitterTest {
             .setEndKey(encodeKey(range.getEnd().toByteArray()))
             .addPeers(Peer.getDefaultInstance())
             .build(),
-        null, IsolationLevel.RC);
+        null, IsolationLevel.RC, CommandPri.Low);
   }
 
   @Test

@@ -28,6 +28,7 @@ import com.pingcap.tikv.ReadOnlyPDClient;
 import com.pingcap.tikv.TiSession;
 import com.pingcap.tikv.exception.GrpcException;
 import com.pingcap.tikv.exception.TiClientInternalException;
+import com.pingcap.tikv.kvproto.Kvrpcpb.CommandPri;
 import com.pingcap.tikv.kvproto.Kvrpcpb.IsolationLevel;
 import com.pingcap.tikv.kvproto.Metapb.Peer;
 import com.pingcap.tikv.kvproto.Metapb.Region;
@@ -191,7 +192,7 @@ public class RegionManager {
   public void onRegionStale(long regionID, List<Region> regions) {
     cache.invalidateRegion(regionID);
     for (Region r : regions) {
-      cache.putRegion(new TiRegion(r, r.getPeers(0), IsolationLevel.RC));
+      cache.putRegion(new TiRegion(r, r.getPeers(0), IsolationLevel.RC, CommandPri.Low));
     }
   }
 
