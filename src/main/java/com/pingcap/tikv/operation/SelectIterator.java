@@ -126,18 +126,14 @@ public abstract class SelectIterator<T, RawT> implements Iterator<T> {
     Store store = regionTask.getStore();
 
     RegionStoreClient client;
-    try {
-      client = RegionStoreClient.create(region, store, session);
-      SelectResponse resp = client.coprocess(request, ranges);
-      // if resp is null, then indicates eof.
-      if (resp == null) {
-        eof = true;
-        return null;
-      }
-      return resp.getChunksList();
-    } catch (Exception e) {
-      throw new TiClientInternalException("Error Closing Store client.", e);
+    client = RegionStoreClient.create(region, store, session);
+    SelectResponse resp = client.coprocess(request, ranges);
+    // if resp is null, then indicates eof.
+    if (resp == null) {
+      eof = true;
+      return null;
     }
+    return resp.getChunksList();
   }
 
   private boolean readNextRegion() {

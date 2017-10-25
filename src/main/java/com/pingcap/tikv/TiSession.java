@@ -16,6 +16,7 @@
 package com.pingcap.tikv;
 
 import com.google.common.net.HostAndPort;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.pingcap.tikv.catalog.Catalog;
 import com.pingcap.tikv.meta.TiTimestamp;
 import com.pingcap.tikv.region.RegionManager;
@@ -126,7 +127,9 @@ public class TiSession implements AutoCloseable {
     if (res == null) {
       synchronized (this) {
         if (indexScanThreadPool == null) {
-          indexScanThreadPool = Executors.newFixedThreadPool(conf.getIndexScanConcurrency());
+          indexScanThreadPool = Executors.newFixedThreadPool(
+              conf.getIndexScanConcurrency(),
+              new ThreadFactoryBuilder().setDaemon(true).build());
           res = indexScanThreadPool;
         }
       }
@@ -139,7 +142,9 @@ public class TiSession implements AutoCloseable {
     if (res == null) {
       synchronized (this) {
         if (tableScanThreadPool == null) {
-          tableScanThreadPool = Executors.newFixedThreadPool(conf.getTableScanConcurrency());
+          tableScanThreadPool = Executors.newFixedThreadPool(
+              conf.getTableScanConcurrency(),
+              new ThreadFactoryBuilder().setDaemon(true).build());
           res = tableScanThreadPool;
         }
       }
