@@ -17,7 +17,6 @@ package com.pingcap.tikv;
 
 import static com.pingcap.tikv.util.KeyRangeUtils.makeRange;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.exception.TiClientInternalException;
@@ -105,17 +104,17 @@ public class Snapshot {
    * @param task RegionTask of the coprocessor request to send
    * @return Row iterator to iterate over resulting rows
    */
-  public Iterator<Row> tableRead(TiSelectRequest selReq, RegionTask task) {
+  public Iterator<Row> tableRead(TiSelectRequest selReq, List<RegionTask> task) {
     if (selReq.isIndexScan()) {
       Iterator<Long> iter = SelectIterator.getHandleIterator(
           selReq,
-          ImmutableList.of(task),
+          task,
           session);
       return new IndexScanIterator(this, selReq, iter);
     } else {
       return SelectIterator.getRowIterator(
           selReq,
-          ImmutableList.of(task),
+          task,
           session);
     }
   }
