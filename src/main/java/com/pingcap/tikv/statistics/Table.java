@@ -7,6 +7,7 @@ import com.pingcap.tikv.expression.TiBinaryFunctionExpresson;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiConstant;
 import com.pingcap.tikv.expression.TiExpr;
+import com.pingcap.tikv.expression.scalar.*;
 import com.pingcap.tikv.meta.TiIndexInfo;
 import com.pingcap.tikv.meta.TiKey;
 import com.pingcap.tikv.meta.TiTableInfo;
@@ -25,12 +26,12 @@ import java.util.*;
  *
  */
 public class Table {
-  private static final long pseudoRowCount = 10000;
-  private static final long pseudoEqualRate = 1000;
-  private static final long pseudoLessRate = 3;
-  private static final long pseudoBetweenRate = 40;
+  private static final long PSEUDO_ROW_COUNT = 10000;
+  private static final double EQUAL_RATE = 1.0 / 1000.0;
+  private static final double LESS_RATE = 1.0 / 3.0;
+  private static final double PSEUDO_BETWEEN_RATE = 1.0 / 40;
   // If one condition can't be calculated, we will assume that the selectivity of this condition is 0.8.
-  private static final double selectionFactor = 0.8;
+  private static final double SELECTION_FACTOR = 0.8;
 
   private static final int indexType = 0;
   private static final int pkType = 1;
@@ -124,7 +125,7 @@ public class Table {
   /** ColumnGreaterRowCount estimates the row count where the column greater than value. */
   public double ColumnGreaterRowCount(TiKey value, ColumnInfo columnInfo) {
     if (ColumnIsInvalid(columnInfo)) {
-      return (double) (Count) / pseudoLessRate;
+      return (double) (Count) * LESS_RATE;
     }
     Histogram hist = Columns.get(columnInfo.getColumnId()).getHistogram();
     double result = hist.greaterRowCount(value);
@@ -135,7 +136,7 @@ public class Table {
   /** ColumnLessRowCount estimates the row count where the column less than value. */
   public double ColumnLessRowCount(TiKey value, ColumnInfo columnInfo) {
     if (ColumnIsInvalid(columnInfo)) {
-      return (double) (Count) / pseudoLessRate;
+      return (double) (Count) * LESS_RATE;
     }
     Histogram hist = Columns.get(columnInfo.getColumnId()).getHistogram();
     double result = hist.lessRowCount(value);
@@ -146,7 +147,7 @@ public class Table {
   /** ColumnBetweenRowCount estimates the row count where column greater or equal to a and less than b. */
   public double ColumnBetweenRowCount(TiKey a, TiKey b, ColumnInfo columnInfo) {
     if (ColumnIsInvalid(columnInfo)) {
-      return (double) (Count) / pseudoBetweenRate;
+      return (double) (Count) * PSEUDO_BETWEEN_RATE;
     }
     Histogram hist = Columns.get(columnInfo.getColumnId()).getHistogram();
     double result = hist.betweenRowCount(a, b);
@@ -157,7 +158,7 @@ public class Table {
   /** ColumnEqualRowCount estimates the row count where the column equals to value. */
   public double ColumnEqualRowCount(TiKey value, ColumnInfo columnInfo) {
     if (ColumnIsInvalid(columnInfo)) {
-      return (double) (Count) / pseudoEqualRate;
+      return (double) (Count) * EQUAL_RATE;
     }
     Histogram hist = Columns.get(columnInfo.getColumnId()).getHistogram();
     double result = hist.equalRowCount(value);
@@ -188,7 +189,7 @@ public class Table {
   }
 
   static Table PseudoTable(long tableID) {
-    return new Table(tableID, pseudoRowCount, true);
+    return new Table(tableID, PSEUDO_ROW_COUNT, true);
   }
 
   private double getPseudoRowCountByIndexRanges(List<IndexRange> indexRanges, double tableRowCount) {
@@ -245,20 +246,20 @@ public class Table {
       if (!rg.hasLowerBound() && upperBound.compareTo(TiKey.encode(DataType.indexMaxValue())) == 0) {
         rowCount += tableRowCount;
       } else if (rg.hasLowerBound() && lowerBound.compareTo(TiKey.encode(DataType.indexMinValue())) == 0) {
-        double nullCount = tableRowCount / pseudoEqualRate;
+        double nullCount = tableRowCount * EQUAL_RATE;
         if (upperBound.compareTo(TiKey.encode(DataType.indexMaxValue())) == 0) {
           rowCount += tableRowCount - nullCount;
         } else {
-          double lessCount = tableRowCount / pseudoLessRate;
+          double lessCount = tableRowCount * LESS_RATE;
           rowCount += lessCount - nullCount;
         }
       } else if (upperBound.compareTo(TiKey.encode(DataType.indexMaxValue())) == 0) {
-        rowCount += tableRowCount / pseudoLessRate;
+        rowCount += tableRowCount * LESS_RATE;
       } else {
         if (lowerBound.compareTo(upperBound) == 0) {
-          rowCount += tableRowCount / pseudoEqualRate;
+          rowCount += tableRowCount * EQUAL_RATE;
         } else {
-          rowCount += tableRowCount / pseudoBetweenRate;
+          rowCount += tableRowCount * PSEUDO_BETWEEN_RATE;
         }
       }
     }
@@ -319,22 +320,17 @@ public class Table {
   }
 
   private double pseudoSelectivity(List<TiExpr> exprs) {
-    double minFactor = selectionFactor;
+    double minFactor = SELECTION_FACTOR;
     for(TiExpr expr: exprs) {
       if(expr instanceof TiBinaryFunctionExpresson && checkColumnConstant(((TiBinaryFunctionExpresson) expr).getArgs())) {
-        switch (((TiBinaryFunctionExpresson) expr).getName()) {
-          case "=":
-          case "NullEqual":
-            minFactor = Math.min(minFactor, 1.0/pseudoEqualRate);
-            break;
-          case ">=":
-          case ">":
-          case "<=":
-          case "<":
-            minFactor = Math.min(minFactor, 1.0/pseudoLessRate);
-            break;
-          default:
-          // FIXME: To resolve the between case.
+        if(expr instanceof Equal || expr instanceof NullEqual) {
+          minFactor *= EQUAL_RATE;;
+        } else if(
+            expr instanceof GreaterEqual ||
+            expr instanceof GreaterThan ||
+            expr instanceof LessEqual ||
+            expr instanceof LessThan) {
+          minFactor *= LESS_RATE;
         }
       }
     }
@@ -406,7 +402,7 @@ public class Table {
       ret *= rowCount / getCount();
     }
     if(mask.cardinality() > 0) {
-      ret *= selectionFactor;
+      ret *= SELECTION_FACTOR;
     }
     return ret;
   }
