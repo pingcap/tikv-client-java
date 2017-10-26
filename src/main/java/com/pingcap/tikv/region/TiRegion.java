@@ -98,6 +98,7 @@ public class TiRegion implements Serializable {
   public Kvrpcpb.Context getContext() {
     Kvrpcpb.Context.Builder builder = Kvrpcpb.Context.newBuilder();
     builder.setIsolationLevel(this.isolationLevel);
+    builder.setPriority(this.commandPri);
     builder.setRegionId(meta.getId()).setPeer(this.peer).setRegionEpoch(this.meta.getRegionEpoch());
     return builder.build();
   }
