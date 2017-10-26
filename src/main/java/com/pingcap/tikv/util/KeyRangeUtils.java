@@ -29,6 +29,7 @@ import com.pingcap.tikv.meta.TiIndexColumn;
 import com.pingcap.tikv.meta.TiIndexInfo;
 import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.types.DataType;
+
 import java.util.List;
 
 public class KeyRangeUtils {
@@ -46,7 +47,7 @@ public class KeyRangeUtils {
   }
 
   public static List<Coprocessor.KeyRange> split(Coprocessor.KeyRange range, int splitFactor) {
-    if (splitFactor > 16 || splitFactor <= 0 || (splitFactor & (splitFactor - 1)) != 0) {
+    if (splitFactor > 32 || splitFactor <= 0 || (splitFactor & (splitFactor - 1)) != 0) {
       throw new TiClientInternalException(
           "splitFactor must be positive integer power of 2 and no greater than 16");
     }
@@ -58,8 +59,8 @@ public class KeyRangeUtils {
       return ImmutableList.of(range);
     }
 
-    int maxSize = Math.max(startKey.size(), endKey.size());
     ImmutableList.Builder<Coprocessor.KeyRange> resultList = ImmutableList.builder();
+    int maxSize = Math.max(startKey.size(), endKey.size());
     int i;
 
     for (i = 0; i < maxSize; i++) {
@@ -143,17 +144,17 @@ public class KeyRangeUtils {
     return Range.closedOpen(Comparables.wrap(startKey), Comparables.wrap(endKey));
   }
 
-  public static Coprocessor.KeyRange makeCoprocRange(ByteString startKey, ByteString endKey) {
+  static Coprocessor.KeyRange makeCoprocRange(ByteString startKey, ByteString endKey) {
     return KeyRange.newBuilder().setStart(startKey).setEnd(endKey).build();
   }
 
-  public static Coprocessor.KeyRange makeCoprocRangeWithHandle(long tableId, long startHandle, long endHandle) {
+  static Coprocessor.KeyRange makeCoprocRangeWithHandle(long tableId, long startHandle, long endHandle) {
     ByteString startKey = TableCodec.encodeRowKeyWithHandle(tableId, startHandle);
     ByteString endKey = TableCodec.encodeRowKeyWithHandle(tableId, endHandle);
     return KeyRange.newBuilder().setStart(startKey).setEnd(endKey).build();
   }
 
-  public static String formatByteString(ByteString key) {
+  static String formatByteString(ByteString key) {
     StringBuilder sb = new StringBuilder();
     for (int i = 0; i < key.size(); i++) {
       sb.append(key.byteAt(i) & 0xff);
