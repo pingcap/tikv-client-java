@@ -17,15 +17,14 @@
  */
 package com.pingcap.tikv.util;
 
+import com.google.common.primitives.Longs;
+import com.google.common.primitives.UnsignedBytes;
+import sun.misc.Unsafe;
+
 import java.lang.reflect.Field;
 import java.nio.ByteOrder;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-
-import sun.misc.Unsafe;
-
-import com.google.common.primitives.Longs;
-import com.google.common.primitives.UnsignedBytes;
 
 /**
  * Utility code to do optimized byte-array comparison.
@@ -47,7 +46,7 @@ public abstract class FastByteComparisons {
   }
 
   private interface Comparer<T> {
-    abstract public int compareTo(T buffer1, int offset1, int length1,
+    int compareTo(T buffer1, int offset1, int length1,
         T buffer2, int offset2, int length2);
   }
 
