@@ -26,6 +26,7 @@ import com.pingcap.tikv.kvproto.Metapb;
 import com.pingcap.tikv.kvproto.Metapb.Peer;
 import com.pingcap.tikv.kvproto.Metapb.Region;
 import com.pingcap.tikv.types.BytesType;
+
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.List;
@@ -41,7 +42,6 @@ public class TiRegion implements Serializable {
 
   public TiRegion(Region meta, Peer peer, IsolationLevel isolationLevel, Kvrpcpb.CommandPri commandPri) {
     Objects.requireNonNull(meta, "meta is null");
-    // we need decode this region since it gets from pd.
     this.meta = decodeRegion(meta);
     if (peer == null || peer.getId() == 0) {
       if (meta.getPeersCount() == 0) {
