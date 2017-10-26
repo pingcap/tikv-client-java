@@ -60,16 +60,19 @@ public class KeyRangeUtils {
     }
 
     ImmutableList.Builder<Coprocessor.KeyRange> resultList = ImmutableList.builder();
-    int minSize = Math.min(startKey.size(), endKey.size());
+    int maxSize = Math.max(startKey.size(), endKey.size());
+    int i;
 
-    for (int i = 0; i < minSize; i ++) {
-      if (startKey.byteAt(i) != endKey.byteAt(i)) {
+    for (i = 0; i < maxSize; i++) {
+      byte sb = i < startKey.size() ? startKey.byteAt(i) : 0;
+      byte eb = i < endKey.size() ? endKey.byteAt(i) : 0;
+      if (sb != eb) {
         break;
       }
     }
 
-    ByteString sRemaining = startKey.substring(minSize);
-    ByteString eRemaining = endKey.substring(minSize);
+    ByteString sRemaining = i < startKey.size() ? startKey.substring(i) : ByteString.EMPTY;
+    ByteString eRemaining = i < endKey.size() ? endKey.substring(i) : ByteString.EMPTY;
 
     CodecDataInput cdi = new CodecDataInput(sRemaining);
     int uss = cdi.readPartialUnsignedShort();
@@ -82,7 +85,8 @@ public class KeyRangeUtils {
       return ImmutableList.of(range);
     }
 
-    ByteString prefix = startKey.substring(0, minSize);
+    ByteString prefix = startKey.size() > endKey.size() ?
+                        startKey.substring(0, i) : endKey.substring(0, i);
     ByteString newStartKey = startKey;
     ByteString newEndKey;
     for (int j = 0; j < splitFactor; j++) {
