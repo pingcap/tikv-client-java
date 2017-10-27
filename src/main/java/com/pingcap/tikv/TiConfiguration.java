@@ -17,6 +17,8 @@ package com.pingcap.tikv;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.HostAndPort;
+import com.pingcap.tikv.kvproto.Kvrpcpb.CommandPri;
+import com.pingcap.tikv.kvproto.Kvrpcpb.IsolationLevel;
 import com.pingcap.tikv.util.BackOff;
 import com.pingcap.tikv.util.ExponentialBackOff;
 import java.io.Serializable;
@@ -39,6 +41,8 @@ public class TiConfiguration implements Serializable {
   private static final int DEF_INDEX_SCAN_BATCH_SIZE = 2000000;
   private static final int DEF_INDEX_SCAN_CONCURRENCY = 5;
   private static final int DEF_TABLE_SCAN_CONCURRENCY = 10;
+  private static final CommandPri DEF_COMMAND_PRIORITY = CommandPri.Normal;
+  private static final IsolationLevel DEF_ISOLATION_LEVEL = IsolationLevel.RC;
 
   private int retryTimes = DEF_RETRY_TIMES;
   private int timeout = DEF_TIMEOUT;
@@ -53,6 +57,8 @@ public class TiConfiguration implements Serializable {
   private int indexScanBatchSize = DEF_INDEX_SCAN_BATCH_SIZE;
   private int indexScanConcurrency = DEF_INDEX_SCAN_CONCURRENCY;
   private int tableScanConcurrency = DEF_TABLE_SCAN_CONCURRENCY;
+  private CommandPri commandPriority = DEF_COMMAND_PRIORITY;
+  private IsolationLevel isolationLevel = DEF_ISOLATION_LEVEL;
 
   public static TiConfiguration createDefault(String pdAddrsStr) {
     Objects.requireNonNull(pdAddrsStr, "pdAddrsStr is null");
@@ -188,5 +194,21 @@ public class TiConfiguration implements Serializable {
 
   public void setTableScanConcurrency(int tableScanConcurrency) {
     this.tableScanConcurrency = tableScanConcurrency;
+  }
+
+  public CommandPri getCommandPriority() {
+    return commandPriority;
+  }
+
+  public void setCommandPriority(CommandPri commandPriority) {
+    this.commandPriority = commandPriority;
+  }
+
+  public IsolationLevel getIsolationLevel() {
+    return isolationLevel;
+  }
+
+  public void setIsolationLevel(IsolationLevel isolationLevel) {
+    this.isolationLevel = isolationLevel;
   }
 }
