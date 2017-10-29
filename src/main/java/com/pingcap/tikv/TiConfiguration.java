@@ -41,7 +41,7 @@ public class TiConfiguration implements Serializable {
   private static final int DEF_INDEX_SCAN_BATCH_SIZE = 2000000;
   private static final int DEF_INDEX_SCAN_CONCURRENCY = 5;
   private static final int DEF_TABLE_SCAN_CONCURRENCY = 10;
-  private static final CommandPri DEF_COMMAND_PRIORITY = CommandPri.Normal;
+  private static final CommandPri DEF_COMMAND_PRIORITY = CommandPri.Low;
   private static final IsolationLevel DEF_ISOLATION_LEVEL = IsolationLevel.RC;
 
   private int retryTimes = DEF_RETRY_TIMES;
