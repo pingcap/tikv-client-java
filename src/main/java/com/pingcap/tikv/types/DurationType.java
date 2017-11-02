@@ -17,6 +17,7 @@
 
 package com.pingcap.tikv.types;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.codec.InvalidCodecFormatException;
@@ -81,7 +82,8 @@ public class DurationType extends IntegerType {
    * @param time localDateTime that need to be encoded.
    * @return a packed long.
    */
-  private static long toPackedLong(LocalDateTime time) {
+  @VisibleForTesting
+  static long toPackedLong(LocalDateTime time) {
     int year = time.getYear();
     int month = time.getMonthValue() - 1;
     if(year != 0 || month != 0) {

@@ -17,6 +17,7 @@
 
 package com.pingcap.tikv.types;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.codec.InvalidCodecFormatException;
@@ -88,6 +89,7 @@ public class TimestampType extends DataType {
    * @param time localDateTime that need to be encoded.
    * @return a packed long.
    */
+  @VisibleForTesting
   static long toPackedLong(LocalDateTime time) {
     int year = time.getYear();
     int month = time.getMonthValue();
@@ -108,6 +110,7 @@ public class TimestampType extends DataType {
    * @param packed a long value
    * @return a decoded LocalDateTime.
    */
+  @VisibleForTesting
   static LocalDateTime fromPackedLong(long packed) {
     // TODO: As for JDBC behavior, it can be configured to "round" or "toNull"
     // for now we didn't pass in session so we do a toNull behavior

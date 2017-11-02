@@ -106,7 +106,7 @@ public class DecimalType extends DataType {
    * @param cdo cdo is destination data.
    * @param dec is decimal value that will be written into cdo.
    */
-  public static void writeDecimalFully(CodecDataOutput cdo, MyDecimal dec) {
+  static void writeDecimalFully(CodecDataOutput cdo, MyDecimal dec) {
     int[] data = dec.toBin(dec.precision(), dec.frac());
     cdo.writeByte(dec.precision());
     cdo.writeByte(dec.frac());
