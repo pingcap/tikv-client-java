@@ -23,6 +23,7 @@ import com.pingcap.tikv.codec.InvalidCodecFormatException;
 import com.pingcap.tikv.codec.MyDecimal;
 import com.pingcap.tikv.meta.TiColumnInfo;
 import gnu.trove.list.array.TIntArrayList;
+
 import java.math.BigDecimal;
 
 public class DecimalType extends DataType {
@@ -74,7 +75,7 @@ public class DecimalType extends DataType {
    *
    * @param cdi cdi is source data.
    */
-  private static BigDecimal readDecimalFully(CodecDataInput cdi) {
+  public static BigDecimal readDecimalFully(CodecDataInput cdi) {
     if (cdi.available() < 3) {
       throw new IllegalArgumentException("insufficient bytes to read value");
     }
@@ -105,7 +106,7 @@ public class DecimalType extends DataType {
    * @param cdo cdo is destination data.
    * @param dec is decimal value that will be written into cdo.
    */
-  private static void writeDecimalFully(CodecDataOutput cdo, MyDecimal dec) {
+  public static void writeDecimalFully(CodecDataOutput cdo, MyDecimal dec) {
     int[] data = dec.toBin(dec.precision(), dec.frac());
     cdo.writeByte(dec.precision());
     cdo.writeByte(dec.frac());
@@ -120,7 +121,7 @@ public class DecimalType extends DataType {
    * @param cdi source of data
    * @return decoded unsigned long value
    */
-  static double readDouble(CodecDataInput cdi) {
+  public static double readDouble(CodecDataInput cdi) {
     return readDecimalFully(cdi).doubleValue();
   }
 
@@ -142,7 +143,7 @@ public class DecimalType extends DataType {
    * @param cdo For outputting data in bytes array
    * @param val The data to encode
    */
-  static void writeDouble(CodecDataOutput cdo, double val) {
+  public static void writeDouble(CodecDataOutput cdo, double val) {
     MyDecimal dec = new MyDecimal();
     dec.fromDecimal(val);
     writeDecimalFully(cdo, dec);

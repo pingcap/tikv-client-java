@@ -21,7 +21,6 @@ import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.codec.InvalidCodecFormatException;
 import com.pingcap.tikv.meta.TiColumnInfo;
-import com.pingcap.tikv.row.Row;
 
 import java.time.LocalDateTime;
 
@@ -46,26 +45,6 @@ public class DurationType extends IntegerType {
     } else if (flag == INT_FLAG) {
       long nanoSec = IntegerType.readLong(cdi);
       return nanoSec / 1000000;
-    } else {
-      throw new InvalidCodecFormatException("Invalid Flag type for Time Type: " + flag);
-    }
-  }
-
-  /**
-   * decode a value from cdi to row per tp.
-   *
-   * @param cdi source of data.
-   * @param row destination of data
-   * @param pos position of row.
-   */
-  public void decode(CodecDataInput cdi, Row row, int pos) {
-    int flag = cdi.readUnsignedByte();
-    if (flag == VARINT_FLAG) {
-      long nanoSec = IntegerType.readVarLong(cdi);
-      row.setLong(pos, nanoSec);
-    } else if (flag == INT_FLAG) {
-      long nanoSec = IntegerType.readLong(cdi);
-      row.setLong(pos, nanoSec);
     } else {
       throw new InvalidCodecFormatException("Invalid Flag type for Time Type: " + flag);
     }

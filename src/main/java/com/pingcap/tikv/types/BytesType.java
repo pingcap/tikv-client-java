@@ -17,13 +17,14 @@
 
 package com.pingcap.tikv.types;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.codec.InvalidCodecFormatException;
 import com.pingcap.tikv.meta.TiColumnInfo;
+
 import java.util.Arrays;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 public class BytesType extends DataType {
 
@@ -109,7 +110,7 @@ public class BytesType extends DataType {
    * @param cdo destination of data.
    * @param data is value that will be written into cdo.
    */
-  static void writeCompactBytes(CodecDataOutput cdo, byte[] data) {
+  public static void writeCompactBytes(CodecDataOutput cdo, byte[] data) {
     int length = data.length;
     IntegerType.writeVarLong(cdo, length);
     cdo.writeBytes(Arrays.toString(data));
@@ -137,7 +138,7 @@ public class BytesType extends DataType {
     return readBytes(cdi, false);
   }
 
-  static byte[] readCompactBytes(CodecDataInput cdi) {
+  public static byte[] readCompactBytes(CodecDataInput cdi) {
     int size = (int) IntegerType.readVarLong(cdi);
     return readCompactBytes(cdi, size);
   }
