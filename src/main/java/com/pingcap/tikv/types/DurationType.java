@@ -17,15 +17,13 @@
 
 package com.pingcap.tikv.types;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.codec.InvalidCodecFormatException;
 import com.pingcap.tikv.meta.TiColumnInfo;
 
-import java.time.LocalDateTime;
-
 public class DurationType extends IntegerType {
+  private static final long FACTOR_NANO_SEC_TO_SEC = 1000000;
   static DurationType of(int tp) {
     return new DurationType(tp);
   }
@@ -42,10 +40,10 @@ public class DurationType extends IntegerType {
   public Object decodeNotNull(int flag, CodecDataInput cdi) {
     if (flag == VARINT_FLAG) {
       long nanoSec = IntegerType.readVarLong(cdi);
-      return nanoSec / 1000000;
+      return nanoSec / FACTOR_NANO_SEC_TO_SEC;
     } else if (flag == INT_FLAG) {
       long nanoSec = IntegerType.readLong(cdi);
-      return nanoSec / 1000000;
+      return nanoSec / FACTOR_NANO_SEC_TO_SEC;
     } else {
       throw new InvalidCodecFormatException("Invalid Flag type for Time Type: " + flag);
     }
@@ -60,12 +58,8 @@ public class DurationType extends IntegerType {
    */
   @Override
   public void encodeNotNull(CodecDataOutput cdo, EncodeType encodeType, Object value) {
-    LocalDateTime localDateTime;
     long val;
-    if (value instanceof LocalDateTime) {
-      localDateTime = (LocalDateTime) value;
-      val = toPackedLong(localDateTime);
-    } else if (value instanceof Long) {
+    if (value instanceof Long) {
       val = ((Long) value);
     } else if (value instanceof Integer) {
       val = ((Integer) value);
@@ -74,28 +68,5 @@ public class DurationType extends IntegerType {
     }
 
     IntegerType.writeVarLong(cdo, val);
-  }
-
-  /**
-   * Encode a LocalDateTime to a packed long.
-   *
-   * @param time localDateTime that need to be encoded.
-   * @return a packed long.
-   */
-  @VisibleForTesting
-  static long toPackedLong(LocalDateTime time) {
-    int year = time.getYear();
-    int month = time.getMonthValue() - 1;
-    if(year != 0 || month != 0) {
-      throw new UnsupportedOperationException("Time Convert Error: Duration of time cannot exceed one month.");
-    }
-    int day = time.getDayOfMonth();
-    int hour = time.getHour();
-    int minute = time.getMinute();
-    int second = time.getSecond();
-    // 1 microsecond = 1000 nano second
-    int micro = time.getNano() / 1000;
-    long hms = hour * 3600 + minute * 60 + second;
-    return ((day * 86400 + hms) * 1000) + micro;
   }
 }

@@ -23,9 +23,7 @@ import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.codec.InvalidCodecFormatException;
 import com.pingcap.tikv.meta.TiColumnInfo;
 
-import java.sql.Time;
 import java.sql.Timestamp;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -54,10 +52,6 @@ public class TimestampType extends DataType {
         return null;
       }
       return Timestamp.from(ZonedDateTime.of(localDateTime, defaultZone).toInstant());
-    } else if (flag == INT_FLAG) {
-      long nanoSec = IntegerType.readLong(cdi);
-      Duration duration = Duration.ofNanos(nanoSec);
-      return new Time(duration.toMillis());
     } else {
       throw new InvalidCodecFormatException("Invalid Flag type for TimestampType: " + flag);
     }
