@@ -26,14 +26,14 @@ import java.math.BigDecimal;
 import java.util.Objects;
 
 // TODO: This might need a refactor to accept an DataType?
-public class TiConstant implements TiExpr {
-  private Object value;
+public class TiConstant<C extends Comparable> implements TiExpr {
+  private C value;
 
-  public static TiConstant create(Object value) {
-    return new TiConstant(value);
+  public static <C extends Comparable> TiConstant create(C value) {
+    return new TiConstant<>(value);
   }
 
-  private TiConstant(Object value) {
+  private TiConstant(C value) {
     this.value = value;
   }
 
@@ -44,7 +44,7 @@ public class TiConstant implements TiExpr {
         || value instanceof Byte;
   }
 
-  public Object getValue() {
+  public C getValue() {
     return value;
   }
 

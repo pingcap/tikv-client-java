@@ -40,7 +40,6 @@ public class ScanIterator implements Iterator<Kvrpcpb.KvPair> {
   protected final TiSession session;
   private final RegionManager regionCache;
   protected final long version;
-  private final Kvrpcpb.IsolationLevel isolationLevel = IsolationLevel.RC;
 
   private List<Kvrpcpb.KvPair> currentCache;
   protected ByteString startKey;

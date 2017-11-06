@@ -124,6 +124,7 @@ public class RangeBuilder {
       Comparable<?> comparableVal = Comparables.wrap(constVal.getValue());
       TiExpr expr = cond.condition;
 
+      // ranges.subRangeSet(expr.getRange());
       if (expr instanceof GreaterThan) {
         ranges = ranges.subRangeSet(Range.greaterThan(comparableVal));
       } else if (expr instanceof GreaterEqual) {

@@ -17,6 +17,7 @@ package com.pingcap.tikv.util;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
+import com.google.common.primitives.UnsignedBytes;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.codec.CodecDataOutput;
@@ -31,19 +32,44 @@ import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.types.DataType;
 
 import java.util.List;
+import javax.annotation.Nonnull;
 
 public class KeyRangeUtils {
+  static class ByteStringCMP implements Comparable<ByteStringCMP>{
+    ByteString bytes;
+    public static ByteStringCMP of(ByteString byteString) {
+      return new ByteStringCMP(byteString);
+    }
+
+    ByteStringCMP(ByteString byteString) {
+        this.bytes = byteString;
+    }
+
+    @Override
+    public int compareTo(@Nonnull ByteStringCMP o) {
+      ByteString otherBytes = o.bytes;
+      o.bytes.toByteArray();
+      int n = Math.min(otherBytes.size(), bytes.size());
+      for (int i = 0, j = 0; i < n; i++, j++) {
+        int cmp = UnsignedBytes.compare(bytes.byteAt(i), otherBytes.byteAt(j));
+        if (cmp != 0) return cmp;
+      }
+      // one is the prefix of other then the longer is larger
+      return bytes.size() - otherBytes.size();
+    }
+  }
+
   public static Range toRange(Coprocessor.KeyRange range) {
     if (range == null || (range.getStart().isEmpty() && range.getEnd().isEmpty())) {
       return Range.all();
     }
     if (range.getStart().isEmpty()) {
-      return Range.lessThan(Comparables.wrap(range.getEnd()));
+      return Range.lessThan(ByteStringCMP.of(range.getEnd()));
     }
     if (range.getEnd().isEmpty()) {
-      return Range.atLeast(Comparables.wrap(range.getStart()));
+      return Range.atLeast(ByteStringCMP.of(range.getStart()));
     }
-    return Range.closedOpen(Comparables.wrap(range.getStart()), Comparables.wrap(range.getEnd()));
+    return Range.closedOpen(ByteStringCMP.of(range.getStart()), ByteStringCMP.of(range.getEnd()));
   }
 
   public static List<Coprocessor.KeyRange> split(Coprocessor.KeyRange range, int splitFactor) {

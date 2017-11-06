@@ -15,6 +15,7 @@
 
 package com.pingcap.tikv.expression;
 
+import com.google.common.collect.Range;
 import com.pingcap.tidb.tipb.Expr;
 import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.types.DataType;
@@ -31,4 +32,6 @@ public interface TiExpr extends Serializable {
 
   // TODO: Make it visitor
   TiExpr bind(TiTableInfo table);
+
+//  Range getRange();
 }
