@@ -122,7 +122,7 @@ public class TiSession implements AutoCloseable {
     return channel;
   }
 
-  public synchronized ExecutorService getThreadPoolForIndexScan() {
+  public ExecutorService getThreadPoolForIndexScan() {
     ExecutorService res = indexScanThreadPool;
     if (res == null) {
       synchronized (this) {
@@ -137,7 +137,7 @@ public class TiSession implements AutoCloseable {
     return res;
   }
 
-  public synchronized ExecutorService getThreadPoolForTableScan() {
+  public ExecutorService getThreadPoolForTableScan() {
     ExecutorService res = tableScanThreadPool;
     if (res == null) {
       synchronized (this) {

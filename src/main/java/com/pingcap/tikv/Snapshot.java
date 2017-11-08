@@ -78,7 +78,7 @@ public class Snapshot {
   /**
    * Issue a table read request
    *
-   * @param selReq select request for coporcessor
+   * @param selReq select request for coprocessor
    * @return a Iterator that contains all result from this select request.
    */
   public Iterator<Row> tableRead(TiSelectRequest selReq) {

@@ -166,11 +166,11 @@ public class TableCodec {
     }
     CodecDataOutput cdo = new CodecDataOutput();
     appendTableRecordPrefix(cdo, tableId);
-    byte [] tablePredix = cdo.toBytes();
+    byte [] tablePrefix = cdo.toBytes();
 
     int res = FastByteComparisons.compareTo(
-        tablePredix, 0, tablePredix.length,
-        rowKey, 0, Math.min(rowKey.length, tablePredix.length));
+        tablePrefix, 0, tablePrefix.length,
+        rowKey, 0, Math.min(rowKey.length, tablePrefix.length));
 
     if (res > 0) {
       outResult.status = Status.MIN;
@@ -182,7 +182,7 @@ public class TableCodec {
     }
 
     CodecDataInput cdi = new CodecDataInput(rowKey);
-    cdi.skipBytes(tablePredix.length);
+    cdi.skipBytes(tablePrefix.length);
     if (cdi.available() == 8) {
       outResult.status = Status.EQUAL;
     } else if (cdi.available() < 8) {

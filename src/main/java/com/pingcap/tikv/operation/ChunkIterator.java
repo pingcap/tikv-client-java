@@ -78,6 +78,16 @@ public abstract class ChunkIterator<T> implements Iterator<T> {
     return !eof;
   }
 
+  private boolean seekNextNonEmptyChunk() {
+    // loop until the end of chunk list or first non empty chunk
+    do {
+      chunkIndex += 1;
+    } while (chunkIndex < chunks.size() &&
+             chunks.get(chunkIndex).getRowsMetaCount() == 0);
+    // return if remaining things left
+    return chunkIndex < chunks.size();
+  }
+
   protected void advance() {
     if (eof) {
       return;
@@ -85,16 +95,12 @@ public abstract class ChunkIterator<T> implements Iterator<T> {
     Chunk c = chunks.get(chunkIndex);
     bufOffset += c.getRowsMeta(metaIndex++).getLength();
     if (metaIndex >= c.getRowsMetaCount()) {
-      // seek for next non-empty chunk
-      do {
-        chunkIndex += 1;
-      } while (chunkIndex < chunks.size() && chunks.get(chunkIndex).getRowsMetaCount() == 0);
-      if (chunkIndex >= chunks.size()) {
+      if (seekNextNonEmptyChunk()) {
+        metaIndex = 0;
+        bufOffset = 0;
+      } else {
         eof = true;
-        return;
       }
-      metaIndex = 0;
-      bufOffset = 0;
     }
   }
 }
