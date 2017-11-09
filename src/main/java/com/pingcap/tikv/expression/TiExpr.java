@@ -33,5 +33,4 @@ public interface TiExpr extends Serializable {
   // TODO: Make it visitor
   TiExpr bind(TiTableInfo table);
 
-//  Range getRange();
 }

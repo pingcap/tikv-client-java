@@ -21,7 +21,6 @@ import com.google.protobuf.ByteString;
 import com.pingcap.tikv.codec.TableCodec;
 import com.pingcap.tikv.codec.TableCodec.DecodeResult.Status;
 import com.pingcap.tikv.exception.TiClientInternalException;
-import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
 import com.pingcap.tikv.kvproto.Metapb;
 import com.pingcap.tikv.kvproto.Metapb.Store;
 import com.pingcap.tikv.region.RegionManager;
@@ -41,10 +40,10 @@ public class RangeSplitter {
   public static class RegionTask implements Serializable {
     private final TiRegion region;
     private final Metapb.Store store;
-    private final List<KeyRange> ranges;
+    private final List<com.pingcap.tikv.kvproto.Coprocessor.KeyRange> ranges;
     private final String host;
 
-    RegionTask(TiRegion region, Metapb.Store store, List<KeyRange> ranges) {
+    RegionTask(TiRegion region, Metapb.Store store, List<com.pingcap.tikv.kvproto.Coprocessor.KeyRange> ranges) {
       this.region = region;
       this.store = store;
       this.ranges = ranges;
@@ -63,7 +62,7 @@ public class RangeSplitter {
       return store;
     }
 
-    public List<KeyRange> getRanges() {
+    public List<com.pingcap.tikv.kvproto.Coprocessor.KeyRange> getRanges() {
       return ranges;
     }
 
@@ -80,7 +79,7 @@ public class RangeSplitter {
       sb.append(" end=").append(formatByteString(region.getEndKey()));
       sb.append("]");
 
-      for (KeyRange range : ranges) {
+      for (com.pingcap.tikv.kvproto.Coprocessor.KeyRange range : ranges) {
         sb.append(
             String.format(
                 "Range Start: %s, Range End: %s",
@@ -118,7 +117,7 @@ public class RangeSplitter {
       return -1;
     }
 
-    return Comparables.wrap(lhs).compareTo(Comparables.wrap(rhs));
+    return new ByteArrayComparable(lhs).compareTo(new ByteArrayComparable(rhs));
   }
 
   public List<RegionTask> splitHandlesByRegion(long tableId, TLongArrayList handles) {
@@ -131,8 +130,8 @@ public class RangeSplitter {
     while (startPos < handles.size()) {
       long curHandle = handles.get(startPos);
       byte[] key = TableCodec.encodeRowKeyWithHandleBytes(tableId, curHandle);
-      Pair<TiRegion, Metapb.Store> regionStorePair = regionManager.getRegionStorePairByKey(ByteString.copyFrom(key));
-      byte[] endKey = regionStorePair.first.getEndKey().toByteArray();
+      Pair<TiRegion, Store> regionStorePair = regionManager.getRegionStorePairByKey(ByteString.copyFrom(key));
+      byte[] endKey = regionStorePair.getFirst().getEndKey().toByteArray();
       TableCodec.tryDecodeRowKey(tableId, endKey, decodeResult);
       if (decodeResult.status == Status.MIN) {
         throw new TiClientInternalException("EndKey is less than current rowKey");
@@ -176,11 +175,11 @@ public class RangeSplitter {
       int endPos,
       long tableId,
       TLongArrayList handles,
-      Pair<TiRegion, Metapb.Store> regionStorePair,
+      Pair<TiRegion, Store> regionStorePair,
       ImmutableList.Builder<RegionTask> regionTasks) {
-    TiRegion region = regionStorePair.first;
-    Store store = regionStorePair.second;
-    List<KeyRange> newKeyRanges = new ArrayList<>(endPos - startPos + 1);
+    TiRegion region = regionStorePair.getFirst();
+    Store store = regionStorePair.getSecond();
+    List<com.pingcap.tikv.kvproto.Coprocessor.KeyRange> newKeyRanges = new ArrayList<>(endPos - startPos + 1);
     long startHandle = handles.get(startPos);
     long endHandle = startHandle;
     for (int i = startPos + 1; i < endPos; i++) {
@@ -197,10 +196,10 @@ public class RangeSplitter {
       }
     }
     newKeyRanges.add(KeyRangeUtils.makeCoprocRangeWithHandle(tableId, startHandle, endHandle + 1));
-    regionTasks.add(new RegionTask(regionStorePair.first, regionStorePair.second, newKeyRanges));
+    regionTasks.add(new RegionTask(regionStorePair.getFirst(), regionStorePair.getSecond(), newKeyRanges));
   }
 
-  public List<RegionTask> splitRangeByRegion(List<KeyRange> keyRanges, int splitFactor) {
+  public List<RegionTask> splitRangeByRegion(List<com.pingcap.tikv.kvproto.Coprocessor.KeyRange> keyRanges, int splitFactor) {
     List<RegionTask> tempResult = splitRangeByRegion(keyRanges);
     // rule out query within one region
     if (tempResult.size() <= 1) {
@@ -213,47 +212,47 @@ public class RangeSplitter {
       if (task.getRanges().size() != 1) {
         continue;
       }
-      List<KeyRange> splitRange = KeyRangeUtils.split(task.getRanges().get(0), splitFactor);
-      for (KeyRange range : splitRange) {
+      List<com.pingcap.tikv.kvproto.Coprocessor.KeyRange> splitRange = KeyRangeUtils.split(task.getRanges().get(0), splitFactor);
+      for (com.pingcap.tikv.kvproto.Coprocessor.KeyRange range : splitRange) {
         splitTasks.add(new RegionTask(task.getRegion(), task.getStore(), ImmutableList.of(range)));
       }
     }
     return splitTasks.build();
   }
 
-  public List<RegionTask> splitRangeByRegion(List<KeyRange> keyRanges) {
+  public List<RegionTask> splitRangeByRegion(List<com.pingcap.tikv.kvproto.Coprocessor.KeyRange> keyRanges) {
     if (keyRanges == null || keyRanges.size() == 0) {
       return ImmutableList.of();
     }
 
     int i = 0;
-    KeyRange range = keyRanges.get(i++);
-    Map<Long, List<KeyRange>> idToRange = new HashMap<>(); // region id to keyRange list
-    Map<Long, Pair<TiRegion, Metapb.Store>> idToRegion = new HashMap<>();
+    com.pingcap.tikv.kvproto.Coprocessor.KeyRange range = keyRanges.get(i++);
+    Map<Long, List<com.pingcap.tikv.kvproto.Coprocessor.KeyRange>> idToRange = new HashMap<>(); // region id to keyRange list
+    Map<Long, Pair<TiRegion, Store>> idToRegion = new HashMap<>();
 
     while (true) {
-      Pair<TiRegion, Metapb.Store> regionStorePair =
+      Pair<TiRegion, Store> regionStorePair =
           regionManager.getRegionStorePairByKey(range.getStart());
 
       requireNonNull(regionStorePair, "fail to get region/store pair by key" + range.getStart());
-      TiRegion region = regionStorePair.first;
+      TiRegion region = regionStorePair.getFirst();
       idToRegion.putIfAbsent(region.getId(), regionStorePair);
 
       // both key range is close-opened
       // initial range inside pd is guaranteed to be -INF to +INF
       if (rightCompareTo(range.getEnd(), region.getEndKey()) > 0) {
         // current region does not cover current end key
-        KeyRange cutRange =
-            KeyRange.newBuilder().setStart(range.getStart()).setEnd(region.getEndKey()).build();
+        com.pingcap.tikv.kvproto.Coprocessor.KeyRange cutRange =
+            com.pingcap.tikv.kvproto.Coprocessor.KeyRange.newBuilder().setStart(range.getStart()).setEnd(region.getEndKey()).build();
 
-        List<KeyRange> ranges = idToRange.computeIfAbsent(region.getId(), k -> new ArrayList<>());
+        List<com.pingcap.tikv.kvproto.Coprocessor.KeyRange> ranges = idToRange.computeIfAbsent(region.getId(), k -> new ArrayList<>());
         ranges.add(cutRange);
 
         // cut new remaining for current range
-        range = KeyRange.newBuilder().setStart(region.getEndKey()).setEnd(range.getEnd()).build();
+        range = com.pingcap.tikv.kvproto.Coprocessor.KeyRange.newBuilder().setStart(region.getEndKey()).setEnd(range.getEnd()).build();
       } else {
         // current range covered by region
-        List<KeyRange> ranges = idToRange.computeIfAbsent(region.getId(), k -> new ArrayList<>());
+        List<com.pingcap.tikv.kvproto.Coprocessor.KeyRange> ranges = idToRange.computeIfAbsent(region.getId(), k -> new ArrayList<>());
         ranges.add(range);
         if (i >= keyRanges.size()) {
           break;
@@ -263,10 +262,10 @@ public class RangeSplitter {
     }
 
     ImmutableList.Builder<RegionTask> resultBuilder = ImmutableList.builder();
-    for (Map.Entry<Long, List<KeyRange>> entry : idToRange.entrySet()) {
-      Pair<TiRegion, Metapb.Store> regionStorePair = idToRegion.get(entry.getKey());
+    for (Map.Entry<Long, List<com.pingcap.tikv.kvproto.Coprocessor.KeyRange>> entry : idToRange.entrySet()) {
+      Pair<TiRegion, Store> regionStorePair = idToRegion.get(entry.getKey());
       resultBuilder.add(
-          new RegionTask(regionStorePair.first, regionStorePair.second, entry.getValue()));
+          new RegionTask(regionStorePair.getFirst(), regionStorePair.getSecond(), entry.getValue()));
     }
     return resultBuilder.build();
   }

@@ -30,6 +30,7 @@ import com.pingcap.tikv.operation.SelectIterator;
 import com.pingcap.tikv.region.RegionStoreClient;
 import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.row.Row;
+import com.pingcap.tikv.util.ByteArrayComparable;
 import com.pingcap.tikv.util.Comparables;
 import com.pingcap.tikv.util.Pair;
 import com.pingcap.tikv.util.RangeSplitter;
@@ -70,7 +71,7 @@ public class Snapshot {
   public ByteString get(ByteString key) {
     Pair<TiRegion, Store> pair = session.getRegionManager().getRegionStorePairByKey(key);
     RegionStoreClient client =
-        RegionStoreClient.create(pair.first, pair.second, getSession());
+        RegionStoreClient.create(pair.getFirst(), pair.getSecond(), getSession());
     // TODO: Need to deal with lock error after grpc stable
     return client.get(key, timestamp.getVersion());
   }
@@ -126,22 +127,21 @@ public class Snapshot {
 
   // TODO: Need faster implementation, say concurrent version
   // Assume keys sorted
-  @SuppressWarnings("unchecked")
   public List<KvPair> batchGet(List<ByteString> keys) {
     TiRegion curRegion = null;
-    Range curKeyRange = null;
+    Range<ByteArrayComparable> curKeyRange = null;
     Pair<TiRegion, Store> lastPair;
     List<ByteString> keyBuffer = new ArrayList<>();
     List<KvPair> result = new ArrayList<>(keys.size());
     for (ByteString key : keys) {
-      if (curRegion == null || !curKeyRange.contains(Comparables.wrap(key))) {
+      if (curRegion == null || !curKeyRange.contains(new ByteArrayComparable(key))) {
         Pair<TiRegion, Store> pair = session.getRegionManager().getRegionStorePairByKey(key);
         lastPair = pair;
-        curRegion = pair.first;
+        curRegion = pair.getFirst();
         curKeyRange = makeRange(curRegion.getStartKey(), curRegion.getEndKey());
 
         try (RegionStoreClient client =
-            RegionStoreClient.create(lastPair.first, lastPair.second, getSession())) {
+            RegionStoreClient.create(lastPair.getFirst(), lastPair.getSecond(), getSession())) {
           List<KvPair> partialResult = client.batchGet(keyBuffer, timestamp.getVersion());
           // TODO: Add lock check
           result.addAll(partialResult);

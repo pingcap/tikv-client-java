@@ -47,7 +47,7 @@ public class Main {
     List<TiExpr> exprs =
         ImmutableList.of(
             new GreaterThan(TiColumnRef.create("c3", table),
-                TiConstant.create("aa"))
+                new TiConstant("aa"))
         );
 
     ScanBuilder scanBuilder = new ScanBuilder();
@@ -94,7 +94,7 @@ public class Main {
     List<TiExpr> exprs =
         ImmutableList.of(
             new GreaterThan(TiColumnRef.create("L_SHIPDATE", table),
-                TiConstant.create("1993-07-30"))
+                new TiConstant("1993-07-30"))
         );
 
     ScanBuilder scanBuilder = new ScanBuilder();
@@ -138,7 +138,7 @@ public class Main {
     List<TiExpr> exprs =
         ImmutableList.of(
             new GreaterThan(TiColumnRef.create("L_SHIPDATE", table),
-                TiConstant.create("1993-07-30"))
+                new TiConstant("1993-07-30"))
         );
 
     ScanBuilder scanBuilder = new ScanBuilder();

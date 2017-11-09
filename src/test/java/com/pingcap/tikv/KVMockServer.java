@@ -27,6 +27,7 @@ import com.pingcap.tikv.kvproto.Kvrpcpb;
 import com.pingcap.tikv.kvproto.Kvrpcpb.Context;
 import com.pingcap.tikv.kvproto.TikvGrpc;
 import com.pingcap.tikv.region.TiRegion;
+import com.pingcap.tikv.util.ByteArrayComparable;
 import com.pingcap.tikv.util.Comparables;
 import com.pingcap.tikv.util.Comparables.ComparableByteString;
 import io.grpc.Server;
@@ -47,7 +48,7 @@ public class KVMockServer extends TikvGrpc.TikvImplBase {
   private int port;
   private Server server;
   private TiRegion region;
-  private TreeMap<Comparable<ByteString>, ByteString> dataMap = new TreeMap<>();
+  private TreeMap<ByteArrayComparable, ByteString> dataMap = new TreeMap<>();
   private Map<ByteString, Integer> errorMap = new HashMap<>();
 
   // for KV error
@@ -68,11 +69,11 @@ public class KVMockServer extends TikvGrpc.TikvImplBase {
   }
 
   public void put(ByteString key, ByteString value) {
-    dataMap.put(Comparables.wrap(key), value);
+    dataMap.put(new ByteArrayComparable(key), value);
   }
 
   public void remove(ByteString key) {
-    dataMap.remove(Comparables.wrap(key));
+    dataMap.remove(new ByteArrayComparable(key));
   }
 
   public void put(String key, String value) {
@@ -113,7 +114,7 @@ public class KVMockServer extends TikvGrpc.TikvImplBase {
         setErrorInfo(errorCode, errBuilder);
         builder.setRegionError(errBuilder.build());
       } else {
-        builder.setValue(dataMap.get(Comparables.wrap(key)));
+        builder.setValue(dataMap.get(new ByteArrayComparable(key)));
       }
       responseObserver.onNext(builder.build());
       responseObserver.onCompleted();
@@ -211,7 +212,7 @@ public class KVMockServer extends TikvGrpc.TikvImplBase {
         }
         builder.setError(errBuilder);
       } else {
-        ByteString value = dataMap.get(Comparables.wrap(key));
+        ByteString value = dataMap.get(new ByteArrayComparable(key));
         builder.setValue(value);
       }
       responseObserver.onNext(builder.build());
@@ -242,7 +243,7 @@ public class KVMockServer extends TikvGrpc.TikvImplBase {
         builder.setRegionError(errBuilder.build());
       } else {
         ByteString startKey = request.getStartKey();
-        SortedMap<ComparableByteString, ByteString> kvs = dataMap.tailMap(Comparables.wrap(startKey));
+        SortedMap<ByteArrayComparable, ByteString> kvs = dataMap.tailMap(new ByteArrayComparable(startKey));
         builder.addAllPairs(
             kvs.entrySet()
                 .stream()
@@ -285,7 +286,7 @@ public class KVMockServer extends TikvGrpc.TikvImplBase {
           builder.setRegionError(errBuilder.build());
           break;
         } else {
-          ByteString value = dataMap.get(Comparables.wrap(key));
+          ByteString value = dataMap.get(new ByteArrayComparable(key));
           resultList.add(Kvrpcpb.KvPair.newBuilder().setKey(key).setValue(value).build());
         }
       }
@@ -326,12 +327,12 @@ public class KVMockServer extends TikvGrpc.TikvImplBase {
           break;
         } else {
           ByteString startKey = keyRange.getStart();
-          SortedMap<ByteString, ByteString> kvs = dataMap.tailMap(Comparables.wrap(startKey));
+          SortedMap<ByteArrayComparable, ByteString> kvs = dataMap.tailMap(new ByteArrayComparable(startKey));
           builder.addAllChunks(
               kvs.entrySet()
                   .stream()
                   .filter(Objects::nonNull)
-                  .filter(kv -> Comparables.wrap(kv.getKey()).compareTo(Comparables.wrap(keyRange.getEnd())) <= 0)
+                  .filter(kv -> kv.getKey().compareTo(new ByteArrayComparable(keyRange.getEnd())) <= 0)
                   .map(
                       kv ->
                           Chunk.newBuilder()

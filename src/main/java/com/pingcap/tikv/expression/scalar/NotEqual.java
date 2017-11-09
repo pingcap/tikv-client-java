@@ -15,11 +15,15 @@
 
 package com.pingcap.tikv.expression.scalar;
 
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
+import com.google.common.collect.TreeRangeSet;
 import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.expression.TiBinaryFunctionExpression;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.IntegerType;
+import com.pingcap.tikv.util.ByteArrayComparable;
 
 public class NotEqual extends TiBinaryFunctionExpression {
   public NotEqual(TiExpr lhs, TiExpr rhs) {
@@ -39,5 +43,14 @@ public class NotEqual extends TiBinaryFunctionExpression {
   @Override
   public DataType getType() {
     return IntegerType.DEF_BOOLEAN_TYPE;
+  }
+
+  @Override
+  public RangeSet<ByteArrayComparable> getRangeSet(RangeSet<ByteArrayComparable> ranges, ByteArrayComparable val) {
+    RangeSet<ByteArrayComparable> left = ranges.subRangeSet(Range.lessThan(val));
+    RangeSet<ByteArrayComparable> right = ranges.subRangeSet(Range.greaterThan(val));
+    ranges = TreeRangeSet.create(left);
+    ranges.addAll(right);
+    return ranges;
   }
 }

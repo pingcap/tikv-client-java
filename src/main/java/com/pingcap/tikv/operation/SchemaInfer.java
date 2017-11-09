@@ -76,7 +76,7 @@ public class SchemaInfer {
     // append aggregates if present
     if (!tiSelectRequest.getAggregatePairs().isEmpty()) {
       for (Pair<TiExpr, DataType> pair : tiSelectRequest.getAggregatePairs()) {
-        rowTrans.addProjection(new Cast(pair.second));
+        rowTrans.addProjection(new Cast(pair.getSecond()));
       }
     } else {
       for (TiExpr field : tiSelectRequest.getFields()) {

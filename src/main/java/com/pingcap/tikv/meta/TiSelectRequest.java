@@ -26,7 +26,6 @@ import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.expression.TiByItem;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiExpr;
-import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.util.KeyRangeUtils;
 import com.pingcap.tikv.util.Pair;
@@ -60,7 +59,7 @@ public class TiSelectRequest implements Serializable {
   // System like Spark has different type promotion rules
   // we need a cast to target when given
   private final List<Pair<TiExpr, DataType>> aggregates = new ArrayList<>();
-  private final List<KeyRange> keyRanges = new ArrayList<>();
+  private final List<com.pingcap.tikv.kvproto.Coprocessor.KeyRange> keyRanges = new ArrayList<>();
 
   private int limit;
   private int timeZoneOffset;
@@ -281,7 +280,7 @@ public class TiSelectRequest implements Serializable {
   }
 
   public List<TiExpr> getAggregates() {
-    return aggregates.stream().map(p -> p.first).collect(Collectors.toList());
+    return aggregates.stream().map(p -> p.getFirst()).collect(Collectors.toList());
   }
 
   public List<Pair<TiExpr, DataType>> getAggregatePairs() {
@@ -341,17 +340,17 @@ public class TiSelectRequest implements Serializable {
    *
    * @param ranges key range of scan
    */
-  public TiSelectRequest addRanges(List<KeyRange> ranges) {
-    keyRanges.addAll(requireNonNull(ranges, "KeyRange is null"));
+  public TiSelectRequest addRanges(List<com.pingcap.tikv.kvproto.Coprocessor.KeyRange> ranges) {
+    keyRanges.addAll(requireNonNull(ranges, "Pair is null"));
     return this;
   }
 
-  public void resetRanges(List<KeyRange> ranges) {
+  public void resetRanges(List<com.pingcap.tikv.kvproto.Coprocessor.KeyRange> ranges) {
     keyRanges.clear();
     keyRanges.addAll(ranges);
   }
 
-  public List<KeyRange> getRanges() {
+  public List<com.pingcap.tikv.kvproto.Coprocessor.KeyRange> getRanges() {
     return keyRanges;
   }
 

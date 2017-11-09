@@ -26,6 +26,7 @@ import com.pingcap.tikv.expression.TiFunctionExpression;
 import com.pingcap.tikv.expression.scalar.*;
 import com.pingcap.tikv.predicates.AccessConditionNormalizer.NormalizedCondition;
 import com.pingcap.tikv.types.DataType;
+import com.pingcap.tikv.util.ByteArrayComparable;
 import com.pingcap.tikv.util.Comparables;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,7 +49,7 @@ public class RangeBuilder {
       DataType rangeType) {
     List<IndexRange> irs = exprsToPoints(accessPoints, accessPointsTypes);
     if (accessConditions != null && accessConditions.size() != 0) {
-      List<Range> ranges = exprToRanges(accessConditions, rangeType);
+      List<Range<ByteArrayComparable>> ranges = exprToRanges(accessConditions, rangeType);
       return appendRanges(irs, ranges, rangeType);
     } else {
       return irs;
@@ -111,45 +112,24 @@ public class RangeBuilder {
    * @param type index column type
    * @return access ranges
    */
-  @SuppressWarnings("unchecked")
-  static List<Range> exprToRanges(List<TiExpr> accessConditions, DataType type) {
+  static List<Range<ByteArrayComparable>> exprToRanges(List<TiExpr> accessConditions, DataType type) {
     if (accessConditions == null || accessConditions.size() == 0) {
       return ImmutableList.of();
     }
-    RangeSet ranges = TreeRangeSet.create();
+    RangeSet<ByteArrayComparable> ranges = TreeRangeSet.create();
     ranges.add(Range.all());
     for (TiExpr ac : accessConditions) {
       NormalizedCondition cond = AccessConditionNormalizer.normalize(ac);
       TiConstant constVal = cond.constantVals.get(0);
-      Comparable<?> comparableVal = Comparables.wrap(constVal.getValue());
-      TiExpr expr = cond.condition;
-
-      // ranges.subRangeSet(expr.getRange());
-      if (expr instanceof GreaterThan) {
-        ranges = ranges.subRangeSet(Range.greaterThan(comparableVal));
-      } else if (expr instanceof GreaterEqual) {
-        ranges = ranges.subRangeSet(Range.atLeast(comparableVal));
-      } else if (expr instanceof LessThan) {
-        ranges = ranges.subRangeSet(Range.lessThan(comparableVal));
-      } else if (expr instanceof LessEqual) {
-        ranges = ranges.subRangeSet(Range.atMost(comparableVal));
-      } else if (expr instanceof Equal) {
-        ranges = ranges.subRangeSet(Range.singleton(comparableVal));
-      } else if (expr instanceof NotEqual) {
-        RangeSet left = ranges.subRangeSet(Range.lessThan(comparableVal));
-        RangeSet right = ranges.subRangeSet(Range.greaterThan(comparableVal));
-        ranges = TreeRangeSet.create(left);
-        ranges.addAll(right);
-      } else {
-        throw new TiClientInternalException(
-            "Unsupported conversion to Range " + expr.getClass().getSimpleName());
-      }
+      ByteArrayComparable comparableVal = constVal.getValue();
+      TiFunctionExpression expr = cond.condition;
+      ranges = expr.getRangeSet(ranges, comparableVal);
     }
     return ImmutableList.copyOf(ranges.asRanges());
   }
 
   static List<IndexRange> appendRanges(
-      List<IndexRange> indexRanges, List<Range> ranges, DataType rangeType) {
+      List<IndexRange> indexRanges, List<Range<ByteArrayComparable>> ranges, DataType rangeType) {
     requireNonNull(ranges);
     List<IndexRange> resultRanges = new ArrayList<>();
     if (indexRanges == null || indexRanges.size() == 0) {

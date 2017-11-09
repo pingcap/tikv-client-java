@@ -12,6 +12,7 @@ import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.predicates.AccessConditionNormalizer.NormalizedCondition;
 import com.pingcap.tikv.types.DataTypeFactory;
 import com.pingcap.tikv.types.Types;
+import com.pingcap.tikv.util.ByteArrayComparable;
 import org.junit.Test;
 
 public class AccessConditionNormalizerTest {
@@ -30,62 +31,64 @@ public class AccessConditionNormalizerTest {
   public void normalize() throws Exception {
     TiTableInfo table = createTable();
     // index col = c1, long
-    TiExpr cond = new Equal(TiColumnRef.create("c1", table), TiConstant.create(1));
+    TiExpr cond = new Equal(TiColumnRef.create("c1", table), new TiConstant(1));
     NormalizedCondition normCond = AccessConditionNormalizer.normalize(cond);
     assertEquals("c1", normCond.columnRef.getName());
-    assertEquals(1, normCond.constantVals.get(0).getValue());
+    assertEquals(new ByteArrayComparable(1), normCond.constantVals.get(0).getValue());
     assertTrue(normCond.condition instanceof Equal);
 
-    cond = new LessEqual(TiConstant.create(1), TiColumnRef.create("c1", table));
+    cond = new LessEqual(new TiConstant(1), TiColumnRef.create("c1", table));
     normCond = AccessConditionNormalizer.normalize(cond);
     assertEquals("c1", normCond.columnRef.getName());
-    assertEquals(1, normCond.constantVals.get(0).getValue());
+    assertEquals(new ByteArrayComparable(1), normCond.constantVals.get(0).getValue());
     assertTrue(normCond.condition instanceof GreaterEqual);
 
-    cond = new LessThan(TiConstant.create(1), TiColumnRef.create("c1", table));
+    cond = new LessThan(new TiConstant(1), TiColumnRef.create("c1", table));
     normCond = AccessConditionNormalizer.normalize(cond);
     assertEquals("c1", normCond.columnRef.getName());
-    assertEquals(1, normCond.constantVals.get(0).getValue());
+    assertEquals(new ByteArrayComparable(1), normCond.constantVals.get(0).getValue());
     assertTrue(normCond.condition instanceof GreaterThan);
 
-    cond = new GreaterEqual(TiConstant.create(1), TiColumnRef.create("c1", table));
+    cond = new GreaterEqual(new TiConstant(1), TiColumnRef.create("c1", table));
     normCond = AccessConditionNormalizer.normalize(cond);
     assertEquals("c1", normCond.columnRef.getName());
-    assertEquals(1, normCond.constantVals.get(0).getValue());
+    assertEquals(new ByteArrayComparable(1), normCond.constantVals.get(0).getValue());
     assertTrue(normCond.condition instanceof LessEqual);
 
-    cond = new GreaterThan(TiConstant.create(1), TiColumnRef.create("c1", table));
+    cond = new GreaterThan(new TiConstant(1), TiColumnRef.create("c1", table));
     normCond = AccessConditionNormalizer.normalize(cond);
     assertEquals("c1", normCond.columnRef.getName());
-    assertEquals(1, normCond.constantVals.get(0).getValue());
+    assertEquals(new ByteArrayComparable(1), normCond.constantVals.get(0).getValue());
     assertTrue(normCond.condition instanceof LessThan);
 
-    cond = new Equal(TiConstant.create(1), TiColumnRef.create("c1", table));
+    cond = new Equal(new TiConstant(1), TiColumnRef.create("c1", table));
     normCond = AccessConditionNormalizer.normalize(cond);
     assertEquals("c1", normCond.columnRef.getName());
-    assertEquals(1, normCond.constantVals.get(0).getValue());
+    assertEquals(new ByteArrayComparable(1), normCond.constantVals.get(0).getValue());
     assertTrue(normCond.condition instanceof Equal);
 
-    cond = new NotEqual(TiConstant.create(1), TiColumnRef.create("c1", table));
+    cond = new NotEqual(new TiConstant(1), TiColumnRef.create("c1", table));
     normCond = AccessConditionNormalizer.normalize(cond);
     assertEquals("c1", normCond.columnRef.getName());
-    assertEquals(1, normCond.constantVals.get(0).getValue());
-    assertTrue(normCond.condition instanceof NotEqual);
 
-    cond = new LessEqual(TiColumnRef.create("c1", table), TiConstant.create(1));
+    assertEquals(new ByteArrayComparable(1), normCond.constantVals.get(0).getValue());
+    assertTrue(normCond.condition instanceof NotEqual);
+    cond = new LessEqual(TiColumnRef.create("c1", table), new TiConstant(1));
     normCond = AccessConditionNormalizer.normalize(cond);
     assertEquals("c1", normCond.columnRef.getName());
-    assertEquals(1, normCond.constantVals.get(0).getValue());
+
+    assertEquals(new ByteArrayComparable(1), normCond.constantVals.get(0).getValue());
     assertTrue(normCond.condition instanceof LessEqual);
 
-    cond = new In(TiColumnRef.create("c1", table), TiConstant.create(1), TiConstant.create(2));
+    cond = new In(TiColumnRef.create("c1", table), new TiConstant(1), new TiConstant(2));
     normCond = AccessConditionNormalizer.normalize(cond);
     assertEquals("c1", normCond.columnRef.getName());
-    assertEquals(1, normCond.constantVals.get(0).getValue());
-    assertEquals(2, normCond.constantVals.get(1).getValue());
+
+    assertEquals(new ByteArrayComparable(1), normCond.constantVals.get(0).getValue());
+    assertEquals(new ByteArrayComparable(2), normCond.constantVals.get(0).getValue());
     assertTrue(normCond.condition instanceof In);
 
-    cond = new In(TiConstant.create(1), TiColumnRef.create("c1", table), TiConstant.create(2));
+    cond = new In(new TiConstant(1), TiColumnRef.create("c1", table), new TiConstant(2));
     try {
       AccessConditionNormalizer.normalize(cond);
       fail();
@@ -95,8 +98,8 @@ public class AccessConditionNormalizerTest {
 
     cond =
         new Equal(
-            new Divide(TiColumnRef.create("c1", table), TiConstant.create(1)),
-            TiConstant.create(1));
+            new Divide(TiColumnRef.create("c1", table), new TiConstant(1)),
+            new TiConstant(1));
     try {
       AccessConditionNormalizer.normalize(cond);
       fail();

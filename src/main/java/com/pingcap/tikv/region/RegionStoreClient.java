@@ -31,7 +31,6 @@ import com.pingcap.tikv.exception.RegionException;
 import com.pingcap.tikv.exception.SelectException;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.kvproto.Coprocessor;
-import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
 import com.pingcap.tikv.kvproto.Kvrpcpb.BatchGetRequest;
 import com.pingcap.tikv.kvproto.Kvrpcpb.BatchGetResponse;
 import com.pingcap.tikv.kvproto.Kvrpcpb.Context;
@@ -169,7 +168,7 @@ public class RegionStoreClient extends AbstractGRPCClient<TikvBlockingStub, Tikv
     return resp.getPairsList();
   }
 
-  public SelectResponse coprocess(SelectRequest req, List<KeyRange> ranges) {
+  public SelectResponse coprocess(SelectRequest req, List<Coprocessor.KeyRange> ranges) {
     Supplier<Coprocessor.Request> reqToSend = () ->
         Coprocessor.Request.newBuilder()
             .setContext(region.getContext())
@@ -256,12 +255,12 @@ public class RegionStoreClient extends AbstractGRPCClient<TikvBlockingStub, Tikv
   public void onStoreNotMatch() {
     Pair<TiRegion, Store> regionStorePair =
         regionManager.getRegionStorePairByRegionId(region.getId());
-    Store store = regionStorePair.second;
+    Store store = regionStorePair.getSecond();
     String addressStr = store.getAddress();
     ManagedChannel channel = getSession().getChannel(addressStr);
     blockingStub = TikvGrpc.newBlockingStub(channel);
     asyncStub = TikvGrpc.newStub(channel);
-    region = regionStorePair.first;
+    region = regionStorePair.getFirst();
     region.switchPeer(store.getId());
   }
 }

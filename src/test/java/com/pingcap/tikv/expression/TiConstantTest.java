@@ -33,7 +33,7 @@ public class TiConstantTest {
   public void greaterThanTest() throws Exception {
     ObjectMapper mapper = new ObjectMapper();
     TiTableInfo tableInfo = mapper.readValue(TiTableInfoTest.tableJson, TiTableInfo.class);
-    GreaterThan g = new GreaterThan(TiColumnRef.create("c1", tableInfo), TiConstant.create(1.12));
+    GreaterThan g = new GreaterThan(TiColumnRef.create("c1", tableInfo), new TiConstant(1.12));
     Expr ge = g.toProto();
     assertEquals(2, ge.getChildrenCount());
     double expected = RealType.readDouble(new CodecDataInput(ge.getChildren(1).getVal()));

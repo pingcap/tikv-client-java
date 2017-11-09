@@ -8,11 +8,11 @@ import com.google.protobuf.ByteString;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.codec.TableCodec;
 import com.pingcap.tikv.codec.TableCodec.DecodeResult.Status;
-import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
 import com.pingcap.tikv.kvproto.Kvrpcpb.CommandPri;
 import com.pingcap.tikv.kvproto.Kvrpcpb.IsolationLevel;
 import com.pingcap.tikv.kvproto.Metapb;
 import com.pingcap.tikv.kvproto.Metapb.Peer;
+import com.pingcap.tikv.kvproto.Metapb.Store;
 import com.pingcap.tikv.region.RegionManager;
 import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.types.IntegerType;
@@ -24,9 +24,9 @@ import org.junit.Test;
 
 public class RangeSplitterTest {
   static class MockRegionManager extends RegionManager {
-    private final Map<KeyRange, TiRegion> mockRegionMap;
+    private final Map<com.pingcap.tikv.kvproto.Coprocessor.KeyRange, TiRegion> mockRegionMap;
 
-    public MockRegionManager(List<KeyRange> ranges) {
+    public MockRegionManager(List<com.pingcap.tikv.kvproto.Coprocessor.KeyRange> ranges) {
       super(null);
       mockRegionMap =
           ranges
@@ -35,9 +35,9 @@ public class RangeSplitterTest {
     }
 
     @Override
-    public Pair<TiRegion, Metapb.Store> getRegionStorePairByKey(ByteString key) {
-      for (Map.Entry<KeyRange, TiRegion> entry : mockRegionMap.entrySet()) {
-        if (KeyRangeUtils.toRange(entry.getKey()).contains(Comparables.wrap(key))) {
+    public Pair<TiRegion, Store> getRegionStorePairByKey(ByteString key) {
+      for (Map.Entry<com.pingcap.tikv.kvproto.Coprocessor.KeyRange, TiRegion> entry : mockRegionMap.entrySet()) {
+        if (KeyRangeUtils.toRange(entry.getKey()).contains(new ByteArrayComparable(key))) {
           TiRegion region = entry.getValue();
           return Pair.create(region, Metapb.Store.newBuilder().setId(region.getId()).build());
         }
@@ -46,7 +46,7 @@ public class RangeSplitterTest {
     }
   }
 
-  private static KeyRange keyRange(Long s, Long e) {
+  private static com.pingcap.tikv.kvproto.Coprocessor.KeyRange keyRange(Long s, Long e) {
     ByteString sKey = ByteString.EMPTY;
     ByteString eKey = ByteString.EMPTY;
     if (s != null) {
@@ -61,7 +61,7 @@ public class RangeSplitterTest {
       eKey = cdo.toByteString();
     }
 
-    return KeyRange.newBuilder().setStart(sKey).setEnd(eKey).build();
+    return com.pingcap.tikv.kvproto.Coprocessor.KeyRange.newBuilder().setStart(sKey).setEnd(eKey).build();
   }
 
   private static ByteString shiftByStatus(ByteString v, Status s) {
@@ -77,11 +77,11 @@ public class RangeSplitterTest {
     }
   }
 
-  private static KeyRange keyRangeByHandle(long tableId, Long s, Status ss, Long e, Status es) {
+  private static com.pingcap.tikv.kvproto.Coprocessor.KeyRange keyRangeByHandle(long tableId, Long s, Status ss, Long e, Status es) {
     ByteString sKey = shiftByStatus(handleToByteString(tableId, s), ss);
     ByteString eKey = shiftByStatus(handleToByteString(tableId, e), es);
 
-    return KeyRange.newBuilder().setStart(sKey).setEnd(eKey).build();
+    return com.pingcap.tikv.kvproto.Coprocessor.KeyRange.newBuilder().setStart(sKey).setEnd(eKey).build();
   }
 
   private static ByteString handleToByteString(long tableId, Long k) {
@@ -91,19 +91,19 @@ public class RangeSplitterTest {
     return ByteString.EMPTY;
   }
 
-  private static KeyRange keyRangeByHandle(long tableId, Long s, Long e) {
+  private static com.pingcap.tikv.kvproto.Coprocessor.KeyRange keyRangeByHandle(long tableId, Long s, Long e) {
     return keyRangeByHandle(tableId, s, Status.EQUAL, e, Status.EQUAL);
   }
 
-  private static KeyRange keyRangeByHandle(long tableId, Long s, ByteString regionEndKey) {
-    return KeyRange
+  private static com.pingcap.tikv.kvproto.Coprocessor.KeyRange keyRangeByHandle(long tableId, Long s, ByteString regionEndKey) {
+    return com.pingcap.tikv.kvproto.Coprocessor.KeyRange
         .newBuilder()
         .setStart(handleToByteString(tableId, s))
         .setEnd(regionEndKey)
         .build();
   }
 
-  private static TiRegion region(long id, KeyRange range) {
+  private static TiRegion region(long id, com.pingcap.tikv.kvproto.Coprocessor.KeyRange range) {
     return new TiRegion(
         Metapb.Region.newBuilder()
             .setId(id)

@@ -39,21 +39,16 @@ public class ComparablesTest {
     ByteString lhsBS = ByteString.copyFrom(lhs);
     ByteString rhsBS = ByteString.copyFrom(rhs);
 
-    Comparable lhsComp = Comparables.wrap(lhsBS);
-    Comparable rhsComp = Comparables.wrap(rhsBS);
-
-    assertTrue(tester.apply(lhsComp.compareTo(rhsComp)));
-
-    lhsComp = Comparables.wrap(lhs);
-    rhsComp = Comparables.wrap(rhs);
+    ByteArrayComparable lhsComp = new ByteArrayComparable(lhsBS);
+    ByteArrayComparable rhsComp = new ByteArrayComparable(rhsBS);
 
     assertTrue(tester.apply(lhsComp.compareTo(rhsComp)));
   }
 
   private void testComparable(Object lhs, Object rhs, Function<Integer, Boolean> tester) {
-    Comparable lhsComp = Comparables.wrap(lhs);
-    Comparable rhsComp = Comparables.wrap(rhs);
+//    Comparable lhsComp = new ByteArrayComparable(lhs);
+//    Comparable rhsComp = Comparables.wrap(rhs);
 
-    assertTrue(tester.apply(lhsComp.compareTo(rhsComp)));
+//    assertTrue(tester.apply(lhsComp.compareTo(rhsComp)));
   }
 }

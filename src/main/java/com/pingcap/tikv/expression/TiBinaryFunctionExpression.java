@@ -18,6 +18,9 @@ package com.pingcap.tikv.expression;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.collect.Range;
+import com.pingcap.tikv.exception.TiClientInternalException;
+
 public abstract class TiBinaryFunctionExpression extends TiFunctionExpression {
   protected TiBinaryFunctionExpression(TiExpr lhs, TiExpr rhs) {
     super(lhs, rhs);
@@ -35,4 +38,5 @@ public abstract class TiBinaryFunctionExpression extends TiFunctionExpression {
   public String toString() {
     return String.format("(%s %s %s)", getArg(0), getName(), getArg(1));
   }
+
 }
