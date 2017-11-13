@@ -28,7 +28,7 @@ import static com.pingcap.tikv.types.Types.*;
 import static java.util.Objects.requireNonNull;
 
 /**
- * The ScalarFunction Signature inferrer.
+ * The TiScalarFunction Signature inferrer.
  * <p>
  * Used to infer a target signature for the given DataType and ExprType
  */
