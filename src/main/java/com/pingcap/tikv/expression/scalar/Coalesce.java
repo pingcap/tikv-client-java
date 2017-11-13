@@ -19,7 +19,7 @@ import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.types.DataType;
 
-public class Coalesce extends ScalarFunction {
+public class Coalesce extends TiScalarFunction {
   public Coalesce(TiExpr... args) {
     super(args);
   }

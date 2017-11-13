@@ -18,7 +18,7 @@ package com.pingcap.tikv.expression.scalar;
 import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.expression.TiExpr;
 
-public class Divide extends ScalarFunction {
+public class Divide extends TiScalarFunction {
   public Divide(TiExpr lhs, TiExpr rhs) {
     super(lhs, rhs);
   }

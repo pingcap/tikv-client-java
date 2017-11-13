@@ -18,7 +18,7 @@ package com.pingcap.tikv.expression.scalar;
 import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.expression.TiExpr;
 
-public class Plus extends ScalarFunction {
+public class Plus extends TiScalarFunction {
   public Plus(TiExpr lhs, TiExpr rhs) {
     super(lhs, rhs);
   }

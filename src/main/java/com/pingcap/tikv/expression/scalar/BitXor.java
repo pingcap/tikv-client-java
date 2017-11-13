@@ -20,7 +20,7 @@ import com.pingcap.tidb.tipb.ScalarFuncSig;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.types.DataType;
 
-public class BitXor extends ScalarFunction {
+public class BitXor extends TiScalarFunction {
   public BitXor(TiExpr lhs, TiExpr rhs) {
     super(lhs, rhs);
   }

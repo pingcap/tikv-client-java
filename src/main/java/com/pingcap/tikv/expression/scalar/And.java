@@ -23,7 +23,7 @@ import com.pingcap.tikv.types.IntegerType;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-public class And extends ScalarFunction {
+public class And extends TiScalarFunction {
   public And(TiExpr lhs, TiExpr rhs) {
     super(lhs, rhs);
   }

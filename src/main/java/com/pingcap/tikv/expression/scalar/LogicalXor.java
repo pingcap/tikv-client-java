@@ -23,7 +23,7 @@ import com.pingcap.tikv.types.IntegerType;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-public class LogicalXor extends ScalarFunction {
+public class LogicalXor extends TiScalarFunction {
   public LogicalXor(TiExpr lhs, TiExpr rhs) {
     super(lhs, rhs);
   }

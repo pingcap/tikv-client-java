@@ -20,7 +20,7 @@ import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.IntegerType;
 
-public class Equal extends ScalarFunction {
+public class Equal extends TiScalarFunction {
   public Equal(TiExpr lhs, TiExpr rhs) {
     super(lhs, rhs);
   }

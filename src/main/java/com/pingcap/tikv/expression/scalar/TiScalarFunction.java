@@ -29,8 +29,8 @@ import com.pingcap.tikv.util.ScalarFuncInfer;
  * Scalar function
  * Used in DAG mode
  */
-public abstract class ScalarFunction extends TiFunctionExpression {
-  ScalarFunction(TiExpr... args) {
+public abstract class TiScalarFunction extends TiFunctionExpression {
+  TiScalarFunction(TiExpr... args) {
     super(args);
   }
 

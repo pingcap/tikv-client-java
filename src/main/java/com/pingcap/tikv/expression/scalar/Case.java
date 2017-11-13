@@ -19,7 +19,7 @@ import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.types.DataType;
 
-public class Case extends ScalarFunction {
+public class Case extends TiScalarFunction {
   public Case(TiExpr... arg) {
     super(arg);
   }

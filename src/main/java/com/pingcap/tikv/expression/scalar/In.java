@@ -23,7 +23,7 @@ import com.pingcap.tikv.types.IntegerType;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
-public class In extends ScalarFunction {
+public class In extends TiScalarFunction {
   public In(TiExpr... args) {
     super(args);
   }

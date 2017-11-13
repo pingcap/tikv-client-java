@@ -20,7 +20,7 @@ import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.IntegerType;
 
-public class IsNull extends ScalarFunction {
+public class IsNull extends TiScalarFunction {
   public IsNull(TiExpr arg) {
     super(arg);
   }

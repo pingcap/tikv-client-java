@@ -21,7 +21,7 @@ import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.IntegerType;
 
-public class BitOr extends ScalarFunction {
+public class BitOr extends TiScalarFunction {
   public BitOr(TiExpr lhs, TiExpr rhs) {
     super(lhs, rhs);
   }
