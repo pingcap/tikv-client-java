@@ -15,11 +15,8 @@
 
 package com.pingcap.tikv.operation;
 
-import com.pingcap.tidb.tipb.DAGRequest;
-import com.pingcap.tikv.util.RangeSplitter.RegionTask;
-
-import com.google.protobuf.ByteString;
 import com.pingcap.tidb.tipb.Chunk;
+import com.pingcap.tidb.tipb.DAGRequest;
 import com.pingcap.tidb.tipb.SelectResponse;
 import com.pingcap.tikv.TiSession;
 import com.pingcap.tikv.codec.CodecDataInput;
@@ -27,7 +24,6 @@ import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.kvproto.Coprocessor;
 import com.pingcap.tikv.kvproto.Metapb;
 import com.pingcap.tikv.meta.TiDAGRequest;
-import com.pingcap.tikv.region.RegionManager;
 import com.pingcap.tikv.region.RegionStoreClient;
 import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.row.Row;
@@ -36,7 +32,7 @@ import com.pingcap.tikv.row.RowReaderFactory;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.DataTypeFactory;
 import com.pingcap.tikv.types.Types;
-import com.pingcap.tikv.util.RangeSplitter;
+import com.pingcap.tikv.util.RangeSplitter.RegionTask;
 
 import java.util.Iterator;
 import java.util.List;
@@ -44,49 +40,53 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.ExecutorCompletionService;
 
-import static com.pingcap.tikv.util.RangeSplitter.newSplitter;
-
-public abstract class DAGIterator<T, RawT> implements Iterator<T> {
+public abstract class DAGIterator<T> implements Iterator<T> {
   protected final TiSession session;
   private final List<RegionTask> regionTasks;
   private DAGRequest dagRequest;
   private static final DataType[] handleTypes =
       new DataType[]{DataTypeFactory.of(Types.TYPE_LONG)};
-  private final ExecutorCompletionService<RawT> completionService;
-
-
-  private RowReader rowReader;
+  protected final ExecutorCompletionService<Iterator<SelectResponse>> completionService;
+  protected RowReader rowReader;
   private CodecDataInput dataInput;
   private boolean eof = false;
   private int taskIndex;
   private int chunkIndex;
   private List<Chunk> chunkList;
-  private SchemaInfer schemaInfer;
+  protected SchemaInfer schemaInfer;
+  protected Iterator<SelectResponse> responseIterator;
 
-  public DAGIterator(DAGRequest req,
-                     List<RegionTask> regionTasks,
-                     TiSession session) {
+  private DAGIterator(DAGRequest req,
+                      List<RegionTask> regionTasks,
+                      TiSession session,
+                      SchemaInfer infer) {
     this.dagRequest = req;
     this.session = session;
     this.regionTasks = regionTasks;
-    this.schemaInfer = SchemaInfer.create(req);
+    this.schemaInfer = infer;
+    this.completionService = new ExecutorCompletionService<>(session.getThreadPoolForTableScan());
+    submitTasks();
   }
 
-  public static DAGIterator<Row, ByteString> getRowIterator(TiDAGRequest req,
-                                                            List<RegionTask> regionTasks,
-                                                            TiSession session) {
-    return new DAGIterator<Row, ByteString>(req.buildScan(false),
+  private void submitTasks() {
+    for (RegionTask task : regionTasks) {
+      completionService.submit(() -> processByStreaming(task));
+    }
+  }
+
+  public static DAGIterator<Row> getRowIterator(TiDAGRequest req,
+                                                List<RegionTask> regionTasks,
+                                                TiSession session) {
+    return new DAGIterator<Row>(
+        req.buildScan(false),
         regionTasks,
         session,
-        false) {
+        SchemaInfer.create(req)
+    ) {
       @Override
       public Row next() {
         if (hasNext()) {
-          if (indexScan) {
-            return rowReader.readRow(handleTypes);
-          } else {
-            return rowReader.readRow(this.schemaInfer.getTypes().toArray(new DataType[0]));
-          }
+          return rowReader.readRow(schemaInfer.getTypes().toArray(new DataType[0]));
         } else {
           throw new NoSuchElementException();
         }
@@ -94,9 +94,24 @@ public abstract class DAGIterator<T, RawT> implements Iterator<T> {
     };
   }
 
-  public DAGIterator(TiDAGRequest req, TiSession session, RegionManager rm,
-                     boolean indexScan) {
-    this(req, newSplitter(rm).splitRangeByRegion(req.getRanges()), session, indexScan);
+  public static DAGIterator<Long> getHandleIterator(TiDAGRequest req,
+                                                    List<RegionTask> regionTasks,
+                                                    TiSession session) {
+    return new DAGIterator<Long>(
+        req.buildScan(true),
+        regionTasks,
+        session,
+        SchemaInfer.create(req)
+    ) {
+      @Override
+      public Long next() {
+        if (hasNext()) {
+          return rowReader.readRow(handleTypes).getLong(0);
+        } else {
+          throw new NoSuchElementException();
+        }
+      }
+    };
   }
 
   @Override
@@ -113,8 +128,8 @@ public abstract class DAGIterator<T, RawT> implements Iterator<T> {
       if (tryAdvanceChunkIndex()) {
         createDataInputReader();
       }
-      // If not, check next region
-      else if (!readNextRegionChunks()) {
+      // If not, check next response/region
+      else if (!advanceNextResponse() && !readNextRegionChunks()) {
         return false;
       }
     }
@@ -133,19 +148,20 @@ public abstract class DAGIterator<T, RawT> implements Iterator<T> {
   }
 
   private boolean readNextRegionChunks() {
-    if (regionTasks == null || taskIndex >= regionTasks.size()) {
+    if (eof ||
+        regionTasks == null ||
+        taskIndex >= regionTasks.size()) {
       return false;
     }
 
-    RangeSplitter.RegionTask regionTask = regionTasks.get(taskIndex++);
-    List<Chunk> chunks = createClientAndSendReq(regionTask, this.dagRequest);
-    if (chunks == null || chunks.isEmpty()) {
-      return false;
+    try {
+      responseIterator = completionService.take().get();
+      taskIndex++;
+    } catch (Exception e) {
+      throw new TiClientInternalException("Error reading region:", e);
     }
-    chunkList = chunks;
-    chunkIndex = 0;
-    createDataInputReader();
-    return true;
+
+    return responseIterator != null && advanceNextResponse();
   }
 
   private void createDataInputReader() {
@@ -158,8 +174,23 @@ public abstract class DAGIterator<T, RawT> implements Iterator<T> {
     rowReader = RowReaderFactory.createRowReader(dataInput);
   }
 
-  private List<Chunk> createClientAndSendReq(RangeSplitter.RegionTask regionTask,
-                                             TiDAGRequest req) {
+  private boolean hasMoreResponse() {
+    return responseIterator != null && responseIterator.hasNext();
+  }
+
+  private boolean advanceNextResponse() {
+    if (!hasMoreResponse()) return false;
+
+    chunkList = responseIterator.next().getChunksList();
+    if (null == chunkList || chunkList.isEmpty()) {
+      return false;
+    }
+    chunkIndex = 0;
+    createDataInputReader();
+    return true;
+  }
+
+  private Iterator<SelectResponse> processByStreaming(RegionTask regionTask) {
     List<Coprocessor.KeyRange> ranges = regionTask.getRanges();
     TiRegion region = regionTask.getRegion();
     Metapb.Store store = regionTask.getStore();
@@ -167,13 +198,12 @@ public abstract class DAGIterator<T, RawT> implements Iterator<T> {
     RegionStoreClient client;
     try {
       client = RegionStoreClient.create(region, store, session);
-      SelectResponse resp = client.coprocess(req.buildScan(indexScan), ranges);
-      // if resp is null, then indicates eof.
-      if (resp == null) {
+      Iterator<SelectResponse> responseIterator = client.coprocessStreaming(dagRequest, ranges);
+      if (null == responseIterator) {
         eof = true;
         return null;
       }
-      return resp.getChunksList();
+      return responseIterator;
     } catch (Exception e) {
       throw new TiClientInternalException("Error Closing Store client.", e);
     }

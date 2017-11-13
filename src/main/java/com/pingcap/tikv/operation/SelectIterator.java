@@ -59,7 +59,7 @@ public abstract class SelectIterator<T, RawT> implements Iterator<T> {
     return new SelectIterator<Row, ByteString>(req.buildScan(false),
                                                regionTasks,
                                                session,
-                                               SchemaInfer.create(req),
+                                               SchemaInfer.create(null),
                                                (chunks) -> ChunkIterator.getRawBytesChunkIterator(chunks)) {
       @Override
       public Row next() {
@@ -80,7 +80,7 @@ public abstract class SelectIterator<T, RawT> implements Iterator<T> {
     return new SelectIterator<Long, Long>(req.buildScan(true),
                                           regionTasks,
                                           session,
-                                          SchemaInfer.create(req),
+                                          SchemaInfer.create(null),
                                           (chunks) -> ChunkIterator.getHandleChunkIterator(chunks)) {
       @Override
       public Long next() {

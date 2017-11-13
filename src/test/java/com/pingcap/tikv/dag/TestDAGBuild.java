@@ -1,3 +1,18 @@
+/*
+ * Copyright 2017 PingCAP, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.pingcap.tikv.dag;
 
 import com.google.protobuf.ByteString;
@@ -91,7 +106,7 @@ public class TestDAGBuild {
     dagRequest.addAggregate(new Count(custKey));
     dagRequest.addGroupByItem(TiByItem.create(TiColumnRef.create("c_mktsegment"), false));
     dagRequest.resolve();
-    Iterator<Row> iterator = snapshot.select(dagRequest);
+    Iterator<Row> iterator = snapshot.tableRead(dagRequest);
     Assert.assertTrue(iterator.hasNext());
   }
 
@@ -103,7 +118,7 @@ public class TestDAGBuild {
     dagRequest.addRequiredColumn(mktsegment);
     dagRequest.setStartTs(session.getTimestamp().getVersion());
     dagRequest.resolve();
-    Iterator<Row> iterator = snapshot.select(dagRequest);
+    Iterator<Row> iterator = snapshot.tableRead(dagRequest);
     Assert.assertTrue(iterator.hasNext());
   }
 
@@ -117,7 +132,7 @@ public class TestDAGBuild {
     dagRequest.addGroupByItem(TiByItem.create(TiColumnRef.create("c_name"), false));
     dagRequest.addGroupByItem(TiByItem.create(TiColumnRef.create("c_mktsegment"), false));
     dagRequest.resolve();
-    Iterator<Row> iterator = snapshot.select(dagRequest);
+    Iterator<Row> iterator = snapshot.tableRead(dagRequest);
     Assert.assertTrue(iterator.hasNext());
   }
 
@@ -129,9 +144,8 @@ public class TestDAGBuild {
     dagRequest.setStartTs(session.getTimestamp().getVersion());
     dagRequest.addAggregate(new Count(TiColumnRef.create("c_custkey")));
     dagRequest.resolve();
-    Iterator<Row> iterator = snapshot.select(dagRequest);
+    Iterator<Row> iterator = snapshot.tableRead(dagRequest);
     Assert.assertTrue(iterator.hasNext());
-//    showIterRes(iterator);
   }
 
   @Test
@@ -143,7 +157,7 @@ public class TestDAGBuild {
     dagRequest.setStartTs(session.getTimestamp().getVersion());
     dagRequest.addWhere(new Equal(TiConstant.create(3), TiConstant.create(1)));
     dagRequest.resolve();
-    Iterator<Row> iterator = snapshot.select(dagRequest);
+    Iterator<Row> iterator = snapshot.tableRead(dagRequest);
     Assert.assertTrue(!iterator.hasNext());
   }
 
@@ -156,7 +170,7 @@ public class TestDAGBuild {
     dagRequest.setStartTs(session.getTimestamp().getVersion());
     dagRequest.addWhere(new Equal(TiConstant.create(1), TiConstant.create(1)));
     dagRequest.resolve();
-    Iterator<Row> iterator = snapshot.select(dagRequest);
+    Iterator<Row> iterator = snapshot.tableRead(dagRequest);
     Assert.assertTrue(iterator.hasNext());
   }
 
@@ -169,7 +183,7 @@ public class TestDAGBuild {
     dagRequest.setStartTs(session.getTimestamp().getVersion());
     dagRequest.addWhere(new Equal(new Plus(TiConstant.create(1), custKey), TiConstant.create(4)));
     dagRequest.resolve();
-    Iterator<Row> iterator = snapshot.select(dagRequest);
+    Iterator<Row> iterator = snapshot.tableRead(dagRequest);
     Assert.assertTrue(iterator.hasNext());
   }
 
@@ -185,7 +199,7 @@ public class TestDAGBuild {
     dagRequest.setStartTs(session.getTimestamp().getVersion());
     dagRequest.setLimit(65);
     dagRequest.resolve();
-    Iterator<Row> iterator = snapshot.select(dagRequest);
+    Iterator<Row> iterator = snapshot.tableRead(dagRequest);
     Assert.assertTrue(iterator.hasNext());
   }
 
