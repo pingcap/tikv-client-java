@@ -36,10 +36,6 @@ public class If extends TiScalarFunction {
   }
 
   @Override
-  protected void validateArguments(TiExpr... args) throws RuntimeException {
-  }
-
-  @Override
   public DataType getType() {
     return IntegerType.DEF_BOOLEAN_TYPE;
   }
