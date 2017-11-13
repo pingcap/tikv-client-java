@@ -15,15 +15,16 @@
 
 package com.pingcap.tikv;
 
-import com.google.common.collect.ImmutableList;
+import static com.pingcap.tikv.util.KeyRangeUtils.makeRange;
+
 import com.google.common.collect.Range;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.kvproto.Kvrpcpb.KvPair;
 import com.pingcap.tikv.kvproto.Metapb.Store;
-import com.pingcap.tikv.meta.TiDAGRequest;
+import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.meta.TiTimestamp;
-import com.pingcap.tikv.operation.DAGIterator;
+import com.pingcap.tikv.operation.SelectIterator;
 import com.pingcap.tikv.operation.IndexScanIterator;
 import com.pingcap.tikv.operation.ScanIterator;
 import com.pingcap.tikv.region.RegionStoreClient;
@@ -31,6 +32,7 @@ import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.util.Comparables;
 import com.pingcap.tikv.util.Pair;
+import com.pingcap.tikv.util.RangeSplitter;
 import com.pingcap.tikv.util.RangeSplitter.RegionTask;
 
 import java.util.ArrayList;
@@ -77,44 +79,47 @@ public class Snapshot {
   }
 
   /**
-   * Issue a select request to TiKV and PD.
+   * Issue a table read request
    *
-   * @param dagRequest is DAGRequest.
+   * @param selReq select request for coprocessor
    * @return a Iterator that contains all result from this select request.
    */
-  public Iterator<Row> select(TiDAGRequest dagRequest) {
-    return new DAGIterator(dagRequest, getSession(), session.getRegionManager(), false);
-  }
-
-  public Iterator<Row> selectByIndex(TiDAGRequest dagRequest) {
-    Iterator<Row> iter = new DAGIterator(dagRequest, getSession(), session.getRegionManager(), true);
-    return new IndexScanIterator(this, dagRequest, iter);
+  public Iterator<Row> tableRead(TiSelectRequest selReq) {
+    if (selReq.isIndexScan()) {
+      Iterator<Long> iter = SelectIterator.getHandleIterator(
+          selReq,
+          RangeSplitter.newSplitter(session.getRegionManager()).splitRangeByRegion(selReq.getRanges()),
+          session);
+      return new IndexScanIterator(this, selReq, iter);
+    } else {
+      return SelectIterator.getRowIterator(
+          selReq,
+          RangeSplitter.newSplitter(session.getRegionManager()).splitRangeByRegion(selReq.getRanges()),
+          session);
+    }
   }
 
   /**
    * Below is lower level API for env like Spark which already did key range split Perform table
    * scan
    *
-   * @param req DAGRequest for coprocessor
+   * @param selReq SelectRequest for coprocessor
    * @param task RegionTask of the coprocessor request to send
    * @return Row iterator to iterate over resulting rows
    */
-  public Iterator<Row> select(TiDAGRequest req, RegionTask task) {
-    return new DAGIterator(req, ImmutableList.of(task), getSession(), false);
-  }
-
-  /**
-   * Below is lower level API for env like Spark which already did key range split Perform index
-   * double read
-   *
-   * @param req DAGRequest for coprocessor
-   * @param task RegionTask of the coprocessor request to send
-   * @return Row iterator to iterate over resulting rows
-   */
-  public Iterator<Row> selectByIndex(TiDAGRequest req, RegionTask task) {
-    Iterator<Row> iter =
-        new DAGIterator(req, ImmutableList.of(task), getSession(), true);
-    return new IndexScanIterator(this, req, iter);
+  public Iterator<Row> tableRead(TiSelectRequest selReq, List<RegionTask> task) {
+    if (selReq.isIndexScan()) {
+      Iterator<Long> iter = SelectIterator.getHandleIterator(
+          selReq,
+          task,
+          session);
+      return new IndexScanIterator(this, selReq, iter);
+    } else {
+      return SelectIterator.getRowIterator(
+          selReq,
+          task,
+          session);
+    }
   }
 
   public Iterator<KvPair> scan(ByteString startKey) {

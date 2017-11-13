@@ -16,6 +16,7 @@
 package com.pingcap.tikv;
 
 import com.google.common.net.HostAndPort;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.pingcap.tikv.catalog.Catalog;
 import com.pingcap.tikv.meta.TiTimestamp;
 import com.pingcap.tikv.region.RegionManager;
@@ -23,6 +24,8 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 
@@ -33,6 +36,8 @@ public class TiSession implements AutoCloseable {
   private volatile RegionManager regionManager;
   private volatile PDClient client;
   private volatile Catalog catalog;
+  private volatile ExecutorService indexScanThreadPool;
+  private volatile ExecutorService tableScanThreadPool;
 
   public TiSession(TiConfiguration conf) {
     this.conf = conf;
@@ -60,8 +65,8 @@ public class TiSession implements AutoCloseable {
       synchronized (this) {
         if (client == null) {
           client = PDClient.createRaw(this);
-          res = client;
         }
+        res = client;
       }
     }
     return res;
@@ -75,8 +80,8 @@ public class TiSession implements AutoCloseable {
           catalog = new Catalog(() -> createSnapshot(),
               conf.getMetaReloadPeriod(),
               conf.getMetaReloadPeriodUnit());
-          res = catalog;
         }
+        res = catalog;
       }
     }
     return res;
@@ -88,8 +93,8 @@ public class TiSession implements AutoCloseable {
       synchronized (this) {
         if (regionManager == null) {
           regionManager = new RegionManager(getPDClient());
-          res = regionManager;
         }
+        res = regionManager;
       }
     }
     return res;
@@ -104,6 +109,7 @@ public class TiSession implements AutoCloseable {
       } catch (Exception e) {
         throw new IllegalArgumentException("failed to form address");
       }
+
       // Channel should be lazy without actual connection until first call
       // So a coarse grain lock is ok here
       channel = ManagedChannelBuilder.forAddress(address.getHostText(), address.getPort())
@@ -116,12 +122,43 @@ public class TiSession implements AutoCloseable {
     return channel;
   }
 
+  public ExecutorService getThreadPoolForIndexScan() {
+    ExecutorService res = indexScanThreadPool;
+    if (res == null) {
+      synchronized (this) {
+        if (indexScanThreadPool == null) {
+          indexScanThreadPool = Executors.newFixedThreadPool(
+              conf.getIndexScanConcurrency(),
+              new ThreadFactoryBuilder().setDaemon(true).build());
+        }
+        res = indexScanThreadPool;
+      }
+    }
+    return res;
+  }
+
+  public ExecutorService getThreadPoolForTableScan() {
+    ExecutorService res = tableScanThreadPool;
+    if (res == null) {
+      synchronized (this) {
+        if (tableScanThreadPool == null) {
+          tableScanThreadPool = Executors.newFixedThreadPool(
+              conf.getTableScanConcurrency(),
+              new ThreadFactoryBuilder().setDaemon(true).build());
+        }
+        res = tableScanThreadPool;
+      }
+    }
+    return res;
+  }
+
   public static TiSession create(TiConfiguration conf) {
     return new TiSession(conf);
   }
 
   @Override
   public void close() throws Exception {
-    connPool.values().forEach(ManagedChannel::shutdown);
+    getThreadPoolForTableScan().shutdownNow();
+    getThreadPoolForIndexScan().shutdownNow();
   }
 }

@@ -15,6 +15,10 @@
 
 package com.pingcap.tikv.operation;
 
+import com.pingcap.tidb.tipb.DAGRequest;
+import com.pingcap.tikv.util.RangeSplitter.RegionTask;
+
+import com.google.protobuf.ByteString;
 import com.pingcap.tidb.tipb.Chunk;
 import com.pingcap.tidb.tipb.SelectResponse;
 import com.pingcap.tikv.TiSession;
@@ -38,14 +42,19 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.concurrent.ExecutorCompletionService;
 
-public class DAGIterator implements Iterator<Row> {
+import static com.pingcap.tikv.util.RangeSplitter.newSplitter;
+
+public abstract class DAGIterator<T, RawT> implements Iterator<T> {
   protected final TiSession session;
-  private final List<RangeSplitter.RegionTask> regionTasks;
-  private final boolean indexScan;
-  private TiDAGRequest dagRequest;
+  private final List<RegionTask> regionTasks;
+  private DAGRequest dagRequest;
   private static final DataType[] handleTypes =
-          new DataType[]{DataTypeFactory.of(Types.TYPE_LONG)};
+      new DataType[]{DataTypeFactory.of(Types.TYPE_LONG)};
+  private final ExecutorCompletionService<RawT> completionService;
+
+
   private RowReader rowReader;
   private CodecDataInput dataInput;
   private boolean eof = false;
@@ -54,20 +63,40 @@ public class DAGIterator implements Iterator<Row> {
   private List<Chunk> chunkList;
   private SchemaInfer schemaInfer;
 
-  public DAGIterator(TiDAGRequest req,
-                     List<RangeSplitter.RegionTask> regionTasks,
-                     TiSession session,
-                     boolean indexScan) {
+  public DAGIterator(DAGRequest req,
+                     List<RegionTask> regionTasks,
+                     TiSession session) {
     this.dagRequest = req;
     this.session = session;
     this.regionTasks = regionTasks;
-    this.indexScan = indexScan;
     this.schemaInfer = SchemaInfer.create(req);
   }
 
+  public static DAGIterator<Row, ByteString> getRowIterator(TiDAGRequest req,
+                                                            List<RegionTask> regionTasks,
+                                                            TiSession session) {
+    return new DAGIterator<Row, ByteString>(req.buildScan(false),
+        regionTasks,
+        session,
+        false) {
+      @Override
+      public Row next() {
+        if (hasNext()) {
+          if (indexScan) {
+            return rowReader.readRow(handleTypes);
+          } else {
+            return rowReader.readRow(this.schemaInfer.getTypes().toArray(new DataType[0]));
+          }
+        } else {
+          throw new NoSuchElementException();
+        }
+      }
+    };
+  }
+
   public DAGIterator(TiDAGRequest req, TiSession session, RegionManager rm,
-                        boolean indexScan) {
-    this(req, RangeSplitter.newSplitter(rm).splitRangeByRegion(req.getRanges()), session, indexScan);
+                     boolean indexScan) {
+    this(req, newSplitter(rm).splitRangeByRegion(req.getRanges()), session, indexScan);
   }
 
   @Override
@@ -77,9 +106,9 @@ public class DAGIterator implements Iterator<Row> {
     }
 
     while (chunkList == null ||
-            chunkIndex >= chunkList.size() ||
-            dataInput.available() <= 0
-            ) {
+        chunkIndex >= chunkList.size() ||
+        dataInput.available() <= 0
+        ) {
       // First we check if our chunk list has remaining chunk
       if (tryAdvanceChunkIndex()) {
         createDataInputReader();
@@ -93,18 +122,6 @@ public class DAGIterator implements Iterator<Row> {
     return true;
   }
 
-  @Override
-  public Row next() {
-    if (hasNext()) {
-      if (indexScan) {
-        return rowReader.readRow(handleTypes);
-      } else {
-        return rowReader.readRow(this.schemaInfer.getTypes().toArray(new DataType[0]));
-      }
-    } else {
-      throw new NoSuchElementException();
-    }
-  }
 
   private boolean tryAdvanceChunkIndex() {
     if (chunkList == null || chunkIndex >= chunkList.size() - 1) {
@@ -134,7 +151,7 @@ public class DAGIterator implements Iterator<Row> {
   private void createDataInputReader() {
     Objects.requireNonNull(chunkList, "Chunk list should not be null.");
     if (0 > chunkIndex ||
-            chunkIndex >= chunkList.size()) {
+        chunkIndex >= chunkList.size()) {
       throw new IllegalArgumentException();
     }
     dataInput = new CodecDataInput(chunkList.get(chunkIndex).getRowsData());
