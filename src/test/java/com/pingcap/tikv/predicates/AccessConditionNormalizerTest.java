@@ -85,7 +85,7 @@ public class AccessConditionNormalizerTest {
     assertEquals("c1", normCond.columnRef.getName());
 
     assertEquals(new ByteArrayComparable(1), normCond.constantVals.get(0).getValue());
-    assertEquals(new ByteArrayComparable(2), normCond.constantVals.get(0).getValue());
+    assertEquals(new ByteArrayComparable(2), normCond.constantVals.get(1).getValue());
     assertTrue(normCond.condition instanceof In);
 
     cond = new In(new TiConstant(1), TiColumnRef.create("c1", table), new TiConstant(2));

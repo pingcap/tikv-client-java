@@ -26,6 +26,7 @@ import com.google.common.primitives.UnsignedBytes;
 import com.google.protobuf.ByteString;
 import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.codec.CodecDataOutput;
+import com.pingcap.tikv.expression.scalar.In;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.DataTypeFactory;
 import com.pingcap.tikv.types.DecimalType;
@@ -35,8 +36,10 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Comparator;
+import org.w3c.dom.DOMImplementation;
 
 public class ByteArrayComparable implements Comparable<ByteArrayComparable>, Serializable {
+  private Object objValue;
   private byte[] value;
   private ExprType exprType;
   private DataType dataType;
@@ -57,6 +60,7 @@ public class ByteArrayComparable implements Comparable<ByteArrayComparable>, Ser
     this.exprType = ExprType.Int64;
     this.dataType = DataTypeFactory.of(TYPE_LONG);
     this.value = cdo.toBytes();
+    this.objValue = val;
     sb.append(val);
   }
 
@@ -64,6 +68,7 @@ public class ByteArrayComparable implements Comparable<ByteArrayComparable>, Ser
     this.exprType = ExprType.String;
     this.dataType = DataTypeFactory.of(TYPE_VARCHAR);
     this.value = val.getBytes();
+    this.objValue = val;
     sb.append(val);
   }
 
@@ -73,6 +78,7 @@ public class ByteArrayComparable implements Comparable<ByteArrayComparable>, Ser
     RealType.writeFloat(cdo, val);
     this.dataType = DataTypeFactory.of(TYPE_FLOAT);
     this.value = cdo.toBytes();
+    this.objValue = val;
     sb.append(val);
   }
 
@@ -82,6 +88,7 @@ public class ByteArrayComparable implements Comparable<ByteArrayComparable>, Ser
     DecimalType.writeDecimal(cdo, val);
     // Why does not this have data type.
     this.value = cdo.toBytes();
+    this.objValue = val;
     sb.append(val);
   }
 
@@ -91,11 +98,16 @@ public class ByteArrayComparable implements Comparable<ByteArrayComparable>, Ser
     RealType.writeDouble(cdo, val);
     this.dataType = DataTypeFactory.of(TYPE_NEW_DECIMAL);
     this.value = cdo.toBytes();
+    this.objValue = val;
     sb.append(val);
   }
 
   public byte[] getValue() {
     return value;
+  }
+
+  public Object getObjValue() {
+    return objValue;
   }
 
   @Override
@@ -123,7 +135,31 @@ public class ByteArrayComparable implements Comparable<ByteArrayComparable>, Ser
 
   @Override
   public boolean equals(Object other) {
-    return true;
+    if(other == null) return false;
+    if(other instanceof Double) {
+      ByteArrayComparable val = new ByteArrayComparable((Double) other);
+      return compareTo(val) == 0;
+    }
+
+    if(other instanceof String) {
+      ByteArrayComparable val = new ByteArrayComparable((String)other);
+      return compareTo(val) == 0;
+    }
+
+    if(other instanceof Integer) {
+      ByteArrayComparable val = new ByteArrayComparable((Integer) other);
+      return compareTo(val) == 0;
+    }
+    if(other instanceof Long) {
+      ByteArrayComparable val = new ByteArrayComparable((Long) other);
+      return compareTo(val) == 0;
+    }
+
+    if(other instanceof ByteArrayComparable) {
+      return compareTo((ByteArrayComparable) other) == 0;
+    }
+
+    return false;
   }
 
   @Override

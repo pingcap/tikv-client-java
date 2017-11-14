@@ -29,7 +29,7 @@ import java.math.BigDecimal;
 import java.util.Objects;
 
 // TODO: This might need a refactor to accept an DataType?
-public class TiConstant<C> implements TiExpr {
+public class TiConstant implements TiExpr {
   private ByteArrayComparable value;
 
   public TiConstant(Number value) {

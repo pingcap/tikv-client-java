@@ -56,7 +56,8 @@ public class RangeBuilderTest {
       List<Object> aps = ir.getAccessPoints();
       for (int i = 0; i < values.size(); i++) {
         List<Object> curVals = values.get(i);
-        if (curVals.equals(aps)) {
+        // TODO equals must be reflexivity
+        if (aps.equals(curVals)) {
           values.remove(i);
           found = true;
           break;
@@ -140,8 +141,7 @@ public class RangeBuilderTest {
         ImmutableList.of(
             DataTypeFactory.of(Types.TYPE_LONG), DataTypeFactory.of(Types.TYPE_STRING));
     List<RangeBuilder.IndexRange> indexRanges = builder.exprsToPoints(ac, types);
-        testPointIndexRanges(
-            indexRanges,
+    testPointIndexRanges(indexRanges,
             Lists.newArrayList(ImmutableList.of(0L, "v1"), ImmutableList.of(1L, "v1")));
 
     conds =
@@ -157,9 +157,9 @@ public class RangeBuilderTest {
     indexRanges = RangeBuilder.appendRanges(indexRanges, ranges, type);
     assertEquals(4, indexRanges.size());
 
-    assertEquals(Range.closedOpen("a", "g"), indexRanges.get(0).getRange());
-    assertEquals(Range.closedOpen("a", "g"), indexRanges.get(2).getRange());
-    assertEquals(Range.open("g", "z"), indexRanges.get(1).getRange());
-    assertEquals(Range.open("g", "z"), indexRanges.get(3).getRange());
+    assertEquals(Range.closedOpen(new ByteArrayComparable("a"), new ByteArrayComparable("g")), indexRanges.get(0).getRange());
+    assertEquals(Range.closedOpen(new ByteArrayComparable("a"), new ByteArrayComparable("g")), indexRanges.get(2).getRange());
+    assertEquals(Range.open(new ByteArrayComparable("g"), new ByteArrayComparable("z")), indexRanges.get(1).getRange());
+    assertEquals(Range.open(new ByteArrayComparable("g"), new ByteArrayComparable("z")), indexRanges.get(3).getRange());
   }
 }
