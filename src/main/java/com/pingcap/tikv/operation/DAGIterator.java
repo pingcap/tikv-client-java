@@ -198,6 +198,8 @@ public abstract class DAGIterator<T> implements Iterator<T> {
     RegionStoreClient client;
     try {
       client = RegionStoreClient.create(region, store, session);
+      SelectResponse response = client.coprocess(dagRequest, ranges);
+      System.out.println(response);
       Iterator<SelectResponse> responseIterator = client.coprocessStreaming(dagRequest, ranges);
       if (null == responseIterator) {
         eof = true;

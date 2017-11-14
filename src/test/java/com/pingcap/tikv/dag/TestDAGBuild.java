@@ -203,6 +203,25 @@ public class TestDAGBuild {
     Assert.assertTrue(iterator.hasNext());
   }
 
+  @Test
+  public void testIndex() {
+    db = cat.getDatabase("test_index");
+    table = cat.getTable(db, "test_index");
+    bindRanges();
+
+    TiDAGRequest dagRequest = new TiDAGRequest();
+    dagRequest.setIndexInfo(table.getIndices().get(0));
+    dagRequest.setTableInfo(table);
+    dagRequest.addRanges(ranges);
+    dagRequest.addRequiredColumn(TiColumnRef.create("b"));
+    dagRequest.addWhere(new Equal(TiColumnRef.create("b", table),TiColumnRef.create("b", table)));
+    dagRequest.setStartTs(session.getTimestamp().getVersion());
+    dagRequest.resolve();
+
+    Iterator<Row> iterator = snapshot.tableRead(dagRequest);
+    Assert.assertTrue(iterator.hasNext());
+  }
+
   private void showIterCount(Iterator<Row> iterator) {
     int count = 0;
     while (iterator.hasNext()) {
