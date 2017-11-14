@@ -47,9 +47,9 @@ public class RangeBuilderTest {
         .build();
   }
 
-  private static boolean testPointIndexRanges(
+  private static void testPointIndexRanges(
       List<RangeBuilder.IndexRange> ranges, List<List<Object>> values) {
-    if (ranges.size() != values.size()) return false;
+    if (ranges.size() != values.size()) assertTrue(false);
 
     for (RangeBuilder.IndexRange ir : ranges) {
       boolean found = false;
@@ -62,10 +62,10 @@ public class RangeBuilderTest {
           break;
         }
       }
-      if (!found) return false;
+      assertTrue(found);
     }
 
-    return values.isEmpty();
+    assertTrue(values.isEmpty());
   }
 
   @Test
@@ -105,16 +105,13 @@ public class RangeBuilderTest {
 
     indexRanges = builder.exprsToPoints(conds, types);
     assertEquals(6, indexRanges.size());
-    assertTrue(
-        testPointIndexRanges(
-            indexRanges,
-            Lists.newArrayList(
+    testPointIndexRanges(indexRanges, Lists.newArrayList(
                 ImmutableList.of(0, "v1", "2"),
                 ImmutableList.of(0, "v1", "4"),
                 ImmutableList.of(1, "v1", "2"),
                 ImmutableList.of(1, "v1", "4"),
                 ImmutableList.of(3, "v1", "2"),
-                ImmutableList.of(3, "v1", "4"))));
+                ImmutableList.of(3, "v1", "4")));
   }
 
   @Test
@@ -143,10 +140,9 @@ public class RangeBuilderTest {
         ImmutableList.of(
             DataTypeFactory.of(Types.TYPE_LONG), DataTypeFactory.of(Types.TYPE_STRING));
     List<RangeBuilder.IndexRange> indexRanges = builder.exprsToPoints(ac, types);
-    assertTrue(
         testPointIndexRanges(
             indexRanges,
-            Lists.newArrayList(ImmutableList.of(0L, "v1"), ImmutableList.of(1L, "v1"))));
+            Lists.newArrayList(ImmutableList.of(0L, "v1"), ImmutableList.of(1L, "v1")));
 
     conds =
         ImmutableList.of(
