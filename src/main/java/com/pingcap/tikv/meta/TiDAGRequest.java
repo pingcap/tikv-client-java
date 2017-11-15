@@ -104,12 +104,50 @@ public class TiDAGRequest implements Serializable {
     DAGRequest.Builder dagRequestBuilder = DAGRequest.newBuilder();
     Executor.Builder executorBuilder = Executor.newBuilder();
     IndexScan.Builder indexScanBuilder = IndexScan.newBuilder();
+//    tableInfo.getColumns().forEach(tiColumnInfo -> indexScanBuilder.addColumns(tiColumnInfo.toProto(tableInfo)));
+
+    List<TiColumnInfo> columnInfoList = tableInfo.getColumns();
+    boolean hasPk = false;
+    // We extract index column info
+    List<Integer> indexColIds = indexInfo
+        .getIndexColumns()
+        .stream()
+        .map(TiIndexColumn::getOffset)
+        .collect(Collectors.toList());
+
+//    for (Integer idx : indexColIds) {
+//      ColumnInfo columnInfo = columnInfoList
+//          .get(idx)
+//          .toProto(tableInfo);
+//
+////      ColumnInfo.Builder colBuilder = ColumnInfo.newBuilder();
+////      colBuilder.setTp(columnInfo.getTp());
+////      colBuilder.setColumnId(columnInfo.getColumnId());
+//      if (columnInfo.getColumnId() == -1) {
+//        hasPk = true;
+////        colBuilder.setPkHandle(true);
+//      }
+//      indexScanBuilder.addColumns(columnInfo);
+//    }
+
+//    if (!hasPk) {
+      ColumnInfo handleColumn = ColumnInfo.newBuilder()
+          .setColumnId(-1)
+          .setPkHandle(true)
+          // We haven't changed the field name in protobuf file, but
+          // we need to set this to true in order to retrieve the handle,
+          // so the name 'setPkHandle' may sounds strange.
+          .build();
+//      indexScanBuilder.addColumns(handleColumn);
+//    }
     executorBuilder.setTp(ExecType.TypeIndexScan);
+
     indexScanBuilder
         .setTableId(tableInfo.getId())
         .setIndexId(indexInfo.getId());
-    dagRequestBuilder.addExecutors(executorBuilder.setIdxScan(indexScanBuilder));
+    dagRequestBuilder.addExecutors(executorBuilder.setIdxScan(indexScanBuilder).build());
 
+    dagRequestBuilder.addOutputOffsets(0);
     return dagRequestBuilder
         .setFlags(flags)
         .setTimeZoneOffset(timeZoneOffset)
