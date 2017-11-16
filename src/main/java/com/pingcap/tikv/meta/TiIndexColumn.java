@@ -18,6 +18,7 @@ package com.pingcap.tikv.meta;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.pingcap.tikv.types.DataType;
+
 import java.io.Serializable;
 
 public class TiIndexColumn implements Serializable {

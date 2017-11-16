@@ -23,6 +23,7 @@ import com.pingcap.tikv.expression.TiConstant;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.expression.scalar.*;
 import com.pingcap.tikv.meta.MetaUtils;
+import com.pingcap.tikv.meta.TiKey;
 import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.DataTypeFactory;
@@ -68,6 +69,7 @@ public class RangeBuilderTest {
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   public void exprsToPoints() throws Exception {
     TiTableInfo table = createTable();
     List<TiExpr> conds =
@@ -77,8 +79,7 @@ public class RangeBuilderTest {
     List<DataType> types =
         ImmutableList.of(
             DataTypeFactory.of(Types.TYPE_LONG), DataTypeFactory.of(Types.TYPE_STRING));
-    RangeBuilder builder = new RangeBuilder();
-    List<RangeBuilder.IndexRange> indexRanges = builder.exprsToPoints(conds, types);
+    List<RangeBuilder.IndexRange> indexRanges = RangeBuilder.exprsToPoints(conds, types);
     assertEquals(1, indexRanges.size());
     List<Object> acpts = indexRanges.get(0).getAccessPoints();
     assertEquals(2, acpts.size());
@@ -102,7 +103,7 @@ public class RangeBuilderTest {
             DataTypeFactory.of(Types.TYPE_STRING),
             DataTypeFactory.of(Types.TYPE_STRING));
 
-    indexRanges = builder.exprsToPoints(conds, types);
+    indexRanges = RangeBuilder.exprsToPoints(conds, types);
     assertEquals(6, indexRanges.size());
     assertTrue(
         testPointIndexRanges(
@@ -117,6 +118,7 @@ public class RangeBuilderTest {
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   public void exprToRanges() throws Exception {
     TiTableInfo table = createTable();
     List<TiExpr> conds =
@@ -127,11 +129,10 @@ public class RangeBuilderTest {
             new NotEqual(TiColumnRef.create("c1", table), TiConstant.create(50L)) // c1 != 50
             );
     DataType type = DataTypeFactory.of(Types.TYPE_LONG);
-    RangeBuilder builder = new RangeBuilder();
     List<Range> ranges = RangeBuilder.exprToRanges(conds, type);
     assertEquals(2, ranges.size());
-    assertEquals(Range.closedOpen(0L, 50L), ranges.get(0));
-    assertEquals(Range.open(50L, 100L), ranges.get(1));
+    assertEquals(Range.closedOpen(TiKey.create(0L), TiKey.create(50L)), ranges.get(0));
+    assertEquals(Range.open(TiKey.create(50L), TiKey.create(100L)), ranges.get(1));
 
     // Test points and string range
     List<TiExpr> ac =
@@ -141,7 +142,7 @@ public class RangeBuilderTest {
     List<DataType> types =
         ImmutableList.of(
             DataTypeFactory.of(Types.TYPE_LONG), DataTypeFactory.of(Types.TYPE_STRING));
-    List<RangeBuilder.IndexRange> indexRanges = builder.exprsToPoints(ac, types);
+    List<RangeBuilder.IndexRange> indexRanges = RangeBuilder.exprsToPoints(ac, types);
     assertTrue(
         testPointIndexRanges(
             indexRanges,
@@ -160,9 +161,9 @@ public class RangeBuilderTest {
     indexRanges = RangeBuilder.appendRanges(indexRanges, ranges, type);
     assertEquals(4, indexRanges.size());
 
-    assertEquals(Range.closedOpen("a", "g"), indexRanges.get(0).getRange());
-    assertEquals(Range.closedOpen("a", "g"), indexRanges.get(2).getRange());
-    assertEquals(Range.open("g", "z"), indexRanges.get(1).getRange());
-    assertEquals(Range.open("g", "z"), indexRanges.get(3).getRange());
+    assertEquals(Range.closedOpen(TiKey.create("a"), TiKey.create("g")), indexRanges.get(0).getRange());
+    assertEquals(Range.closedOpen(TiKey.create("a"), TiKey.create("g")), indexRanges.get(2).getRange());
+    assertEquals(Range.open(TiKey.create("g"), TiKey.create("z")), indexRanges.get(1).getRange());
+    assertEquals(Range.open(TiKey.create("g"), TiKey.create("z")), indexRanges.get(3).getRange());
   }
 }

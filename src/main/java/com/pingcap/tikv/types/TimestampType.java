@@ -22,6 +22,7 @@ import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.codec.InvalidCodecFormatException;
 import com.pingcap.tikv.meta.TiColumnInfo;
 import com.pingcap.tikv.row.Row;
+
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.Duration;

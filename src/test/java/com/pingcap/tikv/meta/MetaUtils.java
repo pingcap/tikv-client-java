@@ -26,6 +26,7 @@ import com.pingcap.tikv.kvproto.Metapb;
 import com.pingcap.tikv.types.BytesType;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.IntegerType;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,9 +35,19 @@ import java.util.stream.Stream;
 public class MetaUtils {
   public static class TableBuilder {
     static long autoId = 1;
+    static long autoColumnId = 1;
+    static long autoIndexId = 1;
 
     private static long newId() {
       return autoId++;
+    }
+
+    private static long newColumnId() {
+      return autoColumnId++;
+    }
+
+    private static long newIndexId() {
+      return autoIndexId++;
     }
 
     public static TableBuilder newBuilder() {
@@ -48,7 +59,19 @@ public class MetaUtils {
     private List<TiColumnInfo> columns = new ArrayList<>();
     private List<TiIndexInfo> indices = new ArrayList<>();
 
-    public TableBuilder() {}
+    public TableBuilder() {
+      autoId = 1;
+      autoColumnId = 1;
+      autoIndexId = 1;
+    }
+
+    public List<TiColumnInfo> getColumns() {
+      return columns;
+    }
+
+    public List<TiIndexInfo> getIndices() {
+      return indices;
+    }
 
     public TableBuilder name(String name) {
       this.name = name;
@@ -65,8 +88,8 @@ public class MetaUtils {
           throw new TiClientInternalException("duplicated name: " + name);
         }
       }
-
-      TiColumnInfo col = new TiColumnInfo(newId(), name, columns.size(), type, pk);
+      long id = newColumnId();
+      TiColumnInfo col = new TiColumnInfo(id, name, columns.size(), type, pk);
       columns.add(col);
       return this;
     }
@@ -82,7 +105,7 @@ public class MetaUtils {
 
       TiIndexInfo index =
           new TiIndexInfo(
-              newId(),
+              newIndexId(),
               CIStr.newCIStr(indexName),
               CIStr.newCIStr(name),
               ImmutableList.copyOf(indexCols),
@@ -109,12 +132,21 @@ public class MetaUtils {
       return new TiTableInfo(
           tid, CIStr.newCIStr(name), "", "", pkHandle, columns, indices, "", 0, 0, 0, 0);
     }
+
+    public TiTableInfo build(long tid) {
+      autoId = Math.max(autoId, tid + 1);
+      if (name == null) {
+        name = "Table" + tid;
+      }
+      return new TiTableInfo(
+          tid, CIStr.newCIStr(name), "", "", pkHandle, columns, indices, "", 0, 0, 0, 0);
+    }
   }
 
   public static class MetaMockHelper {
-    public static final String LOCAL_ADDR = "127.0.0.1";
-    public static int MEMBER_ID = 1;
-    public static int STORE_ID = 1;
+    private static final String LOCAL_ADDR = "127.0.0.1";
+    private static int MEMBER_ID = 1;
+    private static int STORE_ID = 1;
     public static Metapb.Region region =
         Metapb.Region.newBuilder()
             .setRegionEpoch(Metapb.RegionEpoch.newBuilder().setConfVer(1).setVersion(1))
@@ -203,49 +235,53 @@ public class MetaUtils {
       kvServer.put(getSchemaVersionKey(), ByteString.copyFromUtf8(String.format("%d", version)));
     }
 
-    public void addTable(int dbId, int tableId, String tableName) {
+    private String buildDefaultTableFormat() {
+      return "\n"
+          + "{\n"
+          + "   \"id\": %d,\n"
+          + "   \"name\": {\n"
+          + "      \"O\": \"%s\",\n"
+          + "      \"L\": \"%s\"\n"
+          + "   },\n"
+          + "   \"charset\": \"\",\n"
+          + "   \"collate\": \"\",\n"
+          + "   \"cols\": [\n"
+          + "      {\n"
+          + "         \"id\": 1,\n"
+          + "         \"name\": {\n"
+          + "            \"O\": \"c1\",\n"
+          + "            \"L\": \"c1\"\n"
+          + "         },\n"
+          + "         \"offset\": 0,\n"
+          + "         \"origin_default\": null,\n"
+          + "         \"default\": null,\n"
+          + "         \"type\": {\n"
+          + "            \"Tp\": 3,\n"
+          + "            \"Flag\": 139,\n"
+          + "            \"Flen\": 11,\n"
+          + "            \"Decimal\": -1,\n"
+          + "            \"Charset\": \"binary\",\n"
+          + "            \"Collate\": \"binary\",\n"
+          + "            \"Elems\": null\n"
+          + "         },\n"
+          + "         \"state\": 5,\n"
+          + "         \"comment\": \"\"\n"
+          + "      }\n"
+          + "   ],\n"
+          + "   \"index_info\": [],\n"
+          + "   \"fk_info\": null,\n"
+          + "   \"state\": 5,\n"
+          + "   \"pk_is_handle\": true,\n"
+          + "   \"comment\": \"\",\n"
+          + "   \"auto_inc_id\": 0,\n"
+          + "   \"max_col_id\": 4,\n"
+          + "   \"max_idx_id\": 1\n"
+          + "}";
+    }
+
+    public void addTable(long dbId, long tableId, String tableName) {
       String tableJson = String.format(
-          "\n"
-              + "{\n"
-              + "   \"id\": %d,\n"
-              + "   \"name\": {\n"
-              + "      \"O\": \"%s\",\n"
-              + "      \"L\": \"%s\"\n"
-              + "   },\n"
-              + "   \"charset\": \"\",\n"
-              + "   \"collate\": \"\",\n"
-              + "   \"cols\": [\n"
-              + "      {\n"
-              + "         \"id\": 1,\n"
-              + "         \"name\": {\n"
-              + "            \"O\": \"c1\",\n"
-              + "            \"L\": \"c1\"\n"
-              + "         },\n"
-              + "         \"offset\": 0,\n"
-              + "         \"origin_default\": null,\n"
-              + "         \"default\": null,\n"
-              + "         \"type\": {\n"
-              + "            \"Tp\": 3,\n"
-              + "            \"Flag\": 139,\n"
-              + "            \"Flen\": 11,\n"
-              + "            \"Decimal\": -1,\n"
-              + "            \"Charset\": \"binary\",\n"
-              + "            \"Collate\": \"binary\",\n"
-              + "            \"Elems\": null\n"
-              + "         },\n"
-              + "         \"state\": 5,\n"
-              + "         \"comment\": \"\"\n"
-              + "      }\n"
-              + "   ],\n"
-              + "   \"index_info\": [],\n"
-              + "   \"fk_info\": null,\n"
-              + "   \"state\": 5,\n"
-              + "   \"pk_is_handle\": true,\n"
-              + "   \"comment\": \"\",\n"
-              + "   \"auto_inc_id\": 0,\n"
-              + "   \"max_col_id\": 4,\n"
-              + "   \"max_idx_id\": 1\n"
-              + "}", tableId, tableName, tableName.toLowerCase());
+          buildDefaultTableFormat(), tableId, tableName, tableName.toLowerCase());
 
       kvServer.put(getKeyForTable(dbId, tableId),
           ByteString.copyFromUtf8(tableJson));

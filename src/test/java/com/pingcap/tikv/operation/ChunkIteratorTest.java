@@ -17,10 +17,6 @@
 
 package com.pingcap.tikv.operation;
 
-import static com.pingcap.tikv.types.Types.TYPE_LONG;
-import static com.pingcap.tikv.types.Types.TYPE_VARCHAR;
-import static org.junit.Assert.assertEquals;
-
 import com.google.protobuf.ByteString;
 import com.pingcap.tidb.tipb.Chunk;
 import com.pingcap.tidb.tipb.RowMeta;
@@ -29,10 +25,15 @@ import com.pingcap.tikv.row.ObjectRowImpl;
 import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.DataTypeFactory;
-import java.util.ArrayList;
-import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.pingcap.tikv.types.Types.TYPE_LONG;
+import static com.pingcap.tikv.types.Types.TYPE_VARCHAR;
+import static org.junit.Assert.assertEquals;
 
 public class ChunkIteratorTest {
   private List<Chunk> chunks = new ArrayList<>();

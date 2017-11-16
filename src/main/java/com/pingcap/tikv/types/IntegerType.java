@@ -17,14 +17,14 @@
 
 package com.pingcap.tikv.types;
 
-import static com.pingcap.tikv.types.Types.*;
-
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.codec.InvalidCodecFormatException;
 import com.pingcap.tikv.codec.TableCodec;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.meta.TiColumnInfo;
+
+import static com.pingcap.tikv.types.Types.*;
 
 /** Base class for all integer types: Tiny, Short, Medium, Int, Long and LongLong */
 public class IntegerType extends DataType {
@@ -54,6 +54,10 @@ public class IntegerType extends DataType {
         return readVarLong(cdi);
       case INT_FLAG:
         return readLong(cdi);
+      case BYTES_FLAG:
+        return Long.MIN_VALUE;
+      case MAX_FLAG:
+        return Long.MAX_VALUE;
       default:
         throw new TiClientInternalException("Invalid IntegerType flag: " + flag);
     }
@@ -263,7 +267,7 @@ public class IntegerType extends DataType {
    * @param cdi source of data
    * @return decoded unsigned long value
    */
-  public static long readUVarLong(CodecDataInput cdi) {
+  static long readUVarLong(CodecDataInput cdi) {
     long x = 0;
     int s = 0;
     for (int i = 0; !cdi.eof(); i++) {

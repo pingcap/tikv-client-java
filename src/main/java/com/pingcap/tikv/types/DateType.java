@@ -17,16 +17,17 @@
 
 package com.pingcap.tikv.types;
 
-import static com.pingcap.tikv.types.TimestampType.fromPackedLong;
-import static com.pingcap.tikv.types.TimestampType.toPackedLong;
-
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.meta.TiColumnInfo;
+
+import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
-import java.sql.Date;
+
+import static com.pingcap.tikv.types.TimestampType.fromPackedLong;
+import static com.pingcap.tikv.types.TimestampType.toPackedLong;
 
 public class DateType extends DataType {
   static DateType of(int tp) {

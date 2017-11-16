@@ -15,10 +15,6 @@
 
 package com.pingcap.tikv.meta;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.pingcap.tikv.predicates.PredicateUtils.mergeCNFExpressions;
-import static java.util.Objects.requireNonNull;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.pingcap.tidb.tipb.SelectRequest;
@@ -30,10 +26,15 @@ import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.util.KeyRangeUtils;
 import com.pingcap.tikv.util.Pair;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.pingcap.tikv.predicates.PredicateUtils.mergeCNFExpressions;
+import static java.util.Objects.requireNonNull;
 
 public class TiSelectRequest implements Serializable {
   public enum TruncateMode {

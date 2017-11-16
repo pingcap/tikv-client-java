@@ -15,8 +15,6 @@
 
 package com.pingcap.tikv;
 
-import static io.grpc.stub.ClientCalls.asyncBidiStreamingCall;
-
 import com.pingcap.tikv.operation.ErrorHandler;
 import com.pingcap.tikv.policy.RetryNTimes.Builder;
 import com.pingcap.tikv.policy.RetryPolicy;
@@ -24,8 +22,11 @@ import io.grpc.MethodDescriptor;
 import io.grpc.stub.AbstractStub;
 import io.grpc.stub.ClientCalls;
 import io.grpc.stub.StreamObserver;
-import java.util.function.Supplier;
 import org.apache.log4j.Logger;
+
+import java.util.function.Supplier;
+
+import static io.grpc.stub.ClientCalls.asyncBidiStreamingCall;
 
 public abstract class AbstractGRPCClient<
         BlockingStubT extends AbstractStub<BlockingStubT>, StubT extends AbstractStub<StubT>>

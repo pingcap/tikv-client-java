@@ -15,17 +15,18 @@
 
 package com.pingcap.tikv.meta;
 
-import static java.util.Objects.requireNonNull;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.pingcap.tidb.tipb.ColumnInfo;
 import com.pingcap.tidb.tipb.IndexInfo;
+
 import java.io.Serializable;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static java.util.Objects.requireNonNull;
 
 public class TiIndexInfo implements Serializable {
   private final long id;
@@ -65,6 +66,19 @@ public class TiIndexInfo implements Serializable {
     this.isFakePrimaryKey = isFakePrimaryKey;
   }
 
+  public TiIndexInfo(long id, String indexName, String tableName, List<TiIndexColumn> indexColumns, boolean isPrimary) {
+    this.id = id;
+    this.name = indexName;
+    this.tableName = tableName;
+    this.indexColumns = indexColumns;
+    this.isUnique = false;
+    this.isPrimary = isPrimary;
+    this.schemaState = SchemaState.StatePublic;
+    this.comment = "";
+    this.indexType = IndexType.IndexTypeBtree;
+    this.isFakePrimaryKey = false;
+  }
+
   public static TiIndexInfo generateFakePrimaryKeyIndex(TiTableInfo table) {
     TiColumnInfo pkColumn = table.getPrimaryKeyColumn();
     if (pkColumn != null) {
@@ -79,6 +93,25 @@ public class TiIndexInfo implements Serializable {
           "Fake Column",
           IndexType.IndexTypeHash.getTypeCode(),
           true);
+    }
+    return null;
+  }
+
+  public static TiIndexInfo generatePrimaryKeyIndex(TiTableInfo table, int id) {
+    TiColumnInfo pkColumn = table.getPrimaryKeyColumn();
+    if(pkColumn != null) {
+      new TiIndexInfo(
+          id,
+          CIStr.newCIStr("pk_" + table.getId()),
+          CIStr.newCIStr(table.getName()),
+          ImmutableList.of(pkColumn.toIndexColumn()),
+          true,
+          true,
+          SchemaState.StatePublic.getStateCode(),
+          "",
+          IndexType.IndexTypeHash.getTypeCode(),
+          true);
+      return null;
     }
     return null;
   }

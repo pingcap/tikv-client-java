@@ -18,6 +18,7 @@
 package com.pingcap.tikv.util;
 
 import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
 
 public class ExponentialBackOffTest {

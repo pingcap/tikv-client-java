@@ -15,12 +15,12 @@
 
 package com.pingcap.tikv.expression.scalar;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.expression.TiBinaryFunctionExpression;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.types.IntegerType;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 public class Or extends TiBinaryFunctionExpression {
   public Or(TiExpr lhs, TiExpr rhs) {

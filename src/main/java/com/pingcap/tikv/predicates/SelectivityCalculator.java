@@ -17,12 +17,7 @@ package com.pingcap.tikv.predicates;
 
 
 import com.pingcap.tikv.expression.TiExpr;
-import com.pingcap.tikv.expression.scalar.Equal;
-import com.pingcap.tikv.expression.scalar.GreaterEqual;
-import com.pingcap.tikv.expression.scalar.GreaterThan;
-import com.pingcap.tikv.expression.scalar.LessEqual;
-import com.pingcap.tikv.expression.scalar.LessThan;
-import com.pingcap.tikv.expression.scalar.NullEqual;
+import com.pingcap.tikv.expression.scalar.*;
 
 public class SelectivityCalculator {
   public static final double SELECTION_FACTOR = 100;

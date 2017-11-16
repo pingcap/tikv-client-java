@@ -16,6 +16,7 @@
 package com.pingcap.tikv.codec;
 
 import com.google.protobuf.ByteString;
+
 import java.io.ByteArrayInputStream;
 import java.io.DataInput;
 import java.io.DataInputStream;

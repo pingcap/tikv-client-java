@@ -21,6 +21,7 @@ import com.pingcap.tikv.kvproto.Kvrpcpb.CommandPri;
 import com.pingcap.tikv.kvproto.Kvrpcpb.IsolationLevel;
 import com.pingcap.tikv.util.BackOff;
 import com.pingcap.tikv.util.ExponentialBackOff;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -129,7 +130,7 @@ public class TiConfiguration implements Serializable {
     return DEF_SCAN_BATCH_SIZE;
   }
 
-  boolean isIgnoreTruncate() {
+  public boolean isIgnoreTruncate() {
     return ignoreTruncate;
   }
 
@@ -138,7 +139,7 @@ public class TiConfiguration implements Serializable {
     return this;
   }
 
-  boolean isTruncateAsWarning() {
+  public boolean isTruncateAsWarning() {
     return truncateAsWarning;
   }
 

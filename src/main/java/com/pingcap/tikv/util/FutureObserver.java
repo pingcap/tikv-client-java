@@ -16,9 +16,8 @@
 package com.pingcap.tikv.util;
 
 import com.google.common.util.concurrent.SettableFuture;
-import com.pingcap.tikv.kvproto.Pdpb;
-import com.pingcap.tikv.operation.ErrorHandler;
 import io.grpc.stub.StreamObserver;
+
 import java.util.concurrent.Future;
 
 public class FutureObserver<Value, RespT> implements StreamObserver<RespT> {

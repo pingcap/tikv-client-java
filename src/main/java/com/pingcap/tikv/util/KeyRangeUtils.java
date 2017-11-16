@@ -24,26 +24,23 @@ import com.pingcap.tikv.codec.TableCodec;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.kvproto.Coprocessor;
 import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
-import com.pingcap.tikv.meta.TiColumnInfo;
-import com.pingcap.tikv.meta.TiIndexColumn;
-import com.pingcap.tikv.meta.TiIndexInfo;
-import com.pingcap.tikv.meta.TiTableInfo;
+import com.pingcap.tikv.meta.*;
 import com.pingcap.tikv.types.DataType;
 
 import java.util.List;
 
 public class KeyRangeUtils {
-  public static Range toRange(Coprocessor.KeyRange range) {
+  public static Range<TiKey> toRange(Coprocessor.KeyRange range) {
     if (range == null || (range.getStart().isEmpty() && range.getEnd().isEmpty())) {
       return Range.all();
     }
     if (range.getStart().isEmpty()) {
-      return Range.lessThan(Comparables.wrap(range.getEnd()));
+      return Range.lessThan(TiKey.create(range.getEnd()));
     }
     if (range.getEnd().isEmpty()) {
-      return Range.atLeast(Comparables.wrap(range.getStart()));
+      return Range.atLeast(TiKey.create(range.getStart()));
     }
-    return Range.closedOpen(Comparables.wrap(range.getStart()), Comparables.wrap(range.getEnd()));
+    return Range.closedOpen(TiKey.create(range.getStart()), TiKey.create(range.getEnd()));
   }
 
   public static List<Coprocessor.KeyRange> split(Coprocessor.KeyRange range, int splitFactor) {
@@ -132,16 +129,16 @@ public class KeyRangeUtils {
     return types.build();
   }
 
-  public static Range makeRange(ByteString startKey, ByteString endKey) {
+  public static Range<TiKey> makeRange(ByteString startKey, ByteString endKey) {
     if (startKey.isEmpty() && endKey.isEmpty()) {
       return Range.all();
     }
     if (startKey.isEmpty()) {
-      return Range.lessThan(Comparables.wrap(endKey));
+      return Range.lessThan(TiKey.create(endKey));
     } else if (endKey.isEmpty()) {
-      return Range.atLeast(Comparables.wrap(startKey));
+      return Range.atLeast(TiKey.create(startKey));
     }
-    return Range.closedOpen(Comparables.wrap(startKey), Comparables.wrap(endKey));
+    return Range.closedOpen(TiKey.create(startKey), TiKey.create(endKey));
   }
 
   static Coprocessor.KeyRange makeCoprocRange(ByteString startKey, ByteString endKey) {

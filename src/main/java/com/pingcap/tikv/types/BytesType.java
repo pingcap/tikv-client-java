@@ -17,13 +17,14 @@
 
 package com.pingcap.tikv.types;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.codec.InvalidCodecFormatException;
 import com.pingcap.tikv.meta.TiColumnInfo;
+
 import java.util.Arrays;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 public class BytesType extends DataType {
 

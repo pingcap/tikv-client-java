@@ -22,6 +22,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.pingcap.tidb.tipb.ColumnInfo;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.DataTypeFactory;
+
 import java.io.Serializable;
 import java.util.List;
 
@@ -57,7 +58,6 @@ public class TiColumnInfo implements Serializable {
     this.isPrimaryKey = (type.getFlag() & PK_MASK) > 0;
   }
 
-  @VisibleForTesting
   public TiColumnInfo(long id, String name, int offset, DataType type, boolean isPrimaryKey) {
     this.id = id;
     this.name = name;
@@ -96,7 +96,7 @@ public class TiColumnInfo implements Serializable {
     return comment;
   }
 
-  boolean isPrimaryKey() {
+  public boolean isPrimaryKey() {
     return isPrimaryKey;
   }
 
@@ -171,7 +171,7 @@ public class TiColumnInfo implements Serializable {
     }
   }
 
-  TiIndexColumn toIndexColumn() {
+  public TiIndexColumn toIndexColumn() {
     return new TiIndexColumn(CIStr.newCIStr(getName()), getOffset(), type.getLength());
   }
 

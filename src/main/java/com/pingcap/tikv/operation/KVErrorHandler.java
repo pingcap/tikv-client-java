@@ -23,8 +23,9 @@ import com.pingcap.tikv.region.RegionManager;
 import com.pingcap.tikv.region.TiRegion;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
-import java.util.function.Function;
 import org.apache.log4j.Logger;
+
+import java.util.function.Function;
 
 public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
   private static final Logger logger = Logger.getLogger(KVErrorHandler.class);
