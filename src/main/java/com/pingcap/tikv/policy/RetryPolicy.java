@@ -17,6 +17,7 @@ package com.pingcap.tikv.policy;
 
 import com.google.common.collect.ImmutableSet;
 import com.pingcap.tikv.exception.GrpcException;
+import com.pingcap.tikv.exception.GrpcUnrecoverException;
 import com.pingcap.tikv.operation.ErrorHandler;
 import com.pingcap.tikv.util.BackOff;
 import io.grpc.Status;
@@ -36,7 +37,7 @@ public abstract class RetryPolicy<RespT> {
           Status.Code.ALREADY_EXISTS, Status.Code.PERMISSION_DENIED,
           Status.Code.INVALID_ARGUMENT, Status.Code.NOT_FOUND,
           Status.Code.UNIMPLEMENTED, Status.Code.OUT_OF_RANGE,
-          Status.Code.UNAUTHENTICATED, Status.Code.CANCELLED);
+          Status.Code.UNAUTHENTICATED);
 
   RetryPolicy(ErrorHandler<RespT> handler) {
     this.handler = handler;
@@ -46,13 +47,15 @@ public abstract class RetryPolicy<RespT> {
     return unrecoverableStatus.contains(status.getCode());
   }
 
-  private void handleFailure(Exception e, String methodName, long millis) {
+  private void handleFailure(Exception e, String methodName, long nextBackMills) {
+    if(nextBackMills == BackOff.STOP) {
+          throw new GrpcException("retry is exhausted.", e);
+    }
     Status status = Status.fromThrowable(e);
     if (checkNotRecoverableException(status)) {
-      logger.error(String.format("Failed to recover from last grpc error calling %s.", methodName));
-      throw new GrpcException(e);
+      throw new GrpcUnrecoverException(e);
     }
-    doWait(millis);
+    doWait(nextBackMills);
   }
 
   private void doWait(long millis) {
@@ -64,19 +67,17 @@ public abstract class RetryPolicy<RespT> {
   }
 
   public RespT callWithRetry(Callable<RespT> proc, String methodName) {
-    for(;true ;) {
+    for(;true;) {
       try {
         RespT result = proc.call();
         if (handler != null) {
           handler.handle(result);
         }
         return result;
-      } catch (Exception e) {
-        long nextBackMills  = this.backOff.nextBackOffMillis();
-        if(nextBackMills == BackOff.STOP) {
-          throw new GrpcException("retry is exhausted.", e);
-        }
-        handleFailure(e, methodName, nextBackMills);
+      } catch (GrpcException e) {
+        handleFailure(e, methodName, backOff.nextBackOffMillis());
+      } catch (Exception ignored) {
+        logger.error(String.format("Failed to recover from last grpc error calling %s.", methodName));
       }
     }
   }
