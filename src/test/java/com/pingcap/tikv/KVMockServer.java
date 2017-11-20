@@ -329,7 +329,7 @@ public class KVMockServer extends TikvGrpc.TikvImplBase {
               kvs.entrySet()
                   .stream()
                   .filter(Objects::nonNull)
-                  .filter(kv -> BytesComparable.wrap(kv.getKey()).compareTo(BytesComparable.wrap(keyRange.getEnd())) <= 0)
+                  .filter(kv -> kv.getKey().compareTo(BytesComparable.wrap(keyRange.getEnd())) <= 0)
                   .map(
                       kv ->
                           Chunk.newBuilder()

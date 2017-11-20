@@ -17,7 +17,9 @@
 
 package com.pingcap.tikv.util;
 
+import com.google.common.primitives.Bytes;
 import com.google.common.primitives.UnsignedBytes;
+import com.google.protobuf.ByteString;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -26,6 +28,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Comparator;
 
 public class BytesComparable implements Comparable<BytesComparable>, Serializable {
@@ -70,7 +73,31 @@ public class BytesComparable implements Comparable<BytesComparable>, Serializabl
 
   @Override
   public int compareTo(BytesComparable o) {
+    if(getObjectValue() instanceof ByteString) {
+      ByteString bytes = (ByteString) getObjectValue();
+      ByteString otherBytes = (ByteString) o.getObjectValue();
+      int n = Math.min(bytes.size(), otherBytes.size());
+      for (int i = 0, j = 0; i < n; i++, j++) {
+        int cmp = UnsignedBytes.compare(bytes.byteAt(i), otherBytes.byteAt(j));
+        if (cmp != 0) return cmp;
+      }
+      // one is the prefix of other then the longer is larger
+      return bytes.size() - otherBytes.size();
+    }
     return comparator.compare(this.value, o.getValue());
+  }
+
+  @Override
+  public int hashCode() {
+    return Arrays.hashCode(value);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if(o == this) return true;
+    if(o instanceof BytesComparable)
+      return compareTo(BytesComparable.wrap(o)) == 0;
+    return false;
   }
 
   public byte[] getValue() {

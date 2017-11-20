@@ -197,14 +197,13 @@ public class RegionStoreClientTest {
     client.close();
   }
 
-  private static KeyRange createByteStringRange(ByteString sKey, ByteString eKey) {
+  public static KeyRange createByteStringRange(ByteString sKey, ByteString eKey) {
     return KeyRange.newBuilder().setStart(sKey).setEnd(eKey).build();
   }
 
   @Test
   public void coprocessTest() throws Exception {
     RegionStoreClient client = createClient();
-
     server.put("key1", "value1");
     server.put("key2", "value2");
     server.put("key4", "value4");
