@@ -84,7 +84,7 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
         regionManager.onRegionStale(ctxRegion.getId(), error.getStaleEpoch().getNewRegionsList());
         this.regionManager.onRegionStale(
             ctxRegion.getId(), error.getStaleEpoch().getNewRegionsList());
-        throw new StatusRuntimeException(Status.fromCode(Status.Code.CANCELLED).withDescription(error.toString()));
+        throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
       }
 
       if (error.hasServerIsBusy()) {
