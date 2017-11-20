@@ -33,17 +33,17 @@ import com.pingcap.tikv.types.DataType;
 import java.util.List;
 
 public class KeyRangeUtils {
-  public static Range toRange(Coprocessor.KeyRange range) {
+  public static Range<BytesComparable> toRange(Coprocessor.KeyRange range) {
     if (range == null || (range.getStart().isEmpty() && range.getEnd().isEmpty())) {
       return Range.all();
     }
     if (range.getStart().isEmpty()) {
-      return Range.lessThan(Comparables.wrap(range.getEnd()));
+      return Range.lessThan(BytesComparable.wrap(range.getEnd()));
     }
     if (range.getEnd().isEmpty()) {
-      return Range.atLeast(Comparables.wrap(range.getStart()));
+      return Range.atLeast(BytesComparable.wrap(range.getStart()));
     }
-    return Range.closedOpen(Comparables.wrap(range.getStart()), Comparables.wrap(range.getEnd()));
+    return Range.closedOpen(BytesComparable.wrap(range.getStart()), BytesComparable.wrap(range.getEnd()));
   }
 
   public static List<Coprocessor.KeyRange> split(Coprocessor.KeyRange range, int splitFactor) {
@@ -132,16 +132,16 @@ public class KeyRangeUtils {
     return types.build();
   }
 
-  public static Range makeRange(ByteString startKey, ByteString endKey) {
+  public static Range<BytesComparable> makeRange(ByteString startKey, ByteString endKey) {
     if (startKey.isEmpty() && endKey.isEmpty()) {
       return Range.all();
     }
     if (startKey.isEmpty()) {
-      return Range.lessThan(Comparables.wrap(endKey));
+      return Range.lessThan(BytesComparable.wrap(endKey));
     } else if (endKey.isEmpty()) {
-      return Range.atLeast(Comparables.wrap(startKey));
+      return Range.atLeast(BytesComparable.wrap(startKey));
     }
-    return Range.closedOpen(Comparables.wrap(startKey), Comparables.wrap(endKey));
+    return Range.closedOpen(BytesComparable.wrap(startKey), BytesComparable.wrap(endKey));
   }
 
   static Coprocessor.KeyRange makeCoprocRange(ByteString startKey, ByteString endKey) {

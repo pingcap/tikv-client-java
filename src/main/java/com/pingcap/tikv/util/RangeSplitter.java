@@ -118,7 +118,7 @@ public class RangeSplitter {
       return -1;
     }
 
-    return Comparables.wrap(lhs).compareTo(Comparables.wrap(rhs));
+    return BytesComparable.wrap(lhs).compareTo(BytesComparable.wrap(rhs));
   }
 
   public List<RegionTask> splitHandlesByRegion(long tableId, TLongArrayList handles) {

@@ -56,6 +56,7 @@ public class TiConstant implements TiExpr {
   public Expr toProto() {
     Expr.Builder builder = Expr.newBuilder();
     CodecDataOutput cdo = new CodecDataOutput();
+//    builder.setTp(type.)
     // We don't allow build a unsigned long constant for now
     if (value == null) {
       builder.setTp(ExprType.Null);

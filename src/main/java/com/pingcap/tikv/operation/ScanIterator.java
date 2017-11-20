@@ -27,7 +27,7 @@ import com.pingcap.tikv.kvproto.Metapb;
 import com.pingcap.tikv.region.RegionManager;
 import com.pingcap.tikv.region.RegionStoreClient;
 import com.pingcap.tikv.region.TiRegion;
-import com.pingcap.tikv.util.Comparables;
+import com.pingcap.tikv.util.BytesComparable;
 import com.pingcap.tikv.util.KeyRangeUtils;
 import com.pingcap.tikv.util.Pair;
 import java.util.Iterator;
@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 public class ScanIterator implements Iterator<Kvrpcpb.KvPair> {
-  private final Range scanRange;
+  private final Range<BytesComparable> scanRange;
   private final int batchSize;
   protected final TiSession session;
   private final RegionManager regionCache;
@@ -119,7 +119,7 @@ public class ScanIterator implements Iterator<Kvrpcpb.KvPair> {
 
   @SuppressWarnings("unchecked")
   private boolean contains(ByteString key) {
-    return scanRange.contains(Comparables.wrap(key));
+    return scanRange.contains(BytesComparable.wrap(key));
   }
 
   private Kvrpcpb.KvPair getCurrent() {

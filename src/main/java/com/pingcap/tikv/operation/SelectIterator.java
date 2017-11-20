@@ -62,7 +62,7 @@ public abstract class SelectIterator<T, RawT> implements Iterator<T> {
                                                regionTasks,
                                                session,
                                                SchemaInfer.create(req),
-                                               (chunks) -> ChunkIterator.getRawBytesChunkIterator(chunks)) {
+                                               ChunkIterator::getRawBytesChunkIterator) {
       @Override
       public Row next() {
         if (hasNext()) {
@@ -83,7 +83,7 @@ public abstract class SelectIterator<T, RawT> implements Iterator<T> {
                                           regionTasks,
                                           session,
                                           SchemaInfer.create(req),
-                                          (chunks) -> ChunkIterator.getHandleChunkIterator(chunks)) {
+                                          ChunkIterator::getHandleChunkIterator) {
       @Override
       public Long next() {
         if (hasNext()) {
@@ -122,6 +122,7 @@ public abstract class SelectIterator<T, RawT> implements Iterator<T> {
       });
     }
   }
+
 
   private List<Chunk> createClientAndSendReq(RegionTask regionTask) {
     List<KeyRange> ranges = regionTask.getRanges();

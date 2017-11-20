@@ -27,6 +27,7 @@ import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.DataTypeFactory;
 import com.pingcap.tikv.types.Types;
+import com.pingcap.tikv.util.BytesComparable;
 import org.junit.Test;
 
 import java.util.List;
@@ -128,10 +129,10 @@ public class RangeBuilderTest {
             );
     DataType type = DataTypeFactory.of(Types.TYPE_LONG);
     RangeBuilder builder = new RangeBuilder();
-    List<Range> ranges = RangeBuilder.exprToRanges(conds, type);
+    List<Range<BytesComparable>> ranges = RangeBuilder.exprToRanges(conds, type);
     assertEquals(2, ranges.size());
-    assertEquals(Range.closedOpen(0L, 50L), ranges.get(0));
-    assertEquals(Range.open(50L, 100L), ranges.get(1));
+    assertEquals(Range.closedOpen(BytesComparable.wrap(0L), BytesComparable.wrap(50L)), ranges.get(0));
+    assertEquals(Range.open(BytesComparable.wrap(50L), BytesComparable.wrap(100L)), ranges.get(1));
 
     // Test points and string range
     List<TiExpr> ac =
@@ -160,9 +161,17 @@ public class RangeBuilderTest {
     indexRanges = RangeBuilder.appendRanges(indexRanges, ranges, type);
     assertEquals(4, indexRanges.size());
 
-    assertEquals(Range.closedOpen("a", "g"), indexRanges.get(0).getRange());
-    assertEquals(Range.closedOpen("a", "g"), indexRanges.get(2).getRange());
-    assertEquals(Range.open("g", "z"), indexRanges.get(1).getRange());
-    assertEquals(Range.open("g", "z"), indexRanges.get(3).getRange());
+    assertEquals(closedOpen("a", "g"), indexRanges.get(0).getRange());
+    assertEquals(closedOpen("a", "g"), indexRanges.get(2).getRange());
+    assertEquals(open("g", "z"), indexRanges.get(1).getRange());
+    assertEquals(open("g", "z"), indexRanges.get(3).getRange());
+  }
+
+  private Range<BytesComparable> closedOpen(Object a, Object b) {
+    return Range.closedOpen(BytesComparable.wrap(a), BytesComparable.wrap(b));
+  }
+
+  private Range<BytesComparable> open(Object a, Object b) {
+    return Range.open(BytesComparable.wrap(a), BytesComparable.wrap(b));
   }
 }

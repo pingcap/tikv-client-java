@@ -21,7 +21,7 @@ import com.google.protobuf.ByteString;
 import java.util.function.Function;
 import org.junit.Test;
 
-public class ComparablesTest {
+public class BytesComparableTest {
   @Test
   public void wrapTest() throws Exception {
     // compared as unsigned
@@ -39,20 +39,20 @@ public class ComparablesTest {
     ByteString lhsBS = ByteString.copyFrom(lhs);
     ByteString rhsBS = ByteString.copyFrom(rhs);
 
-    Comparable lhsComp = Comparables.wrap(lhsBS);
-    Comparable rhsComp = Comparables.wrap(rhsBS);
+    BytesComparable lhsComp = BytesComparable.wrap(lhsBS);
+    BytesComparable rhsComp = BytesComparable.wrap(rhsBS);
 
     assertTrue(tester.apply(lhsComp.compareTo(rhsComp)));
 
-    lhsComp = Comparables.wrap(lhs);
-    rhsComp = Comparables.wrap(rhs);
+    lhsComp = BytesComparable.wrap(lhs);
+    rhsComp = BytesComparable.wrap(rhs);
 
     assertTrue(tester.apply(lhsComp.compareTo(rhsComp)));
   }
 
   private void testComparable(Object lhs, Object rhs, Function<Integer, Boolean> tester) {
-    Comparable lhsComp = Comparables.wrap(lhs);
-    Comparable rhsComp = Comparables.wrap(rhs);
+    BytesComparable lhsComp = BytesComparable.wrap(lhs);
+    BytesComparable rhsComp = BytesComparable.wrap(rhs);
 
     assertTrue(tester.apply(lhsComp.compareTo(rhsComp)));
   }

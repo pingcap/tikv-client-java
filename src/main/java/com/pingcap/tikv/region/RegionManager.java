@@ -34,7 +34,7 @@ import com.pingcap.tikv.kvproto.Metapb.Peer;
 import com.pingcap.tikv.kvproto.Metapb.Region;
 import com.pingcap.tikv.kvproto.Metapb.Store;
 import com.pingcap.tikv.kvproto.Metapb.StoreState;
-import com.pingcap.tikv.util.Comparables;
+import com.pingcap.tikv.util.BytesComparable;
 import com.pingcap.tikv.util.Pair;
 import java.util.List;
 
@@ -53,7 +53,7 @@ public class RegionManager {
     private static final int MAX_CACHE_CAPACITY =     4096;
     private final Cache<Long, TiRegion>               regionCache;
     private final Cache<Long, Store>                  storeCache;
-    private final RangeMap<Comparable, Long>          keyToRegionIdCache;
+    private final RangeMap<BytesComparable, Long>          keyToRegionIdCache;
     private final ReadOnlyPDClient pdClient;
 
     public RegionCache(ReadOnlyPDClient pdClient) {
@@ -73,7 +73,7 @@ public class RegionManager {
 
     public synchronized TiRegion getRegionByKey(ByteString key) {
       Long regionId;
-      regionId = keyToRegionIdCache.get(Comparables.wrap(key));
+      regionId = keyToRegionIdCache.get(BytesComparable.wrap(key));
 
       if (regionId == null) {
         TiRegion region = pdClient.getRegionByKey(key);

@@ -30,7 +30,7 @@ import com.pingcap.tikv.operation.SelectIterator;
 import com.pingcap.tikv.region.RegionStoreClient;
 import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.row.Row;
-import com.pingcap.tikv.util.Comparables;
+import com.pingcap.tikv.util.BytesComparable;
 import com.pingcap.tikv.util.Pair;
 import com.pingcap.tikv.util.RangeSplitter;
 import com.pingcap.tikv.util.RangeSplitter.RegionTask;
@@ -126,15 +126,14 @@ public class Snapshot {
 
   // TODO: Need faster implementation, say concurrent version
   // Assume keys sorted
-  @SuppressWarnings("unchecked")
   public List<KvPair> batchGet(List<ByteString> keys) {
     TiRegion curRegion = null;
-    Range curKeyRange = null;
+    Range<BytesComparable> curKeyRange = null;
     Pair<TiRegion, Store> lastPair;
     List<ByteString> keyBuffer = new ArrayList<>();
     List<KvPair> result = new ArrayList<>(keys.size());
     for (ByteString key : keys) {
-      if (curRegion == null || !curKeyRange.contains(Comparables.wrap(key))) {
+      if (curRegion == null || !curKeyRange.contains(BytesComparable.wrap(key))) {
         Pair<TiRegion, Store> pair = session.getRegionManager().getRegionStorePairByKey(key);
         lastPair = pair;
         curRegion = pair.first;
