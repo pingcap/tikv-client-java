@@ -81,7 +81,7 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
 
       if (error.hasStaleEpoch()) {
         this.regionManager.onRegionStale(
-            ctxRegion.getId(), error.getStaleEpoch().getNewRegionsList());
+            ctxRegion.getId(), ctxRegion.getLeader(),error.getStaleEpoch().getNewRegionsList());
         throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
       }
 

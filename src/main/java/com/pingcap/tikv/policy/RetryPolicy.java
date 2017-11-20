@@ -17,7 +17,6 @@ package com.pingcap.tikv.policy;
 
 import com.google.common.collect.ImmutableSet;
 import com.pingcap.tikv.exception.GrpcException;
-import com.pingcap.tikv.exception.GrpcUnrecoverableException;
 import com.pingcap.tikv.operation.ErrorHandler;
 import com.pingcap.tikv.util.BackOff;
 import io.grpc.Status;
@@ -53,7 +52,7 @@ public abstract class RetryPolicy<RespT> {
     }
     Status status = Status.fromThrowable(e);
     if (checkNotRecoverableException(status)) {
-      throw new GrpcUnrecoverableException(e);
+      throw new GrpcException(e);
     }
     doWait(nextBackMills);
   }
@@ -75,11 +74,7 @@ public abstract class RetryPolicy<RespT> {
         }
         return result;
       } catch (Exception e) {
-        if(!(e instanceof GrpcUnrecoverableException)) {
           handleFailure(e, methodName, backOff.nextBackOffMillis());
-        } else {
-          logger.error(String.format("Failed to recover from last grpc error calling %s.", methodName));
-        }
       }
     }
   }
