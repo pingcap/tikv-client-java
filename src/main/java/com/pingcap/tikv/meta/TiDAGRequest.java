@@ -26,7 +26,7 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Type TiDAGRequest.
- *
+ * <p>
  * Used for constructing a new DAG request to TiKV
  */
 public class TiDAGRequest implements Serializable {
@@ -104,7 +104,6 @@ public class TiDAGRequest implements Serializable {
     DAGRequest.Builder dagRequestBuilder = DAGRequest.newBuilder();
     Executor.Builder executorBuilder = Executor.newBuilder();
     IndexScan.Builder indexScanBuilder = IndexScan.newBuilder();
-//    tableInfo.getColumns().forEach(tiColumnInfo -> indexScanBuilder.addColumns(tiColumnInfo.toProto(tableInfo)));
 
     List<TiColumnInfo> columnInfoList = tableInfo.getColumns();
     boolean hasPk = false;
@@ -115,22 +114,25 @@ public class TiDAGRequest implements Serializable {
         .map(TiIndexColumn::getOffset)
         .collect(Collectors.toList());
 
-//    for (Integer idx : indexColIds) {
-//      ColumnInfo columnInfo = columnInfoList
-//          .get(idx)
-//          .toProto(tableInfo);
-//
-////      ColumnInfo.Builder colBuilder = ColumnInfo.newBuilder();
-////      colBuilder.setTp(columnInfo.getTp());
-////      colBuilder.setColumnId(columnInfo.getColumnId());
-//      if (columnInfo.getColumnId() == -1) {
-//        hasPk = true;
-////        colBuilder.setPkHandle(true);
-//      }
-//      indexScanBuilder.addColumns(columnInfo);
-//    }
+    for (Integer idx : indexColIds) {
+      ColumnInfo columnInfo = columnInfoList
+          .get(idx)
+          .toProto(tableInfo);
 
-//    if (!hasPk) {
+      ColumnInfo.Builder colBuilder = ColumnInfo.newBuilder();
+      colBuilder.setTp(columnInfo.getTp());
+      colBuilder.setColumnId(columnInfo.getColumnId());
+      colBuilder.setCollation(columnInfo.getCollation());
+      colBuilder.setColumnLen(columnInfo.getColumnLen());
+      colBuilder.setFlag(columnInfo.getFlag());
+      if (columnInfo.getColumnId() == -1) {
+        hasPk = true;
+        colBuilder.setPkHandle(true);
+      }
+      indexScanBuilder.addColumns(colBuilder);
+    }
+
+    if (!hasPk) {
       ColumnInfo handleColumn = ColumnInfo.newBuilder()
           .setColumnId(-1)
           .setPkHandle(true)
@@ -138,16 +140,18 @@ public class TiDAGRequest implements Serializable {
           // we need to set this to true in order to retrieve the handle,
           // so the name 'setPkHandle' may sounds strange.
           .build();
-//      indexScanBuilder.addColumns(handleColumn);
-//    }
+      indexScanBuilder.addColumns(handleColumn);
+    }
     executorBuilder.setTp(ExecType.TypeIndexScan);
 
     indexScanBuilder
         .setTableId(tableInfo.getId())
         .setIndexId(indexInfo.getId());
     dagRequestBuilder.addExecutors(executorBuilder.setIdxScan(indexScanBuilder).build());
-
-    dagRequestBuilder.addOutputOffsets(0);
+    int colCount = indexScanBuilder.getColumnsCount();
+    dagRequestBuilder.addOutputOffsets(
+         colCount != 0 ? colCount - 1 : 0
+    );
     return dagRequestBuilder
         .setFlags(flags)
         .setTimeZoneOffset(timeZoneOffset)
@@ -410,7 +414,7 @@ public class TiDAGRequest implements Serializable {
    * @param byItem is a TiByItem.
    * @return a SelectBuilder
    */
-  TiDAGRequest addOrderByItem(TiByItem byItem) {
+  public TiDAGRequest addOrderByItem(TiByItem byItem) {
     orderByItems.add(requireNonNull(byItem, "byItem is null"));
     return this;
   }
