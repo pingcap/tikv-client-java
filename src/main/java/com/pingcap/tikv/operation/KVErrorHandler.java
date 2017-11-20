@@ -79,7 +79,6 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
         throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
       }
 
-      // no need retry. NewRegions is returned in this response. we just need update RegionManage's region cache.
       if (error.hasStaleEpoch()) {
         regionManager.onRegionStale(ctxRegion.getId(), error.getStaleEpoch().getNewRegionsList());
         this.regionManager.onRegionStale(
