@@ -17,16 +17,16 @@
 
 package com.pingcap.tikv.exception;
 
-public class GrpcUnrecoverException extends RuntimeException {
-  public GrpcUnrecoverException(Exception e) {
+public class GrpcUnrecoverableException extends RuntimeException {
+  public GrpcUnrecoverableException(Exception e) {
     super(e);
   }
 
-  public GrpcUnrecoverException(String msg) {
+  public GrpcUnrecoverableException(String msg) {
     super(msg);
   }
 
-  public GrpcUnrecoverException(String msg, Exception e) {
+  public GrpcUnrecoverableException(String msg, Exception e) {
     super(msg, e);
   }
 }
