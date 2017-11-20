@@ -28,8 +28,6 @@ import com.pingcap.tikv.kvproto.Kvrpcpb.Context;
 import com.pingcap.tikv.kvproto.TikvGrpc;
 import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.util.ByteArrayComparable;
-import com.pingcap.tikv.util.Comparables;
-import com.pingcap.tikv.util.Comparables.ComparableByteString;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.Status;
