@@ -36,7 +36,7 @@ public abstract class RetryPolicy<RespT> {
           Status.Code.ALREADY_EXISTS, Status.Code.PERMISSION_DENIED,
           Status.Code.INVALID_ARGUMENT, Status.Code.NOT_FOUND,
           Status.Code.UNIMPLEMENTED, Status.Code.OUT_OF_RANGE,
-          Status.Code.UNAUTHENTICATED);
+          Status.Code.UNAUTHENTICATED, Status.Code.CANCELLED );
 
   RetryPolicy(ErrorHandler<RespT> handler) {
     this.handler = handler;
