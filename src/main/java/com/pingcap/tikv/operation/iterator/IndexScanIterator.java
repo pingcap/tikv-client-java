@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package com.pingcap.tikv.operation;
+package com.pingcap.tikv.operation.iterator;
 
 import com.pingcap.tikv.Snapshot;
 import com.pingcap.tikv.TiConfiguration;
@@ -48,7 +48,7 @@ public class IndexScanIterator implements Iterator<Row> {
     this.handleIterator = handleIterator;
     this.snapshot = snapshot;
     this.batchSize = conf.getIndexScanBatchSize();
-    this.completionService = new ExecutorCompletionService(session.getThreadPoolForIndexScan());
+    this.completionService = new ExecutorCompletionService<>(session.getThreadPoolForIndexScan());
   }
 
   private TLongArrayList feedBatch() {
@@ -74,7 +74,7 @@ public class IndexScanIterator implements Iterator<Row> {
             List<RegionTask> tasks = RangeSplitter
                 .newSplitter(session.getRegionManager())
                 .splitHandlesByRegion(dagReq.getTableInfo().getId(), handles);
-            return DAGIterator.getRowIterator(dagReq, tasks, session);
+            return CoprocessIterator.getRowIterator(dagReq, tasks, session);
           });
         }
         while (batchCount > 0) {

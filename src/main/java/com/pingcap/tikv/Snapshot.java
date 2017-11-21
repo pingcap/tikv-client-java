@@ -22,9 +22,8 @@ import com.pingcap.tikv.kvproto.Kvrpcpb.KvPair;
 import com.pingcap.tikv.kvproto.Metapb.Store;
 import com.pingcap.tikv.meta.TiDAGRequest;
 import com.pingcap.tikv.meta.TiTimestamp;
-import com.pingcap.tikv.operation.DAGIterator;
-import com.pingcap.tikv.operation.IndexScanIterator;
-import com.pingcap.tikv.operation.ScanIterator;
+import com.pingcap.tikv.operation.iterator.IndexScanIterator;
+import com.pingcap.tikv.operation.iterator.ScanIterator;
 import com.pingcap.tikv.region.RegionStoreClient;
 import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.row.Row;
@@ -37,6 +36,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import static com.pingcap.tikv.operation.iterator.CoprocessIterator.getHandleIterator;
+import static com.pingcap.tikv.operation.iterator.CoprocessIterator.getRowIterator;
 import static com.pingcap.tikv.util.KeyRangeUtils.makeRange;
 
 public class Snapshot {
@@ -84,13 +85,13 @@ public class Snapshot {
    */
   public Iterator<Row> tableRead(TiDAGRequest dagRequest) {
     if (dagRequest.isIndexScan()) {
-      Iterator<Long> iter = DAGIterator.getHandleIterator(
+      Iterator<Long> iter = getHandleIterator(
           dagRequest,
           RangeSplitter.newSplitter(session.getRegionManager()).splitRangeByRegion(dagRequest.getRanges()),
           session);
       return new IndexScanIterator(this, dagRequest, iter);
     } else {
-      return DAGIterator.getRowIterator(
+      return getRowIterator(
           dagRequest,
           RangeSplitter.newSplitter(session.getRegionManager()).splitRangeByRegion(dagRequest.getRanges()),
           session);
@@ -107,13 +108,13 @@ public class Snapshot {
    */
   public Iterator<Row> tableRead(TiDAGRequest dagRequest, List<RegionTask> task) {
     if (dagRequest.isIndexScan()) {
-      Iterator<Long> iter = DAGIterator.getHandleIterator(
+      Iterator<Long> iter = getHandleIterator(
           dagRequest,
           task,
           session);
       return new IndexScanIterator(this, dagRequest, iter);
     } else {
-      return DAGIterator.getRowIterator(
+      return getRowIterator(
           dagRequest,
           task,
           session);

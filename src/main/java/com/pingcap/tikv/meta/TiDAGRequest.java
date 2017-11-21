@@ -30,6 +30,10 @@ import static java.util.Objects.requireNonNull;
  * Used for constructing a new DAG request to TiKV
  */
 public class TiDAGRequest implements Serializable {
+  public TiDAGRequest(boolean streaming) {
+    this.streaming = streaming;
+  }
+
   public enum TruncateMode {
     IgnoreTruncation(0x1),
     TruncationAsWarning(0x2);
@@ -76,6 +80,7 @@ public class TiDAGRequest implements Serializable {
   private TiExpr having;
   private boolean distinct;
   private boolean handleNeeded;
+  private final boolean streaming;
 
   public void resolve() {
     getFields().forEach(expr -> expr.bind(tableInfo));
@@ -537,6 +542,14 @@ public class TiDAGRequest implements Serializable {
    */
   public void setHandleNeeded(boolean handleNeeded) {
     this.handleNeeded = handleNeeded;
+  }
+
+  /**
+   * Whether we use streaming processing to retrieve data
+   * @return true if use streaming, false otherwise.
+   */
+  public boolean useStreaming() {
+    return streaming;
   }
 
   @Override

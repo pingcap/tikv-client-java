@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package com.pingcap.tikv.operation;
+package com.pingcap.tikv.operation.iterator;
 
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
@@ -26,6 +26,7 @@ import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
 import com.pingcap.tikv.kvproto.Metapb.Store;
 import com.pingcap.tikv.meta.TiSelectRequest;
+import com.pingcap.tikv.operation.SchemaInfer;
 import com.pingcap.tikv.region.RegionStoreClient;
 import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.row.Row;

@@ -9,7 +9,6 @@ import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.expression.scalar.GreaterThan;
 import com.pingcap.tikv.meta.TiDAGRequest;
 import com.pingcap.tikv.meta.TiDBInfo;
-import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.operation.SchemaInfer;
 import com.pingcap.tikv.predicates.PredicateUtils;
@@ -54,7 +53,7 @@ public class Main {
     ScanBuilder scanBuilder = new ScanBuilder();
     ScanBuilder.ScanPlan scanPlan = scanBuilder.buildScan(exprs, table);
 
-    TiDAGRequest selReq = new TiDAGRequest();
+    TiDAGRequest selReq = new TiDAGRequest(false);
     selReq
         .addRanges(scanPlan.getKeyRanges())
         .setTableInfo(table)
@@ -101,7 +100,7 @@ public class Main {
     ScanBuilder scanBuilder = new ScanBuilder();
     ScanBuilder.ScanPlan scanPlan = scanBuilder.buildTableScan(exprs, table);
 
-    TiDAGRequest selReq = new TiDAGRequest();
+    TiDAGRequest selReq = new TiDAGRequest(false);
     selReq
         .addRanges(scanPlan.getKeyRanges())
         .setTableInfo(table)
@@ -145,7 +144,7 @@ public class Main {
     ScanBuilder scanBuilder = new ScanBuilder();
     ScanBuilder.ScanPlan scanPlan = scanBuilder.buildScan(exprs, table);
 
-    TiDAGRequest selReq = new TiDAGRequest();
+    TiDAGRequest selReq = new TiDAGRequest(false);
     selReq
         .addRanges(scanPlan.getKeyRanges())
         .setTableInfo(table)
