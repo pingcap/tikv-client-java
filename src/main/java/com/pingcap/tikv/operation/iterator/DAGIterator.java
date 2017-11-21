@@ -1,8 +1,10 @@
 package com.pingcap.tikv.operation.iterator;
 
+import com.pingcap.tidb.tipb.Chunk;
 import com.pingcap.tidb.tipb.DAGRequest;
 import com.pingcap.tidb.tipb.SelectResponse;
 import com.pingcap.tikv.TiSession;
+import com.pingcap.tikv.exception.GrpcRegionStaleException;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.kvproto.Coprocessor;
 import com.pingcap.tikv.kvproto.Metapb;
@@ -11,6 +13,7 @@ import com.pingcap.tikv.region.RegionStoreClient;
 import com.pingcap.tikv.region.TiRegion;
 import com.pingcap.tikv.util.RangeSplitter;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorCompletionService;
@@ -142,8 +145,22 @@ public abstract class DAGIterator<T> extends CoprocessIterator<T> {
         return null;
       }
       return response;
-    } catch (Exception e) {
-      throw new TiClientInternalException("Error Closing Store client.", e);
+    } catch (GrpcRegionStaleException e) {
+      List<Chunk> resultChunk = new ArrayList<>();
+      List<RangeSplitter.RegionTask> splitTasks = RangeSplitter
+          .newSplitter(session.getRegionManager())
+          .splitRangeByRegion(ranges);
+
+      for (RangeSplitter.RegionTask t : splitTasks) {
+        SelectResponse resFromCurTask = process(t);
+        if (resFromCurTask != null) {
+          resultChunk.addAll(resFromCurTask.getChunksList());
+        }
+      }
+
+      return SelectResponse.newBuilder()
+          .addAllChunks(resultChunk)
+          .build();
     }
   }
 
@@ -162,6 +179,8 @@ public abstract class DAGIterator<T> extends CoprocessIterator<T> {
       }
       return responseIterator;
     } catch (Exception e) {
+      // TODO: Fix stale error handling in streaming
+      // see:https://github.com/pingcap/tikv-client-lib-java/pull/149
       throw new TiClientInternalException("Error Closing Store client.", e);
     }
   }

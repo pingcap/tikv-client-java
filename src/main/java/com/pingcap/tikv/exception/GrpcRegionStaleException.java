@@ -13,29 +13,19 @@
  * limitations under the License.
  */
 
-package com.pingcap.tikv.expression;
+package com.pingcap.tikv.exception;
 
-import com.pingcap.tidb.tipb.Expr;
-import com.pingcap.tikv.meta.TiTableInfo;
-import com.pingcap.tikv.types.DataType;
 
-import java.io.Serializable;
-
-public interface TiExpr extends Serializable {
-  Expr toProto();
-
-  default boolean isSupportedExpr() {
-    try {
-      Expr expr = toProto();
-      return expr != null;
-    } catch (Exception e) {
-      e.printStackTrace();
-      return false;
-    }
+public class GrpcRegionStaleException extends GrpcException {
+  public GrpcRegionStaleException(Exception e) {
+    super(e);
   }
 
-  DataType getType();
+  public GrpcRegionStaleException(String msg) {
+    super(msg);
+  }
 
-  // TODO: Make it visitor
-  TiExpr bind(TiTableInfo table);
+  public GrpcRegionStaleException(String msg, Exception e) {
+    super(msg, e);
+  }
 }
