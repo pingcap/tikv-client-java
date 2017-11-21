@@ -41,6 +41,9 @@ public class BytesComparable implements Comparable<BytesComparable>, Serializabl
 
   private final Comparator<byte[]> comparator = UnsignedBytes.lexicographicalComparator();
   private BytesComparable(Object obj) {
+    if(obj instanceof BytesComparable) {
+      throw new IllegalStateException("This object is already comparable");
+    }
     this.value = convertObjectToBytes(obj);
     this.obj = obj;
   }
