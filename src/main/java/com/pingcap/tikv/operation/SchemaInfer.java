@@ -104,13 +104,7 @@ public class SchemaInfer {
       types.add(DataTypeFactory.of(TYPE_BLOB));
       tiSelectRequest.getAggregates().forEach(expr -> types.add(expr.getType()));
     } else {
-      // skip the only column if no aggregates but group by exists
-      // those cases are distinct and group by without aggregates
-      // and we append fake column for it
-      if (tiSelectRequest.getGroupByItems().isEmpty()) {
-        // Extract all column type information from TiExpr
-        tiSelectRequest.getFields().forEach(expr -> types.add(expr.getType()));
-      }
+      tiSelectRequest.getFields().forEach(expr -> types.add(expr.getType()));
     }
   }
 
