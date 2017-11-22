@@ -83,13 +83,13 @@ public class TiDAGRequest implements Serializable {
   private final boolean streaming;
 
   public void resolve() {
-    getFields().forEach(expr -> expr.bind(tableInfo));
-    getWhere().forEach(expr -> expr.bind(tableInfo));
-    getGroupByItems().forEach(item -> item.getExpr().bind(tableInfo));
-    getOrderByItems().forEach(item -> item.getExpr().bind(tableInfo));
-    getAggregates().forEach(expr -> expr.bind(tableInfo));
+    getFields().forEach(expr -> expr.resolve(tableInfo));
+    getWhere().forEach(expr -> expr.resolve(tableInfo));
+    getGroupByItems().forEach(item -> item.getExpr().resolve(tableInfo));
+    getOrderByItems().forEach(item -> item.getExpr().resolve(tableInfo));
+    getAggregates().forEach(expr -> expr.resolve(tableInfo));
     if (having != null) {
-      having.bind(tableInfo);
+      having.resolve(tableInfo);
     }
   }
 
