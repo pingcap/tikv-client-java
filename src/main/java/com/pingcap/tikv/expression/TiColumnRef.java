@@ -39,7 +39,7 @@ public class TiColumnRef implements TiExpr {
 
   public static TiColumnRef create(String name, TiTableInfo table) {
     TiColumnRef ref = new TiColumnRef(name);
-    ref.bind(table);
+    ref.resolve(table);
     return ref;
   }
 
@@ -88,7 +88,7 @@ public class TiColumnRef implements TiExpr {
   }
 
   @Override
-  public TiColumnRef bind(TiTableInfo table) {
+  public TiColumnRef resolve(TiTableInfo table) {
     TiColumnInfo columnInfo = getColumnWithName(name, table);
     if (columnInfo == null) {
       throw new TiExpressionException("No Matching columns from " + table.getName());
