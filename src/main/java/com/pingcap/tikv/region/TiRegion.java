@@ -128,15 +128,7 @@ public class TiRegion implements Serializable {
   }
 
   public boolean isValid() {
-    return peer != null && meta != null && hasEndKey() && hasEndKey();
-  }
-
-  boolean hasStartKey() {
-    return meta.getStartKey() != null;
-  }
-
-  boolean hasEndKey() {
-    return meta.getEndKey() != null;
+    return peer != null && meta != null;
   }
 
   public Metapb.RegionEpoch getRegionEpoch() {
