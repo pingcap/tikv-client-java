@@ -17,6 +17,7 @@
 
 package com.pingcap.tikv.region;
 
+import static com.pingcap.tikv.codec.KeyUtils.formatBytes;
 import static com.pingcap.tikv.util.KeyRangeUtils.makeRange;
 
 import com.google.common.cache.Cache;
@@ -37,8 +38,10 @@ import com.pingcap.tikv.kvproto.Metapb.StoreState;
 import com.pingcap.tikv.util.Comparables;
 import com.pingcap.tikv.util.Pair;
 import java.util.List;
+import org.apache.log4j.Logger;
 
 public class RegionManager {
+  private static final Logger logger = Logger.getLogger(RegionManager.class);
   private RegionCache cache;
   private final ReadOnlyPDClient pdClient;
 
@@ -74,21 +77,33 @@ public class RegionManager {
     public synchronized TiRegion getRegionByKey(ByteString key) {
       Long regionId;
       regionId = keyToRegionIdCache.get(Comparables.wrap(key));
+      if (logger.isDebugEnabled()) {
+        logger.debug(String.format("getRegionByKey key[%s] -> ID[%s]", formatBytes(key), regionId));
+      }
 
       if (regionId == null) {
+        logger.debug("Key not find in keyToRegionIdCache:" + formatBytes(key));
         TiRegion region = pdClient.getRegionByKey(key);
         if (!putRegion(region)) {
           throw new TiClientInternalException("Invalid Region: " + region.toString());
         }
         return region;
       }
-      return regionCache.getIfPresent(regionId);
+      TiRegion region = regionCache.getIfPresent(regionId);
+      if (logger.isDebugEnabled()) {
+        logger.debug(String.format("getRegionByKey ID[%s] -> Region[%s]", regionId, region));
+      }
+
+      return region;
     }
 
     @SuppressWarnings("unchecked")
     private synchronized boolean putRegion(TiRegion region) {
       if (!region.hasStartKey() || !region.hasEndKey()) return false;
 
+      if (logger.isDebugEnabled()) {
+        logger.debug("putRegion: " + region);
+      }
       regionCache.put(region.getId(), region);
       keyToRegionIdCache.put(makeRange(region.getStartKey(), region.getEndKey()), region.getId());
       return true;
@@ -96,6 +111,9 @@ public class RegionManager {
 
     private synchronized TiRegion getRegionById(long regionId) {
       TiRegion region = regionCache.getIfPresent(regionId);
+      if (logger.isDebugEnabled()) {
+        logger.debug(String.format("getRegionByKey ID[%s] -> Region[%s]", regionId, region));
+      }
       if (region == null) {
         region = pdClient.getRegionByID(regionId);
         if (!putRegion(region)) {
@@ -111,6 +129,9 @@ public class RegionManager {
      */
     public synchronized void invalidateRegion(long regionId) {
       try {
+        if (logger.isDebugEnabled()) {
+          logger.debug(String.format("invalidateRegion ID[%s]", regionId));
+        }
         TiRegion region = regionCache.getIfPresent(regionId);
         keyToRegionIdCache.remove(makeRange(region.getStartKey(), region.getEndKey()));
       } catch (Exception ignore) {
@@ -122,6 +143,9 @@ public class RegionManager {
     public synchronized void invalidateAllRegionForStore(long storeId) {
       for (TiRegion r : regionCache.asMap().values()) {
         if(r.getLeader().getStoreId() == storeId) {
+          if (logger.isDebugEnabled()) {
+            logger.debug(String.format("invalidateAllRegionForStore Region[%s]", r));
+          }
           regionCache.invalidate(r.getId());
           keyToRegionIdCache.remove(makeRange(r.getStartKey(), r.getEndKey()));
         }
@@ -165,7 +189,7 @@ public class RegionManager {
   public Pair<TiRegion, Store> getRegionStorePairByKey(ByteString key) {
     TiRegion region = cache.getRegionByKey(key);
     if (region == null) {
-      throw new TiClientInternalException("Region not exist for key:" + key);
+      throw new TiClientInternalException("Region not exist for key:" + formatBytes(key));
     }
     if (!region.isValid()) {
       throw new TiClientInternalException("Region invalid: " + region.toString());
@@ -192,7 +216,9 @@ public class RegionManager {
   public void onRegionStale(long regionID, Peer peer, List<Region> regions) {
     cache.invalidateRegion(regionID);
     for (Region r : regions) {
-      cache.putRegion(new TiRegion(r, peer, IsolationLevel.RC, CommandPri.Low));
+      TiRegion newRegion = new TiRegion(r, peer, IsolationLevel.RC, CommandPri.Low);
+      logger.debug(String.format("RegionManager:onRegionStale added new region: [%s]", newRegion));
+      cache.putRegion(newRegion);
     }
   }
 

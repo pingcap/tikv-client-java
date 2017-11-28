@@ -30,7 +30,7 @@ import org.apache.log4j.Logger;
 public abstract class AbstractGRPCClient<
         BlockingStubT extends AbstractStub<BlockingStubT>, StubT extends AbstractStub<StubT>>
     implements AutoCloseable {
-  final Logger logger = Logger.getLogger(this.getClass());
+  protected final Logger logger = Logger.getLogger(this.getClass());
   protected TiSession session;
   protected TiConfiguration conf;
 

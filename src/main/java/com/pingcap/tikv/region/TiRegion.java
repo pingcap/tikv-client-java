@@ -19,6 +19,7 @@ package com.pingcap.tikv.region;
 
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.codec.CodecDataInput;
+import com.pingcap.tikv.codec.KeyUtils;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.kvproto.Kvrpcpb;
 import com.pingcap.tikv.kvproto.Kvrpcpb.IsolationLevel;
@@ -167,5 +168,13 @@ public class TiRegion implements Serializable {
       return true;
     }
     return false;
+  }
+
+  public String toString() {
+    return String.format("{Region[%d] Store[%d] KeyRange[%s]:[%s]}",
+                          getId(),
+                          getLeader().getStoreId(),
+                          KeyUtils.formatBytes(getStartKey()),
+                          KeyUtils.formatBytes(getEndKey()));
   }
 }
