@@ -32,7 +32,9 @@ import com.pingcap.tikv.util.KeyRangeUtils;
 import com.pingcap.tikv.util.Pair;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class TiSelectRequest implements Serializable {
@@ -61,6 +63,7 @@ public class TiSelectRequest implements Serializable {
   // we need a cast to target when given
   private final List<Pair<TiExpr, DataType>> aggregates = new ArrayList<>();
   private final List<KeyRange> keyRanges = new ArrayList<>();
+  private final Set<Integer> skipOrdinal = new HashSet<>();
 
   private int limit;
   private int timeZoneOffset;
@@ -70,13 +73,13 @@ public class TiSelectRequest implements Serializable {
   private boolean distinct;
 
   public void resolve() {
-    getFields().forEach(expr -> expr.bind(tableInfo));
-    getWhere().forEach(expr -> expr.bind(tableInfo));
-    getGroupByItems().forEach(item -> item.getExpr().bind(tableInfo));
-    getOrderByItems().forEach(item -> item.getExpr().bind(tableInfo));
-    getAggregates().forEach(expr -> expr.bind(tableInfo));
+    getFields().forEach(expr -> expr.resolve(tableInfo));
+    getWhere().forEach(expr -> expr.resolve(tableInfo));
+    getGroupByItems().forEach(item -> item.getExpr().resolve(tableInfo));
+    getOrderByItems().forEach(item -> item.getExpr().resolve(tableInfo));
+    getAggregates().forEach(expr -> expr.resolve(tableInfo));
     if (having != null) {
-      having.bind(tableInfo);
+      having.resolve(tableInfo);
     }
   }
 
@@ -86,6 +89,14 @@ public class TiSelectRequest implements Serializable {
     } else {
       return buildTableScan();
     }
+  }
+
+  public void skipAggregatesAt(int ordinal) {
+    skipOrdinal.add(ordinal);
+  }
+
+  public boolean isAggregatesSkipped(int ordinal) {
+    return skipOrdinal.contains(ordinal);
   }
 
   private SelectRequest buildIndexScan() {
@@ -127,7 +138,7 @@ public class TiSelectRequest implements Serializable {
       columns =
           getFields()
               .stream()
-              .map(col -> col.bind(tableInfo).getColumnInfo())
+              .map(col -> col.resolve(tableInfo).getColumnInfo())
               .collect(Collectors.toList());
     }
 
