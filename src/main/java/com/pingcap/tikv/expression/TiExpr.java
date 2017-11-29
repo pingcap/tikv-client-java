@@ -29,7 +29,6 @@ public interface TiExpr extends Serializable {
       Expr expr = toProto();
       return expr != null;
     } catch (Exception e) {
-      e.printStackTrace();
       return false;
     }
   }
