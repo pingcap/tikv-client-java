@@ -36,9 +36,6 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.log4j.Logger;
 
-import java.util.List;
-
-import static com.pingcap.tikv.util.KeyRangeUtils.makeRange;
 
 public class RegionManager {
   private static final Logger logger = Logger.getLogger(RegionManager.class);
