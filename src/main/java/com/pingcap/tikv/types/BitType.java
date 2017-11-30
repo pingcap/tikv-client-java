@@ -1,4 +1,5 @@
 /*
+ *
  * Copyright 2017 PingCAP, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,29 +12,18 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package com.pingcap.tikv.expression;
+package com.pingcap.tikv.types;
 
-import com.pingcap.tidb.tipb.Expr;
-import com.pingcap.tikv.meta.TiTableInfo;
-import com.pingcap.tikv.types.DataType;
-import java.io.Serializable;
+import com.pingcap.tikv.meta.TiColumnInfo;
 
-public interface TiExpr extends Serializable {
-  Expr toProto();
-
-  default boolean isSupportedExpr() {
-    try {
-      Expr expr = toProto();
-      return expr != null;
-    } catch (Exception e) {
-      return false;
-    }
+/**
+ * We add this type in order to recognize BitType in spark strategy
+ */
+public class BitType extends IntegerType {
+  protected BitType(TiColumnInfo.InternalTypeHolder holder) {
+    super(holder);
   }
-
-  DataType getType();
-
-  // TODO: Make it visitor
-  TiExpr resolve(TiTableInfo table);
 }

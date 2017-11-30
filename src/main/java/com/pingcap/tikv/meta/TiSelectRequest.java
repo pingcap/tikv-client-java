@@ -26,12 +26,15 @@ import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.expression.TiByItem;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiExpr;
+import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.util.KeyRangeUtils;
 import com.pingcap.tikv.util.Pair;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class TiSelectRequest implements Serializable {
@@ -59,7 +62,8 @@ public class TiSelectRequest implements Serializable {
   // System like Spark has different type promotion rules
   // we need a cast to target when given
   private final List<Pair<TiExpr, DataType>> aggregates = new ArrayList<>();
-  private final List<com.pingcap.tikv.kvproto.Coprocessor.KeyRange> keyRanges = new ArrayList<>();
+  private final List<KeyRange> keyRanges = new ArrayList<>();
+  private final Set<Integer> skipOrdinal = new HashSet<>();
 
   private int limit;
   private int timeZoneOffset;
@@ -69,13 +73,13 @@ public class TiSelectRequest implements Serializable {
   private boolean distinct;
 
   public void resolve() {
-    getFields().forEach(expr -> expr.bind(tableInfo));
-    getWhere().forEach(expr -> expr.bind(tableInfo));
-    getGroupByItems().forEach(item -> item.getExpr().bind(tableInfo));
-    getOrderByItems().forEach(item -> item.getExpr().bind(tableInfo));
-    getAggregates().forEach(expr -> expr.bind(tableInfo));
+    getFields().forEach(expr -> expr.resolve(tableInfo));
+    getWhere().forEach(expr -> expr.resolve(tableInfo));
+    getGroupByItems().forEach(item -> item.getExpr().resolve(tableInfo));
+    getOrderByItems().forEach(item -> item.getExpr().resolve(tableInfo));
+    getAggregates().forEach(expr -> expr.resolve(tableInfo));
     if (having != null) {
-      having.bind(tableInfo);
+      having.resolve(tableInfo);
     }
   }
 
@@ -85,6 +89,14 @@ public class TiSelectRequest implements Serializable {
     } else {
       return buildTableScan();
     }
+  }
+
+  public void skipAggregatesAt(int ordinal) {
+    skipOrdinal.add(ordinal);
+  }
+
+  public boolean isAggregatesSkipped(int ordinal) {
+    return skipOrdinal.contains(ordinal);
   }
 
   private SelectRequest buildIndexScan() {
@@ -126,7 +138,7 @@ public class TiSelectRequest implements Serializable {
       columns =
           getFields()
               .stream()
-              .map(col -> col.bind(tableInfo).getColumnInfo())
+              .map(col -> col.resolve(tableInfo).getColumnInfo())
               .collect(Collectors.toList());
     }
 
@@ -280,7 +292,7 @@ public class TiSelectRequest implements Serializable {
   }
 
   public List<TiExpr> getAggregates() {
-    return aggregates.stream().map(p -> p.getFirst()).collect(Collectors.toList());
+    return aggregates.stream().map(p -> p.first).collect(Collectors.toList());
   }
 
   public List<Pair<TiExpr, DataType>> getAggregatePairs() {
@@ -340,17 +352,17 @@ public class TiSelectRequest implements Serializable {
    *
    * @param ranges key range of scan
    */
-  public TiSelectRequest addRanges(List<com.pingcap.tikv.kvproto.Coprocessor.KeyRange> ranges) {
-    keyRanges.addAll(requireNonNull(ranges, "Pair is null"));
+  public TiSelectRequest addRanges(List<KeyRange> ranges) {
+    keyRanges.addAll(requireNonNull(ranges, "KeyRange is null"));
     return this;
   }
 
-  public void resetRanges(List<com.pingcap.tikv.kvproto.Coprocessor.KeyRange> ranges) {
+  public void resetRanges(List<KeyRange> ranges) {
     keyRanges.clear();
     keyRanges.addAll(ranges);
   }
 
-  public List<com.pingcap.tikv.kvproto.Coprocessor.KeyRange> getRanges() {
+  public List<KeyRange> getRanges() {
     return keyRanges;
   }
 
