@@ -70,7 +70,7 @@ public abstract class CoprocessIterator<T> implements Iterator<T> {
         regionTasks,
         session,
         SchemaInfer.create(req),
-        req.useStreaming()
+        req.getPushDownType()
     ) {
       @Override
       public Row next() {
@@ -91,7 +91,7 @@ public abstract class CoprocessIterator<T> implements Iterator<T> {
         regionTasks,
         session,
         SchemaInfer.create(req),
-        req.useStreaming()
+        req.getPushDownType()
     ) {
       @Override
       public Long next() {

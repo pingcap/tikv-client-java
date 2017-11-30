@@ -8,6 +8,7 @@ import com.pingcap.tikv.exception.GrpcRegionStaleException;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.kvproto.Coprocessor;
 import com.pingcap.tikv.kvproto.Metapb;
+import com.pingcap.tikv.meta.TiDAGRequest.PushDownType;
 import com.pingcap.tikv.operation.SchemaInfer;
 import com.pingcap.tikv.region.RegionStoreClient;
 import com.pingcap.tikv.region.TiRegion;
@@ -18,6 +19,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorCompletionService;
 
+import static com.pingcap.tikv.meta.TiDAGRequest.PushDownType.STREAMING;
+
 public abstract class DAGIterator<T> extends CoprocessIterator<T> {
   private ExecutorCompletionService<Iterator<SelectResponse>> streamingService;
   private ExecutorCompletionService<SelectResponse> dagService;
@@ -25,19 +28,22 @@ public abstract class DAGIterator<T> extends CoprocessIterator<T> {
 
   private Iterator<SelectResponse> responseIterator;
 
-  private final boolean streaming;
+  private final PushDownType pushDownType;
 
   DAGIterator(DAGRequest req,
               List<RangeSplitter.RegionTask> regionTasks,
               TiSession session,
               SchemaInfer infer,
-              boolean streaming) {
+              PushDownType pushDownType) {
     super(req, regionTasks, session, infer);
-    this.streaming = streaming;
-    if (streaming) {
-      streamingService = new ExecutorCompletionService<>(session.getThreadPoolForTableScan());
-    } else {
-      dagService = new ExecutorCompletionService<>(session.getThreadPoolForTableScan());
+    this.pushDownType = pushDownType;
+    switch (pushDownType) {
+      case NORMAL:
+        dagService = new ExecutorCompletionService<>(session.getThreadPoolForTableScan());
+        break;
+      case STREAMING:
+        streamingService = new ExecutorCompletionService<>(session.getThreadPoolForTableScan());
+        break;
     }
     submitTasks();
   }
@@ -45,10 +51,13 @@ public abstract class DAGIterator<T> extends CoprocessIterator<T> {
   @Override
   void submitTasks() {
     for (RangeSplitter.RegionTask task : regionTasks) {
-      if (streaming) {
-        streamingService.submit(() -> processByStreaming(task));
-      } else {
-        dagService.submit(() -> process(task));
+      switch (pushDownType) {
+        case STREAMING:
+          streamingService.submit(() -> processByStreaming(task));
+          break;
+        case NORMAL:
+          dagService.submit(() -> process(task));
+          break;
       }
     }
   }
@@ -68,7 +77,7 @@ public abstract class DAGIterator<T> extends CoprocessIterator<T> {
         createDataInputReader();
       }
       // If not, check next region/response
-      else if (streaming) {
+      else if (pushDownType == STREAMING) {
         if (!advanceNextResponse() &&
             !readNextRegionChunks()) {
           return false;
@@ -83,11 +92,14 @@ public abstract class DAGIterator<T> extends CoprocessIterator<T> {
 
 
   private boolean hasMoreResponse() {
-    if (streaming) {
-      return responseIterator != null && responseIterator.hasNext();
-    } else {
-      return response != null;
+    switch (pushDownType) {
+      case STREAMING:
+        return responseIterator != null && responseIterator.hasNext();
+      case NORMAL:
+        return response != null;
     }
+
+    throw new IllegalArgumentException("Invalid push down type:" + pushDownType);
   }
 
   private boolean advanceNextResponse() {
@@ -95,10 +107,13 @@ public abstract class DAGIterator<T> extends CoprocessIterator<T> {
       return false;
     }
 
-    if (streaming) {
-      chunkList = responseIterator.next().getChunksList();
-    } else {
-      chunkList = response.getChunksList();
+    switch (pushDownType) {
+      case STREAMING:
+        chunkList = responseIterator.next().getChunksList();
+        break;
+      case NORMAL:
+        chunkList = response.getChunksList();
+        break;
     }
 
     if (chunkList == null || chunkList.isEmpty()) {
@@ -118,11 +133,15 @@ public abstract class DAGIterator<T> extends CoprocessIterator<T> {
     }
 
     try {
-      if (streaming) {
-        responseIterator = streamingService.take().get();
-      } else {
-        response = dagService.take().get();
+      switch (pushDownType) {
+        case STREAMING:
+          responseIterator = streamingService.take().get();
+          break;
+        case NORMAL:
+          response = dagService.take().get();
+          break;
       }
+
     } catch (Exception e) {
       throw new TiClientInternalException("Error reading region:", e);
     }

@@ -53,7 +53,7 @@ public class TiDAGRequestTest {
   @Test
   public void testSerializable() throws Exception {
     TiTableInfo table = createTable();
-    TiDAGRequest selReq = new TiDAGRequest(false);
+    TiDAGRequest selReq = new TiDAGRequest(TiDAGRequest.PushDownType.NORMAL);
     selReq
         .addRequiredColumn(TiColumnRef.create("c1", table))
         .addRequiredColumn(TiColumnRef.create("c2", table))

@@ -53,7 +53,7 @@ public class Main {
     ScanBuilder scanBuilder = new ScanBuilder();
     ScanBuilder.ScanPlan scanPlan = scanBuilder.buildScan(exprs, table);
 
-    TiDAGRequest selReq = new TiDAGRequest(false);
+    TiDAGRequest selReq = new TiDAGRequest(TiDAGRequest.PushDownType.NORMAL);
     selReq
         .addRanges(scanPlan.getKeyRanges())
         .setTableInfo(table)
@@ -100,7 +100,7 @@ public class Main {
     ScanBuilder scanBuilder = new ScanBuilder();
     ScanBuilder.ScanPlan scanPlan = scanBuilder.buildTableScan(exprs, table);
 
-    TiDAGRequest selReq = new TiDAGRequest(false);
+    TiDAGRequest selReq = new TiDAGRequest(TiDAGRequest.PushDownType.NORMAL);
     selReq
         .addRanges(scanPlan.getKeyRanges())
         .setTableInfo(table)
@@ -144,7 +144,7 @@ public class Main {
     ScanBuilder scanBuilder = new ScanBuilder();
     ScanBuilder.ScanPlan scanPlan = scanBuilder.buildScan(exprs, table);
 
-    TiDAGRequest selReq = new TiDAGRequest(false);
+    TiDAGRequest selReq = new TiDAGRequest(TiDAGRequest.PushDownType.NORMAL);
     selReq
         .addRanges(scanPlan.getKeyRanges())
         .setTableInfo(table)
