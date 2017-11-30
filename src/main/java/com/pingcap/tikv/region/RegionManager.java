@@ -27,16 +27,12 @@ import com.pingcap.tikv.ReadOnlyPDClient;
 import com.pingcap.tikv.TiSession;
 import com.pingcap.tikv.exception.GrpcException;
 import com.pingcap.tikv.exception.TiClientInternalException;
-import com.pingcap.tikv.kvproto.Kvrpcpb.CommandPri;
-import com.pingcap.tikv.kvproto.Kvrpcpb.IsolationLevel;
 import com.pingcap.tikv.kvproto.Metapb.Peer;
-import com.pingcap.tikv.kvproto.Metapb.Region;
 import com.pingcap.tikv.kvproto.Metapb.Store;
 import com.pingcap.tikv.kvproto.Metapb.StoreState;
 import com.pingcap.tikv.util.Comparables;
 import com.pingcap.tikv.util.Pair;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import org.apache.log4j.Logger;
 
@@ -205,46 +201,35 @@ public class RegionManager {
     return cache.getStoreById(id);
   }
 
-  public void onRegionStale(long regionID, Peer peer, List<Region> regions) {
-    cache.invalidateRegion(regionID);
-    for (Region r : regions) {
-      TiRegion newRegion = new TiRegion(r, peer, IsolationLevel.RC, CommandPri.Low);
-      logger.debug(String.format("RegionManager:onRegionStale added new region: [%s]", newRegion));
-      cache.putRegion(newRegion);
-    }
+  public void onRegionStale(long regionId) {
+    cache.invalidateRegion(regionId);
   }
 
-  public void updateLeader(long regionID, long storeID) {
-    TiRegion r = cache.getRegionById(regionID);
+  public void updateLeader(long regionId, long storeId) {
+    TiRegion r = cache.getRegionById(regionId);
     if (r != null) {
-      if (!r.switchPeer(storeID)) {
-        // drop region cache using verID
-        cache.invalidateRegion(regionID);
+      if (!r.switchPeer(storeId)) {
+        // drop region cache using verId
+        cache.invalidateRegion(regionId);
       }
     }
   }
 
   /**
    * Clears all cache when a TiKV server does not respond
-   * @param regionID region's id
-   * @param storeID TiKV store's id
+   * @param regionId region's id
+   * @param storeId TiKV store's id
    */
-  public void onRequestFail(long regionID, long storeID) {
-    TiRegion r = cache.getRegionById(regionID);
-    if (r != null) {
-      if (!r.onRequestFail(storeID)) {
-        cache.invalidateRegion(regionID);
-      }
-    }
-
-    cache.invalidateAllRegionForStore(storeID);
+  public void onRequestFail(long regionId, long storeId) {
+    cache.invalidateRegion(regionId);
+    cache.invalidateAllRegionForStore(storeId);
   }
 
   public void invalidateStore(long storeId) {
     cache.invalidateStore(storeId);
   }
 
-  public void invalidateRegion(long regionID) {
-    cache.invalidateRegion(regionID);
+  public void invalidateRegion(long regionId) {
+    cache.invalidateRegion(regionId);
   }
 }

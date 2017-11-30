@@ -79,8 +79,7 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
         throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
       } else if (error.hasStaleEpoch()) {
         logger.warn(String.format("Stale Epoch encountered for region [%s]", ctxRegion.getId()));
-        this.regionManager.onRegionStale(
-            ctxRegion.getId(), ctxRegion.getLeader(), error.getStaleEpoch().getNewRegionsList());
+        this.regionManager.onRegionStale(ctxRegion.getId());
         throw new GrpcRegionStaleException(error.toString());
       } else if (error.hasServerIsBusy()) {
         logger.warn(String.format("Server is busy for region [%s]", ctxRegion));
