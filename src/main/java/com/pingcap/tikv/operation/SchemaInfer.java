@@ -78,7 +78,7 @@ public class SchemaInfer {
       for (int i = 0; i < tiSelectRequest.getAggregatePairs().size(); i++) {
         if (!tiSelectRequest.isAggregatesSkipped(i)) {
           Pair<TiExpr, DataType> pair = tiSelectRequest.getAggregatePairs().get(i);
-          rowTrans.addProjection(new Cast(pair.second));
+          rowTrans.addProjection(new Cast(pair.getSecond()));
         } else {
           rowTrans.addProjection(Skip.SKIP_OP);
         }

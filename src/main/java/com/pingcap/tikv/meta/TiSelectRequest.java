@@ -292,7 +292,7 @@ public class TiSelectRequest implements Serializable {
   }
 
   public List<TiExpr> getAggregates() {
-    return aggregates.stream().map(p -> p.first).collect(Collectors.toList());
+    return aggregates.stream().map(Pair::getFirst).collect(Collectors.toList());
   }
 
   public List<Pair<TiExpr, DataType>> getAggregatePairs() {
