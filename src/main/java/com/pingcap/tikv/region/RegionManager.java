@@ -140,7 +140,7 @@ public class RegionManager {
       }
     }
 
-    public void invalidateStore(long storeId) {
+    public synchronized void invalidateStore(long storeId) {
       storeCache.remove(storeId);
     }
 

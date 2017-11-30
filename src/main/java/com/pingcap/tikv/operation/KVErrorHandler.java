@@ -97,6 +97,7 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
         logger.warn(String.format("Unknown error for region [%s]", error));
         // for other errors, we only drop cache here and throw a retryable exception.
         regionManager.invalidateRegion(ctxRegion.getId());
+        regionManager.invalidateStore(ctxRegion.getLeader().getStoreId());
         throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
       }
     }
