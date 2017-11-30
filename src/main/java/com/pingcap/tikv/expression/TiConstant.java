@@ -17,34 +17,42 @@ package com.pingcap.tikv.expression;
 
 import static com.pingcap.tikv.types.Types.*;
 
+import com.google.common.primitives.Ints;
+import com.google.common.primitives.Longs;
 import com.pingcap.tidb.tipb.Expr;
 import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.types.*;
+import com.pingcap.tikv.util.ByteArrayComparable;
 import java.math.BigDecimal;
 import java.util.Objects;
 
 // TODO: This might need a refactor to accept an DataType?
 public class TiConstant implements TiExpr {
-  private Object value;
+  private ByteArrayComparable value;
 
-  public static TiConstant create(Object value) {
-    return new TiConstant(value);
+  public TiConstant(Number value) {
+    this.value = new ByteArrayComparable(value);
   }
 
-  private TiConstant(Object value) {
-    this.value = value;
+  public TiConstant(Float value) {
+    this.value = new ByteArrayComparable(value);
   }
 
-  public boolean isIntegerType() {
-    return value instanceof Long
-        || value instanceof Integer
-        || value instanceof Short
-        || value instanceof Byte;
+
+  public TiConstant(Double value) {
+    this.value = new ByteArrayComparable(value);
   }
 
-  public Object getValue() {
+  public TiConstant(BigDecimal value) {
+    this.value = new ByteArrayComparable(value);
+  }
+  public TiConstant(String value) {
+    this.value = new ByteArrayComparable(value);
+  }
+
+  public ByteArrayComparable getValue() {
     return value;
   }
 
@@ -56,31 +64,14 @@ public class TiConstant implements TiExpr {
   public Expr toProto() {
     Expr.Builder builder = Expr.newBuilder();
     CodecDataOutput cdo = new CodecDataOutput();
-    // We don't allow build a unsigned long constant for now
-    if (value == null) {
+    if(value == null) {
       builder.setTp(ExprType.Null);
-    } else if (isIntegerType()) {
-      builder.setTp(ExprType.Int64);
-      IntegerType.writeLong(cdo, ((Number) value).longValue());
-    } else if (value instanceof String) {
-      builder.setTp(ExprType.String);
-      // Instead of using BytesType codec, coprocessor reads
-      // raw string as bytes
-      cdo.write(((String) value).getBytes());
-    } else if (value instanceof Float) {
-      builder.setTp(ExprType.Float32);
-      RealType.writeFloat(cdo, (Float) value);
-    } else if (value instanceof Double) {
-      builder.setTp(ExprType.Float64);
-      RealType.writeDouble(cdo, (Double) value);
-    } else if (value instanceof BigDecimal) {
-      builder.setTp(ExprType.MysqlDecimal);
-      DecimalType.writeDecimal(cdo, (BigDecimal) value);
-    } else {
-      throw new TiExpressionException("Constant type not supported.");
+      builder.setVal(cdo.toByteString());
+      return builder.build();
     }
+    builder.setTp(value.getExprType());
+    cdo.write(value.getValue());
     builder.setVal(cdo.toByteString());
-
     return builder.build();
   }
 
@@ -88,17 +79,8 @@ public class TiConstant implements TiExpr {
   public DataType getType() {
     if (value == null) {
       throw new TiExpressionException("NULL constant has no type");
-    } else if (isIntegerType()) {
-      return DataTypeFactory.of(TYPE_LONG);
-    } else if (value instanceof String) {
-      return DataTypeFactory.of(TYPE_VARCHAR);
-    } else if (value instanceof Float) {
-      return DataTypeFactory.of(TYPE_FLOAT);
-    } else if (value instanceof Double) {
-      return DataTypeFactory.of(TYPE_NEW_DECIMAL);
-    } else {
-      throw new TiExpressionException("Constant type not supported.");
     }
+    return value.getDataType();
   }
 
   @Override
@@ -108,12 +90,6 @@ public class TiConstant implements TiExpr {
 
   @Override
   public String toString() {
-    if (value == null) {
-      return "null";
-    }
-    if (value instanceof String) {
-      return String.format("\"%s\"", value);
-    }
     return value.toString();
   }
 

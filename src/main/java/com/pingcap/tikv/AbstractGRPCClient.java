@@ -27,8 +27,8 @@ import io.grpc.stub.StreamObserver;
 import java.util.function.Supplier;
 import org.apache.log4j.Logger;
 
-public abstract class AbstractGRPCClient<
-        BlockingStubT extends AbstractStub<BlockingStubT>, StubT extends AbstractStub<StubT>>
+public abstract class AbstractGRPCClient<BlockingStubT extends AbstractStub<BlockingStubT>,
+    StubT extends AbstractStub<StubT>>
     implements AutoCloseable {
   final Logger logger = Logger.getLogger(this.getClass());
   protected TiSession session;

@@ -32,6 +32,7 @@ import com.pingcap.tikv.meta.TiDBInfo;
 import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.types.BytesType;
 import com.pingcap.tikv.types.IntegerType;
+import com.pingcap.tikv.util.ByteArrayComparable;
 import com.pingcap.tikv.util.Pair;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -117,7 +118,7 @@ public class CatalogTransaction {
       if (!KeyUtils.hasPrefix(kv.getKey(), encodedKey)) {
         break;
       }
-      fields.add(Pair.create(decodeHashDataKey(kv.getKey()).second, kv.getValue()));
+      fields.add(Pair.create(decodeHashDataKey(kv.getKey()).getSecond(), kv.getValue()));
     }
 
     return fields;
@@ -137,7 +138,7 @@ public class CatalogTransaction {
     List<Pair<ByteString, ByteString>> fields = hashGetFields(KEY_DB);
     ImmutableList.Builder<TiDBInfo> builder = ImmutableList.builder();
     for (Pair<ByteString, ByteString> pair : fields) {
-      builder.add(parseFromJson(pair.second, TiDBInfo.class));
+      builder.add(parseFromJson(pair.getSecond(), TiDBInfo.class));
     }
     return builder.build();
   }
@@ -156,8 +157,8 @@ public class CatalogTransaction {
     List<Pair<ByteString, ByteString>> fields = hashGetFields(dbKey);
     ImmutableList.Builder<TiTableInfo> builder = ImmutableList.builder();
     for (Pair<ByteString, ByteString> pair : fields) {
-      if (KeyUtils.hasPrefix(pair.first, KEY_TABLE)) {
-        builder.add(parseFromJson(pair.second, TiTableInfo.class));
+      if (KeyUtils.hasPrefix(pair.getFirst(), KEY_TABLE)) {
+        builder.add(parseFromJson(pair.getSecond(), TiTableInfo.class));
       }
     }
     return builder.build();

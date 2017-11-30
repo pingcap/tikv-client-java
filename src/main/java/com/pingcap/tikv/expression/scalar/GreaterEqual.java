@@ -15,11 +15,15 @@
 
 package com.pingcap.tikv.expression.scalar;
 
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
 import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.expression.TiBinaryFunctionExpression;
 import com.pingcap.tikv.expression.TiExpr;
+import com.pingcap.tikv.predicates.RangeBuilder;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.IntegerType;
+import com.pingcap.tikv.util.ByteArrayComparable;
 
 public class GreaterEqual extends TiBinaryFunctionExpression {
   public GreaterEqual(TiExpr lhs, TiExpr rhs) {
@@ -39,5 +43,10 @@ public class GreaterEqual extends TiBinaryFunctionExpression {
   @Override
   public DataType getType() {
     return IntegerType.DEF_BOOLEAN_TYPE;
+  }
+
+  @Override
+  public RangeSet<ByteArrayComparable> getRangeSet(RangeSet<ByteArrayComparable> ranges, ByteArrayComparable val) {
+    return ranges.subRangeSet(Range.atLeast(val));
   }
 }

@@ -51,41 +51,41 @@ public class IndexMatcherTest {
     IndexMatcher matcher = new IndexMatcher(col, true);
 
     // index col = c1, long
-    TiExpr cond = new Equal(TiColumnRef.create("c1", table), TiConstant.create(1));
+    TiExpr cond = new Equal(TiColumnRef.create("c1", table), new TiConstant(1));
     assertTrue(matcher.match(cond));
 
-    cond = new Equal(TiConstant.create(1), TiColumnRef.create("c1", table));
+    cond = new Equal(new TiConstant(1), TiColumnRef.create("c1", table));
     assertTrue(matcher.match(cond));
 
     cond = new Equal(TiColumnRef.create("c2", table), TiColumnRef.create("c1", table));
     assertFalse(matcher.match(cond));
 
-    cond = new Equal(TiConstant.create(1), TiConstant.create(1));
+    cond = new Equal(new TiConstant(1), new TiConstant(1));
     assertFalse(matcher.match(cond));
 
     cond =
         new And(
-            new Equal(TiConstant.create(1), TiColumnRef.create("c1", table)),
-            new Equal(TiColumnRef.create("c1", table), TiConstant.create(2)));
+            new Equal(new TiConstant(1), TiColumnRef.create("c1", table)),
+            new Equal(TiColumnRef.create("c1", table), new TiConstant(2)));
     assertFalse(matcher.match(cond));
 
     cond =
         new Or(
-            new Equal(TiConstant.create(1), TiColumnRef.create("c1", table)),
-            new Equal(TiColumnRef.create("c1", table), TiConstant.create(2)));
+            new Equal(new TiConstant(1), TiColumnRef.create("c1", table)),
+            new Equal(TiColumnRef.create("c1", table), new TiConstant(2)));
     assertTrue(matcher.match(cond));
 
-    cond = new In(TiColumnRef.create("c1", table), TiConstant.create(1), TiConstant.create(2));
+    cond = new In(TiColumnRef.create("c1", table), new TiConstant(1), new TiConstant(2));
     assertTrue(matcher.match(cond));
 
     cond =
         new In(
-            new Equal(TiColumnRef.create("c1", table), TiConstant.create(2)),
-            TiConstant.create(1),
-            TiConstant.create(2));
+            new Equal(TiColumnRef.create("c1", table), new TiConstant(2)),
+            new TiConstant(1),
+            new TiConstant(2));
     assertFalse(matcher.match(cond));
 
-    cond = new LessEqual(TiConstant.create(0), TiColumnRef.create("c1", table));
+    cond = new LessEqual(new TiConstant(0), TiColumnRef.create("c1", table));
     assertFalse(matcher.match(cond));
   }
 
@@ -97,38 +97,38 @@ public class IndexMatcherTest {
     IndexMatcher matcher = new IndexMatcher(col, false);
 
     // index col = c1, long
-    TiExpr cond = new LessEqual(TiColumnRef.create("c1", table), TiConstant.create(1));
+    TiExpr cond = new LessEqual(TiColumnRef.create("c1", table), new TiConstant(1));
     assertTrue(matcher.match(cond));
 
-    cond = new GreaterEqual(TiConstant.create(1), TiColumnRef.create("c1", table));
+    cond = new GreaterEqual(new TiConstant(1), TiColumnRef.create("c1", table));
     assertTrue(matcher.match(cond));
 
     cond = new LessThan(TiColumnRef.create("c2", table), TiColumnRef.create("c1", table));
     assertFalse(matcher.match(cond));
 
-    cond = new LessThan(TiConstant.create(1), TiConstant.create(1));
+    cond = new LessThan(new TiConstant(1), new TiConstant(1));
     assertFalse(matcher.match(cond));
 
     cond =
         new And(
-            new LessThan(TiConstant.create(1), TiColumnRef.create("c1", table)),
-            new LessThan(TiColumnRef.create("c1", table), TiConstant.create(2)));
+            new LessThan(new TiConstant(1), TiColumnRef.create("c1", table)),
+            new LessThan(TiColumnRef.create("c1", table), new TiConstant(2)));
     assertTrue(matcher.match(cond));
 
     cond =
         new Or(
-            new LessThan(TiConstant.create(1), TiColumnRef.create("c1", table)),
-            new LessThan(TiColumnRef.create("c1", table), TiConstant.create(2)));
+            new LessThan(new TiConstant(1), TiColumnRef.create("c1", table)),
+            new LessThan(TiColumnRef.create("c1", table), new TiConstant(2)));
     assertTrue(matcher.match(cond));
 
-    cond = new In(TiColumnRef.create("c1", table), TiConstant.create(1), TiConstant.create(2));
+    cond = new In(TiColumnRef.create("c1", table), new TiConstant(1), new TiConstant(2));
     assertTrue(matcher.match(cond));
 
     cond =
         new In(
-            new Equal(TiColumnRef.create("c1", table), TiConstant.create(2)),
-            TiConstant.create(1),
-            TiConstant.create(2));
+            new Equal(TiColumnRef.create("c1", table), new TiConstant(2)),
+            new TiConstant(1),
+            new TiConstant(2));
     assertFalse(matcher.match(cond));
   }
 }

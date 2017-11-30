@@ -29,19 +29,19 @@ public class PredicateUtilsTest {
   public void mergeCNFExpressions() throws Exception {
     List<TiExpr> exprs =
         ImmutableList.of(
-            TiConstant.create(1),
-            TiConstant.create(2),
-            TiConstant.create(3),
-            TiConstant.create(4),
-            TiConstant.create(5));
+            new TiConstant(1),
+            new TiConstant(2),
+            new TiConstant(3),
+            new TiConstant(4),
+            new TiConstant(5));
 
     TiExpr res =
         new And(
-            TiConstant.create(1),
+            new TiConstant(1),
             new And(
-                TiConstant.create(2),
+                new TiConstant(2),
                 new And(
-                    TiConstant.create(3), new And(TiConstant.create(4), TiConstant.create(5)))));
+                    new TiConstant(3), new And(new TiConstant(4), new TiConstant(5)))));
 
     assertEquals(res, PredicateUtils.mergeCNFExpressions(exprs));
   }

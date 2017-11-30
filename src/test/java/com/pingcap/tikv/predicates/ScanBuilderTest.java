@@ -76,11 +76,11 @@ public class ScanBuilderTest {
     TiTableInfo table = createTable();
     TiIndexInfo index = table.getIndices().get(0);
 
-    TiExpr eq1 = new Equal(TiColumnRef.create("c1", table), TiConstant.create(0));
-    TiExpr eq2 = new Equal(TiColumnRef.create("c2", table), TiConstant.create("test"));
-    TiExpr le1 = new LessEqual(TiColumnRef.create("c3", table), TiConstant.create("fxxx"));
+    TiExpr eq1 = new Equal(TiColumnRef.create("c1", table), new TiConstant(0));
+    TiExpr eq2 = new Equal(TiColumnRef.create("c2", table), new TiConstant("test"));
+    TiExpr le1 = new LessEqual(TiColumnRef.create("c3", table), new TiConstant("fxxx"));
     // Last one should be pushed back
-    TiExpr eq3 = new Equal(TiColumnRef.create("c4", table), TiConstant.create("fxxx"));
+    TiExpr eq3 = new Equal(TiColumnRef.create("c4", table), new TiConstant("fxxx"));
 
     List<TiExpr> exprs = ImmutableList.of(eq1, eq2, le1, eq3);
 
@@ -101,11 +101,11 @@ public class ScanBuilderTest {
     TiTableInfo table = createTableWithPrefix();
     TiIndexInfo index = table.getIndices().get(0);
 
-    TiExpr eq1 = new Equal(TiColumnRef.create("c1", table), TiConstant.create(0));
-    TiExpr eq2 = new Equal(TiColumnRef.create("c2", table), TiConstant.create("test"));
-    TiExpr le1 = new LessEqual(TiColumnRef.create("c3", table), TiConstant.create("fxxx"));
+    TiExpr eq1 = new Equal(TiColumnRef.create("c1", table), new TiConstant(0));
+    TiExpr eq2 = new Equal(TiColumnRef.create("c2", table), new TiConstant("test"));
+    TiExpr le1 = new LessEqual(TiColumnRef.create("c3", table), new TiConstant("fxxx"));
     // Last one should be pushed back
-    TiExpr eq3 = new Equal(TiColumnRef.create("c4", table), TiConstant.create("fxxx"));
+    TiExpr eq3 = new Equal(TiColumnRef.create("c4", table), new TiConstant("fxxx"));
 
     List<TiExpr> exprs = ImmutableList.of(eq1, eq2, le1, eq3);
 
@@ -130,11 +130,11 @@ public class ScanBuilderTest {
     assertEquals(1, index.getIndexColumns().size());
     assertEquals("c1", index.getIndexColumns().get(0).getName());
 
-    TiExpr eq1 = new Equal(TiColumnRef.create("c1", table), TiConstant.create(0));
-    TiExpr eq2 = new Equal(TiColumnRef.create("c2", table), TiConstant.create("test"));
-    TiExpr le1 = new LessEqual(TiColumnRef.create("c3", table), TiConstant.create("fxxx"));
+    TiExpr eq1 = new Equal(TiColumnRef.create("c1", table), new TiConstant(0));
+    TiExpr eq2 = new Equal(TiColumnRef.create("c2", table), new TiConstant("test"));
+    TiExpr le1 = new LessEqual(TiColumnRef.create("c3", table), new TiConstant("fxxx"));
     // Last one should be pushed back
-    TiExpr eq3 = new Equal(TiColumnRef.create("c4", table), TiConstant.create("fxxx"));
+    TiExpr eq3 = new Equal(TiColumnRef.create("c4", table), new TiConstant("fxxx"));
 
     List<TiExpr> exprs = ImmutableList.of(eq1, eq2, le1, eq3);
 

@@ -60,19 +60,19 @@ public class TiSelectRequestTest {
         .addRequiredColumn(TiColumnRef.create("c2", table))
         .addAggregate(new Sum(TiColumnRef.create("c1", table)))
         .addAggregate(new Min(TiColumnRef.create("c1", table)))
-        .addWhere(new Plus(TiConstant.create(1L), TiConstant.create(2L)))
+        .addWhere(new Plus(new TiConstant(1L), new TiConstant(2L)))
         .addGroupByItem(
             TiByItem.create(
-                new Divide(TiColumnRef.create("c2", table), TiConstant.create(100L)), true))
+                new Divide(TiColumnRef.create("c2", table), new TiConstant(100L)), true))
         .addOrderByItem(
             TiByItem.create(
-                new Minus(TiColumnRef.create("c2", table), TiConstant.create(999)), false))
+                new Minus(TiColumnRef.create("c2", table), new TiConstant(999)), false))
         .setTableInfo(table)
         .setStartTs(666)
         .setTruncateMode(TiSelectRequest.TruncateMode.IgnoreTruncation)
         .setDistinct(true)
         .setIndexInfo(table.getIndices().get(0))
-        .setHaving(new LessEqual(TiColumnRef.create("c3", table), TiConstant.create(2L)))
+        .setHaving(new LessEqual(TiColumnRef.create("c3", table), new TiConstant(2L)))
         .setLimit(100)
         .addRanges(
             ImmutableList.of(

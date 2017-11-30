@@ -20,9 +20,13 @@ import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
 import com.pingcap.tidb.tipb.Expr;
 import com.pingcap.tidb.tipb.ExprType;
+import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.meta.TiTableInfo;
+import com.pingcap.tikv.util.ByteArrayComparable;
 import java.util.List;
 
 public abstract class TiFunctionExpression implements TiExpr {
@@ -109,5 +113,10 @@ public abstract class TiFunctionExpression implements TiExpr {
     return String.format("%s(%s)",
                          getName(),
                          Joiner.on(", ").skipNulls().join(args));
+  }
+
+  public RangeSet<ByteArrayComparable> getRangeSet(RangeSet<ByteArrayComparable> ranges, ByteArrayComparable val) {
+    throw new TiClientInternalException(
+        "Unsupported conversion to Range " + this.getClass().getSimpleName());
   }
 }

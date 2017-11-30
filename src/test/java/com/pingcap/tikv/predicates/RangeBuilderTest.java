@@ -27,6 +27,7 @@ import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.DataTypeFactory;
 import com.pingcap.tikv.types.Types;
+import com.pingcap.tikv.util.ByteArrayComparable;
 import org.junit.Test;
 
 import java.util.List;
@@ -46,25 +47,26 @@ public class RangeBuilderTest {
         .build();
   }
 
-  private static boolean testPointIndexRanges(
+  private static void testPointIndexRanges(
       List<RangeBuilder.IndexRange> ranges, List<List<Object>> values) {
-    if (ranges.size() != values.size()) return false;
+    if (ranges.size() != values.size()) assertTrue(false);
 
     for (RangeBuilder.IndexRange ir : ranges) {
       boolean found = false;
       List<Object> aps = ir.getAccessPoints();
       for (int i = 0; i < values.size(); i++) {
         List<Object> curVals = values.get(i);
-        if (curVals.equals(aps)) {
+        // TODO equals must be reflexivity
+        if (aps.equals(curVals)) {
           values.remove(i);
           found = true;
           break;
         }
       }
-      if (!found) return false;
+      assertTrue(found);
     }
 
-    return values.isEmpty();
+    assertTrue(values.isEmpty());
   }
 
   @Test
@@ -72,8 +74,8 @@ public class RangeBuilderTest {
     TiTableInfo table = createTable();
     List<TiExpr> conds =
         ImmutableList.of(
-            new Equal(TiColumnRef.create("c1", table), TiConstant.create(0)),
-            new Equal(TiConstant.create("v1"), TiColumnRef.create("c2", table)));
+            new Equal(TiColumnRef.create("c1", table), new TiConstant(0)),
+            new Equal(new TiConstant("v1"), TiColumnRef.create("c2", table)));
     List<DataType> types =
         ImmutableList.of(
             DataTypeFactory.of(Types.TYPE_LONG), DataTypeFactory.of(Types.TYPE_STRING));
@@ -82,20 +84,20 @@ public class RangeBuilderTest {
     assertEquals(1, indexRanges.size());
     List<Object> acpts = indexRanges.get(0).getAccessPoints();
     assertEquals(2, acpts.size());
-    assertEquals(0, acpts.get(0));
-    assertEquals("v1", acpts.get(1));
+    assertEquals(new ByteArrayComparable(0), acpts.get(0));
+    assertEquals(new ByteArrayComparable("v1"), acpts.get(1));
 
     // In Expr
     conds =
         ImmutableList.of(
             new In(
                 TiColumnRef.create("c1", table),
-                TiConstant.create(0),
-                TiConstant.create(1),
-                TiConstant.create(3)),
-            new Equal(TiConstant.create("v1"), TiColumnRef.create("c2", table)),
+                new TiConstant(0),
+                new TiConstant(1),
+                new TiConstant(3)),
+            new Equal(new TiConstant("v1"), TiColumnRef.create("c2", table)),
             new In(
-                TiColumnRef.create("c3", table), TiConstant.create("2"), TiConstant.create("4")));
+                TiColumnRef.create("c3", table), new TiConstant("2"), new TiConstant("4")));
     types =
         ImmutableList.of(
             DataTypeFactory.of(Types.TYPE_LONG),
@@ -104,16 +106,13 @@ public class RangeBuilderTest {
 
     indexRanges = builder.exprsToPoints(conds, types);
     assertEquals(6, indexRanges.size());
-    assertTrue(
-        testPointIndexRanges(
-            indexRanges,
-            Lists.newArrayList(
+    testPointIndexRanges(indexRanges, Lists.newArrayList(
                 ImmutableList.of(0, "v1", "2"),
                 ImmutableList.of(0, "v1", "4"),
                 ImmutableList.of(1, "v1", "2"),
                 ImmutableList.of(1, "v1", "4"),
                 ImmutableList.of(3, "v1", "2"),
-                ImmutableList.of(3, "v1", "4"))));
+                ImmutableList.of(3, "v1", "4")));
   }
 
   @Test
@@ -121,38 +120,36 @@ public class RangeBuilderTest {
     TiTableInfo table = createTable();
     List<TiExpr> conds =
         ImmutableList.of(
-            new GreaterEqual(TiColumnRef.create("c1", table), TiConstant.create(0L)), // c1 >= 0
+            new GreaterEqual(TiColumnRef.create("c1", table), new TiConstant(0L)), // c1 >= 0
             new GreaterThan(
-                TiConstant.create(100L), TiColumnRef.create("c1", table)), // 100 > c1 -> c1 < 100
-            new NotEqual(TiColumnRef.create("c1", table), TiConstant.create(50L)) // c1 != 50
+                new TiConstant(100L), TiColumnRef.create("c1", table)), // 100 > c1 -> c1 < 100
+            new NotEqual(TiColumnRef.create("c1", table), new TiConstant(50L)) // c1 != 50
             );
     DataType type = DataTypeFactory.of(Types.TYPE_LONG);
     RangeBuilder builder = new RangeBuilder();
-    List<Range> ranges = RangeBuilder.exprToRanges(conds, type);
+    List<Range<ByteArrayComparable>> ranges = RangeBuilder.exprToRanges(conds, type);
     assertEquals(2, ranges.size());
-    assertEquals(Range.closedOpen(0L, 50L), ranges.get(0));
-    assertEquals(Range.open(50L, 100L), ranges.get(1));
+    assertEquals(Range.closedOpen(new ByteArrayComparable(0L), new ByteArrayComparable(50L)), ranges.get(0));
+    assertEquals(Range.open(new ByteArrayComparable(50L), new ByteArrayComparable(100L)), ranges.get(1));
 
     // Test points and string range
     List<TiExpr> ac =
         ImmutableList.of(
-            new In(TiColumnRef.create("c1", table), TiConstant.create(0L), TiConstant.create(1L)),
-            new Equal(TiConstant.create("v1"), TiColumnRef.create("c2", table)));
+            new In(TiColumnRef.create("c1", table), new TiConstant(0L), new TiConstant(1L)),
+            new Equal(new TiConstant("v1"), TiColumnRef.create("c2", table)));
     List<DataType> types =
         ImmutableList.of(
             DataTypeFactory.of(Types.TYPE_LONG), DataTypeFactory.of(Types.TYPE_STRING));
     List<RangeBuilder.IndexRange> indexRanges = builder.exprsToPoints(ac, types);
-    assertTrue(
-        testPointIndexRanges(
-            indexRanges,
-            Lists.newArrayList(ImmutableList.of(0L, "v1"), ImmutableList.of(1L, "v1"))));
+    testPointIndexRanges(indexRanges,
+            Lists.newArrayList(ImmutableList.of(0L, "v1"), ImmutableList.of(1L, "v1")));
 
     conds =
         ImmutableList.of(
-            new GreaterEqual(TiColumnRef.create("c3", table), TiConstant.create("a")), // c1 >= 0
+            new GreaterEqual(TiColumnRef.create("c3", table), new TiConstant("a")), // c1 >= 0
             new GreaterThan(
-                TiConstant.create("z"), TiColumnRef.create("c3", table)), // 100 > c1 -> c1 < 100
-            new NotEqual(TiColumnRef.create("c3", table), TiConstant.create("g")) // c1 != 50
+                new TiConstant("z"), TiColumnRef.create("c3", table)), // 100 > c1 -> c1 < 100
+            new NotEqual(TiColumnRef.create("c3", table), new TiConstant("g")) // c1 != 50
             );
     type = DataTypeFactory.of(Types.TYPE_STRING);
     ranges = RangeBuilder.exprToRanges(conds, type);
@@ -160,9 +157,9 @@ public class RangeBuilderTest {
     indexRanges = RangeBuilder.appendRanges(indexRanges, ranges, type);
     assertEquals(4, indexRanges.size());
 
-    assertEquals(Range.closedOpen("a", "g"), indexRanges.get(0).getRange());
-    assertEquals(Range.closedOpen("a", "g"), indexRanges.get(2).getRange());
-    assertEquals(Range.open("g", "z"), indexRanges.get(1).getRange());
-    assertEquals(Range.open("g", "z"), indexRanges.get(3).getRange());
+    assertEquals(Range.closedOpen(new ByteArrayComparable("a"), new ByteArrayComparable("g")), indexRanges.get(0).getRange());
+    assertEquals(Range.closedOpen(new ByteArrayComparable("a"), new ByteArrayComparable("g")), indexRanges.get(2).getRange());
+    assertEquals(Range.open(new ByteArrayComparable("g"), new ByteArrayComparable("z")), indexRanges.get(1).getRange());
+    assertEquals(Range.open(new ByteArrayComparable("g"), new ByteArrayComparable("z")), indexRanges.get(3).getRange());
   }
 }

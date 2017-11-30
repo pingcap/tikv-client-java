@@ -47,7 +47,7 @@ public class SchemaInferTest {
   private TiColumnRef name = TiColumnRef.create("name", table);
   private TiExpr sum = new Sum(number);
   private TiByItem simpleGroupBy = TiByItem.create(name, false);
-  private TiByItem complexGroupBy = TiByItem.create(new Plus(name, TiConstant.create("1")), false);
+  private TiByItem complexGroupBy = TiByItem.create(new Plus(name, new TiConstant("1")), false);
 
   @Test
   public void simpleSelectSchemaInferTest() throws Exception {

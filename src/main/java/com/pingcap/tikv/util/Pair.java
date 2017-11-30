@@ -18,8 +18,8 @@ package com.pingcap.tikv.util;
 import java.io.Serializable;
 
 public class Pair<F, S> implements Serializable {
-  public final F first;
-  public final S second;
+  private final F first;
+  private final S second;
 
   public Pair(F f, S s) {
     first = f;
@@ -28,5 +28,13 @@ public class Pair<F, S> implements Serializable {
 
   public static <F, S> Pair<F, S> create(F f, S s) {
     return new Pair<>(f, s);
+  }
+
+  public F getFirst() {
+    return first;
+  }
+
+  public S getSecond() {
+    return second;
   }
 }

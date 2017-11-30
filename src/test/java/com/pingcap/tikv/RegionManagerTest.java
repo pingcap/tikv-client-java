@@ -126,8 +126,8 @@ public class RegionManagerTest {
                 GrpcUtils.makeStoreLabel("k1", "v1"),
                 GrpcUtils.makeStoreLabel("k2", "v2"))));
     Pair<TiRegion, Store> pair = mgr.getRegionStorePairByKey(searchKey);
-    assertEquals(pair.first.getId(), regionId);
-    assertEquals(pair.first.getId(), storeId);
+    assertEquals(pair.getFirst().getId(), regionId);
+    assertEquals(pair.getFirst().getId(), storeId);
   }
 
   @Test

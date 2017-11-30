@@ -17,6 +17,7 @@ package com.pingcap.tikv.util;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
+import com.google.common.primitives.UnsignedBytes;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.codec.CodecDataInput;
 import com.pingcap.tikv.codec.CodecDataOutput;
@@ -31,19 +32,24 @@ import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.types.DataType;
 
 import java.util.List;
+import javax.annotation.Nonnull;
 
 public class KeyRangeUtils {
-  public static Range toRange(Coprocessor.KeyRange range) {
+  public static Range<ByteArrayComparable> toRange(Coprocessor.KeyRange range) {
     if (range == null || (range.getStart().isEmpty() && range.getEnd().isEmpty())) {
       return Range.all();
     }
+    ByteArrayComparable startKey = new ByteArrayComparable(range.getStart());
+    ByteArrayComparable endKey = new ByteArrayComparable(range.getEnd());
     if (range.getStart().isEmpty()) {
-      return Range.lessThan(Comparables.wrap(range.getEnd()));
+      return Range.lessThan(endKey);
     }
+
     if (range.getEnd().isEmpty()) {
-      return Range.atLeast(Comparables.wrap(range.getStart()));
+      return Range.atLeast(startKey);
     }
-    return Range.closedOpen(Comparables.wrap(range.getStart()), Comparables.wrap(range.getEnd()));
+
+    return Range.closedOpen(startKey, endKey);
   }
 
   public static List<Coprocessor.KeyRange> split(Coprocessor.KeyRange range, int splitFactor) {
@@ -132,16 +138,19 @@ public class KeyRangeUtils {
     return types.build();
   }
 
-  public static Range makeRange(ByteString startKey, ByteString endKey) {
+  public static Range<ByteArrayComparable> makeRange(ByteString startKey, ByteString endKey) {
     if (startKey.isEmpty() && endKey.isEmpty()) {
       return Range.all();
     }
+    ByteArrayComparable sKey = new ByteArrayComparable(startKey);
+    ByteArrayComparable eKey = new ByteArrayComparable(endKey);
+
     if (startKey.isEmpty()) {
-      return Range.lessThan(Comparables.wrap(endKey));
+      return Range.lessThan(eKey);
     } else if (endKey.isEmpty()) {
-      return Range.atLeast(Comparables.wrap(startKey));
+      return Range.atLeast(eKey);
     }
-    return Range.closedOpen(Comparables.wrap(startKey), Comparables.wrap(endKey));
+    return Range.closedOpen(sKey, eKey);
   }
 
   static Coprocessor.KeyRange makeCoprocRange(ByteString startKey, ByteString endKey) {

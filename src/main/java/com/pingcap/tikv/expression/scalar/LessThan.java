@@ -15,11 +15,14 @@
 
 package com.pingcap.tikv.expression.scalar;
 
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
 import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.expression.TiBinaryFunctionExpression;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.IntegerType;
+import com.pingcap.tikv.util.ByteArrayComparable;
 
 public class LessThan extends TiBinaryFunctionExpression {
   public LessThan(TiExpr lhs, TiExpr rhs) {
@@ -40,4 +43,10 @@ public class LessThan extends TiBinaryFunctionExpression {
   public DataType getType() {
     return IntegerType.DEF_BOOLEAN_TYPE;
   }
+
+  @Override
+  public RangeSet<ByteArrayComparable> getRangeSet(RangeSet<ByteArrayComparable> ranges, ByteArrayComparable val) {
+    return ranges.subRangeSet(Range.lessThan(val));
+  }
 }
+
