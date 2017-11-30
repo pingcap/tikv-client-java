@@ -20,8 +20,6 @@ package com.pingcap.tikv.region;
 import static com.pingcap.tikv.codec.KeyUtils.formatBytes;
 import static com.pingcap.tikv.util.KeyRangeUtils.makeRange;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
 import com.google.protobuf.ByteString;
@@ -37,7 +35,9 @@ import com.pingcap.tikv.kvproto.Metapb.Store;
 import com.pingcap.tikv.kvproto.Metapb.StoreState;
 import com.pingcap.tikv.util.Comparables;
 import com.pingcap.tikv.util.Pair;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.log4j.Logger;
 
 public class RegionManager {
@@ -53,22 +53,14 @@ public class RegionManager {
   }
 
   public static class RegionCache {
-    private static final int MAX_CACHE_CAPACITY =     4096;
-    private final Cache<Long, TiRegion>               regionCache;
-    private final Cache<Long, Store>                  storeCache;
-    private final RangeMap<Comparable, Long>          keyToRegionIdCache;
+    private final Map<Long, TiRegion>             regionCache;
+    private final Map<Long, Store>                storeCache;
+    private final RangeMap<Comparable, Long>      keyToRegionIdCache;
     private final ReadOnlyPDClient pdClient;
 
     public RegionCache(ReadOnlyPDClient pdClient) {
-      regionCache =
-          CacheBuilder.newBuilder()
-              .maximumSize(MAX_CACHE_CAPACITY)
-              .build();
-
-      storeCache =
-          CacheBuilder.newBuilder()
-              .maximumSize(MAX_CACHE_CAPACITY)
-              .build();
+      regionCache = new HashMap<>();
+      storeCache = new HashMap<>();
 
       keyToRegionIdCache = TreeRangeMap.create();
       this.pdClient = pdClient;
@@ -89,7 +81,7 @@ public class RegionManager {
         }
         return region;
       }
-      TiRegion region = regionCache.getIfPresent(regionId);
+      TiRegion region = regionCache.get(regionId);
       if (logger.isDebugEnabled()) {
         logger.debug(String.format("getRegionByKey ID[%s] -> Region[%s]", regionId, region));
       }
@@ -110,7 +102,7 @@ public class RegionManager {
     }
 
     private synchronized TiRegion getRegionById(long regionId) {
-      TiRegion region = regionCache.getIfPresent(regionId);
+      TiRegion region = regionCache.get(regionId);
       if (logger.isDebugEnabled()) {
         logger.debug(String.format("getRegionByKey ID[%s] -> Region[%s]", regionId, region));
       }
@@ -132,34 +124,34 @@ public class RegionManager {
         if (logger.isDebugEnabled()) {
           logger.debug(String.format("invalidateRegion ID[%s]", regionId));
         }
-        TiRegion region = regionCache.getIfPresent(regionId);
+        TiRegion region = regionCache.get(regionId);
         keyToRegionIdCache.remove(makeRange(region.getStartKey(), region.getEndKey()));
       } catch (Exception ignore) {
       } finally {
-        regionCache.invalidate(regionId);
+        regionCache.remove(regionId);
       }
     }
 
     public synchronized void invalidateAllRegionForStore(long storeId) {
-      for (TiRegion r : regionCache.asMap().values()) {
+      for (TiRegion r : regionCache.values()) {
         if(r.getLeader().getStoreId() == storeId) {
           if (logger.isDebugEnabled()) {
             logger.debug(String.format("invalidateAllRegionForStore Region[%s]", r));
           }
-          regionCache.invalidate(r.getId());
+          regionCache.remove(r.getId());
           keyToRegionIdCache.remove(makeRange(r.getStartKey(), r.getEndKey()));
         }
       }
     }
 
     public void invalidateStore(long storeId) {
-      storeCache.invalidate(storeId);
+      storeCache.remove(storeId);
     }
 
 
     public synchronized Store getStoreById(long id) {
       try {
-        Store store = storeCache.getIfPresent(id);
+        Store store = storeCache.get(id);
         if (store == null) {
           store = pdClient.getStore(id);
         }

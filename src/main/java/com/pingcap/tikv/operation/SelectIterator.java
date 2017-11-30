@@ -132,6 +132,9 @@ public abstract class SelectIterator<T, RawT> implements Iterator<T> {
     RegionStoreClient client;
     client = RegionStoreClient.create(region, store, session);
     try {
+      if (logger.isDebugEnabled()) {
+        logger.debug(String.format("RegionTask [%s]", regionTask));
+      }
       SelectResponse resp = client.coprocess(request, ranges);
       // if resp is null, then indicates eof.
       if (resp == null) {

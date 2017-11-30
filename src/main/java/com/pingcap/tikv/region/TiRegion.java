@@ -171,8 +171,10 @@ public class TiRegion implements Serializable {
   }
 
   public String toString() {
-    return String.format("{Region[%d] Store[%d] KeyRange[%s]:[%s]}",
+    return String.format("{Region[%d] ConfVer[%d] Version[%d] Store[%d] KeyRange[%s]:[%s]}",
                           getId(),
+                          getRegionEpoch().getConfVer(),
+                          getRegionEpoch().getVersion(),
                           getLeader().getStoreId(),
                           KeyUtils.formatBytes(getStartKey()),
                           KeyUtils.formatBytes(getEndKey()));
