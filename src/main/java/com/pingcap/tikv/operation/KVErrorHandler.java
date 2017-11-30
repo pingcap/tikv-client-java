@@ -68,8 +68,7 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
         recv.onNotLeader(this.regionManager.getRegionById(ctxRegion.getId()),
                          this.regionManager.getStoreById(newStoreId));
         throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
-      }
-      if (error.hasStoreNotMatch()) {
+      } else if (error.hasStoreNotMatch()) {
         logger.warn(String.format("Store Not Match happened with region id %d, store id %d",
                                   ctxRegion.getId(),
                                   ctxRegion.getLeader().getStoreId()));
@@ -78,38 +77,29 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
         regionManager.invalidateStore(ctxRegion.getLeader().getStoreId());
         recv.onStoreNotMatch();
         throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
-      }
-
-      if (error.hasStaleEpoch()) {
+      } else if (error.hasStaleEpoch()) {
         logger.warn(String.format("Stale Epoch encountered for region [%s]", ctxRegion.getId()));
         this.regionManager.onRegionStale(
             ctxRegion.getId(), ctxRegion.getLeader(), error.getStaleEpoch().getNewRegionsList());
         throw new GrpcRegionStaleException(error.toString());
-      }
-
-      if (error.hasServerIsBusy()) {
+      } else if (error.hasServerIsBusy()) {
         logger.warn(String.format("Server is busy for region [%s]", ctxRegion));
         throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
-      }
-
-      if (error.hasStaleCommand()) {
+      } else if (error.hasStaleCommand()) {
         logger.warn(String.format("Stale command for region [%s]", ctxRegion));
         throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
-      }
-
-      if (error.hasRaftEntryTooLarge()) {
+      } else if (error.hasRaftEntryTooLarge()) {
         logger.warn(String.format("Raft too large for region [%s]", ctxRegion));
         throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
-      }
-
-      if (error.hasKeyNotInRegion()) {
+      } else if (error.hasKeyNotInRegion()) {
         ByteString invalidKey = error.getKeyNotInRegion().getKey();
         logger.warn(String.format("Key not in region [%s] for key [%s]", ctxRegion, KeyUtils.formatBytes(invalidKey)));
+      } else {
+        logger.warn(String.format("Unknown error for region [%s]", error));
+        // for other errors, we only drop cache here and throw a retryable exception.
+        regionManager.invalidateRegion(ctxRegion.getId());
+        throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
       }
-
-      logger.warn(String.format("Unknown error for region [%s]", error));
-      // for other errors, we only drop cache here and throw a retryable exception.
-      regionManager.invalidateRegion(ctxRegion.getId());
     }
   }
 }
