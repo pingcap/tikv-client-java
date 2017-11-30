@@ -44,7 +44,6 @@ public class TimestampType extends DataType {
 
   @Override
   public Object decodeNotNull(int flag, CodecDataInput cdi) {
-    // MysqlTime MysqlDate MysqlDatetime
     if (flag == UVARINT_FLAG) {
       // read packedUint
       LocalDateTime localDateTime = fromPackedLong(IntegerType.readUVarLong(cdi));
