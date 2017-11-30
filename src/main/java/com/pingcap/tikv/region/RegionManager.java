@@ -17,9 +17,9 @@
 
 package com.pingcap.tikv.region;
 
+
 import static com.pingcap.tikv.codec.KeyUtils.formatBytes;
 import static com.pingcap.tikv.util.KeyRangeUtils.makeRange;
-
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
 import com.google.protobuf.ByteString;
@@ -35,6 +35,10 @@ import com.pingcap.tikv.util.Pair;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.log4j.Logger;
+
+import java.util.List;
+
+import static com.pingcap.tikv.util.KeyRangeUtils.makeRange;
 
 public class RegionManager {
   private static final Logger logger = Logger.getLogger(RegionManager.class);
@@ -87,8 +91,6 @@ public class RegionManager {
 
     @SuppressWarnings("unchecked")
     private synchronized boolean putRegion(TiRegion region) {
-      if (!region.hasStartKey() || !region.hasEndKey()) return false;
-
       if (logger.isDebugEnabled()) {
         logger.debug("putRegion: " + region);
       }
