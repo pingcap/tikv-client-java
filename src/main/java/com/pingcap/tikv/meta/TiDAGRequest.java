@@ -1,9 +1,22 @@
 package com.pingcap.tikv.meta;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.pingcap.tikv.predicates.PredicateUtils.mergeCNFExpressions;
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
-import com.pingcap.tidb.tipb.*;
+import com.pingcap.tidb.tipb.Aggregation;
+import com.pingcap.tidb.tipb.ColumnInfo;
+import com.pingcap.tidb.tipb.DAGRequest;
+import com.pingcap.tidb.tipb.ExecType;
+import com.pingcap.tidb.tipb.Executor;
+import com.pingcap.tidb.tipb.IndexScan;
+import com.pingcap.tidb.tipb.Limit;
+import com.pingcap.tidb.tipb.Selection;
+import com.pingcap.tidb.tipb.TableScan;
+import com.pingcap.tidb.tipb.TopN;
 import com.pingcap.tikv.exception.DAGRequestException;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.expression.TiByItem;
@@ -13,16 +26,11 @@ import com.pingcap.tikv.kvproto.Coprocessor;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.util.KeyRangeUtils;
 import com.pingcap.tikv.util.Pair;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.pingcap.tikv.predicates.PredicateUtils.mergeCNFExpressions;
-import static java.util.Objects.requireNonNull;
 
 /**
  * Type TiDAGRequest.
@@ -78,13 +86,13 @@ public class TiDAGRequest implements Serializable {
   private boolean handleNeeded;
 
   public void resolve() {
-    getFields().forEach(expr -> expr.bind(tableInfo));
-    getWhere().forEach(expr -> expr.bind(tableInfo));
-    getGroupByItems().forEach(item -> item.getExpr().bind(tableInfo));
-    getOrderByItems().forEach(item -> item.getExpr().bind(tableInfo));
-    getAggregates().forEach(expr -> expr.bind(tableInfo));
+    getFields().forEach(expr -> expr.resolve(tableInfo));
+    getWhere().forEach(expr -> expr.resolve(tableInfo));
+    getGroupByItems().forEach(item -> item.getExpr().resolve(tableInfo));
+    getOrderByItems().forEach(item -> item.getExpr().resolve(tableInfo));
+    getAggregates().forEach(expr -> expr.resolve(tableInfo));
     if (having != null) {
-      having.bind(tableInfo);
+      having.resolve(tableInfo);
     }
   }
 
