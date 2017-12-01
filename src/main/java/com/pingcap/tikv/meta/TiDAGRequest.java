@@ -1,22 +1,9 @@
 package com.pingcap.tikv.meta;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.pingcap.tikv.predicates.PredicateUtils.mergeCNFExpressions;
-import static java.util.Objects.requireNonNull;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
-import com.pingcap.tidb.tipb.Aggregation;
-import com.pingcap.tidb.tipb.ColumnInfo;
-import com.pingcap.tidb.tipb.DAGRequest;
-import com.pingcap.tidb.tipb.ExecType;
-import com.pingcap.tidb.tipb.Executor;
-import com.pingcap.tidb.tipb.IndexScan;
-import com.pingcap.tidb.tipb.Limit;
-import com.pingcap.tidb.tipb.Selection;
-import com.pingcap.tidb.tipb.TableScan;
-import com.pingcap.tidb.tipb.TopN;
+import com.pingcap.tidb.tipb.*;
 import com.pingcap.tikv.exception.DAGRequestException;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.expression.TiByItem;
@@ -26,18 +13,27 @@ import com.pingcap.tikv.kvproto.Coprocessor;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.util.KeyRangeUtils;
 import com.pingcap.tikv.util.Pair;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.pingcap.tikv.predicates.PredicateUtils.mergeCNFExpressions;
+import static java.util.Objects.requireNonNull;
+
 /**
  * Type TiDAGRequest.
- *
+ * <p>
  * Used for constructing a new DAG request to TiKV
  */
 public class TiDAGRequest implements Serializable {
+  public TiDAGRequest(PushDownType pushDownType) {
+    this.pushDownType = pushDownType;
+  }
+
   public enum TruncateMode {
     IgnoreTruncation(0x1),
     TruncationAsWarning(0x2);
@@ -51,6 +47,14 @@ public class TiDAGRequest implements Serializable {
     public long mask(long flags) {
       return flags | mask;
     }
+  }
+
+  /**
+   * Whether we use streaming to push down the request
+   */
+  public enum PushDownType {
+    STREAMING,
+    NORMAL
   }
 
   /**
@@ -84,6 +88,7 @@ public class TiDAGRequest implements Serializable {
   private TiExpr having;
   private boolean distinct;
   private boolean handleNeeded;
+  private final PushDownType pushDownType;
 
   public void resolve() {
     getFields().forEach(expr -> expr.resolve(tableInfo));
@@ -112,7 +117,6 @@ public class TiDAGRequest implements Serializable {
     DAGRequest.Builder dagRequestBuilder = DAGRequest.newBuilder();
     Executor.Builder executorBuilder = Executor.newBuilder();
     IndexScan.Builder indexScanBuilder = IndexScan.newBuilder();
-//    tableInfo.getColumns().forEach(tiColumnInfo -> indexScanBuilder.addColumns(tiColumnInfo.toProto(tableInfo)));
 
     List<TiColumnInfo> columnInfoList = tableInfo.getColumns();
     boolean hasPk = false;
@@ -123,22 +127,25 @@ public class TiDAGRequest implements Serializable {
         .map(TiIndexColumn::getOffset)
         .collect(Collectors.toList());
 
-//    for (Integer idx : indexColIds) {
-//      ColumnInfo columnInfo = columnInfoList
-//          .get(idx)
-//          .toProto(tableInfo);
-//
-////      ColumnInfo.Builder colBuilder = ColumnInfo.newBuilder();
-////      colBuilder.setTp(columnInfo.getTp());
-////      colBuilder.setColumnId(columnInfo.getColumnId());
-//      if (columnInfo.getColumnId() == -1) {
-//        hasPk = true;
-////        colBuilder.setPkHandle(true);
-//      }
-//      indexScanBuilder.addColumns(columnInfo);
-//    }
+    for (Integer idx : indexColIds) {
+      ColumnInfo columnInfo = columnInfoList
+          .get(idx)
+          .toProto(tableInfo);
 
-//    if (!hasPk) {
+      ColumnInfo.Builder colBuilder = ColumnInfo.newBuilder();
+      colBuilder.setTp(columnInfo.getTp());
+      colBuilder.setColumnId(columnInfo.getColumnId());
+      colBuilder.setCollation(columnInfo.getCollation());
+      colBuilder.setColumnLen(columnInfo.getColumnLen());
+      colBuilder.setFlag(columnInfo.getFlag());
+      if (columnInfo.getColumnId() == -1) {
+        hasPk = true;
+        colBuilder.setPkHandle(true);
+      }
+      indexScanBuilder.addColumns(colBuilder);
+    }
+
+    if (!hasPk) {
       ColumnInfo handleColumn = ColumnInfo.newBuilder()
           .setColumnId(-1)
           .setPkHandle(true)
@@ -146,16 +153,18 @@ public class TiDAGRequest implements Serializable {
           // we need to set this to true in order to retrieve the handle,
           // so the name 'setPkHandle' may sounds strange.
           .build();
-//      indexScanBuilder.addColumns(handleColumn);
-//    }
+      indexScanBuilder.addColumns(handleColumn);
+    }
     executorBuilder.setTp(ExecType.TypeIndexScan);
 
     indexScanBuilder
         .setTableId(tableInfo.getId())
         .setIndexId(indexInfo.getId());
     dagRequestBuilder.addExecutors(executorBuilder.setIdxScan(indexScanBuilder).build());
-
-    dagRequestBuilder.addOutputOffsets(0);
+    int colCount = indexScanBuilder.getColumnsCount();
+    dagRequestBuilder.addOutputOffsets(
+         colCount != 0 ? colCount - 1 : 0
+    );
     return dagRequestBuilder
         .setFlags(flags)
         .setTimeZoneOffset(timeZoneOffset)
@@ -418,7 +427,7 @@ public class TiDAGRequest implements Serializable {
    * @param byItem is a TiByItem.
    * @return a SelectBuilder
    */
-  TiDAGRequest addOrderByItem(TiByItem byItem) {
+  public TiDAGRequest addOrderByItem(TiByItem byItem) {
     orderByItems.add(requireNonNull(byItem, "byItem is null"));
     return this;
   }
@@ -541,6 +550,14 @@ public class TiDAGRequest implements Serializable {
    */
   public void setHandleNeeded(boolean handleNeeded) {
     this.handleNeeded = handleNeeded;
+  }
+
+  /**
+   * Whether we use streaming processing to retrieve data
+   * @return push down type.
+   */
+  public PushDownType getPushDownType() {
+    return pushDownType;
   }
 
   @Override

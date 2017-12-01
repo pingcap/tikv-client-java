@@ -15,7 +15,7 @@
  *
  */
 
-package com.pingcap.tikv.operation;
+package com.pingcap.tikv.operation.iterator;
 
 import com.google.protobuf.ByteString;
 import com.pingcap.tidb.tipb.Chunk;

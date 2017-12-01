@@ -39,11 +39,11 @@ import com.pingcap.tikv.operation.KVErrorHandler;
 import com.pingcap.tikv.streaming.StreamingResponse;
 import com.pingcap.tikv.util.Pair;
 import io.grpc.ManagedChannel;
+import org.apache.log4j.Logger;
 
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Supplier;
-import org.apache.log4j.Logger;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
