@@ -43,6 +43,7 @@ import io.grpc.ManagedChannel;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Supplier;
+import org.apache.log4j.Logger;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -50,6 +51,7 @@ import static com.pingcap.tikv.types.RequestTypes.*;
 
 // RegionStore itself is not thread-safe
 public class RegionStoreClient extends AbstractGRPCClient<TikvBlockingStub, TikvStub> implements RegionErrorReceiver {
+  private static final Logger logger = Logger.getLogger(RegionStoreClient.class);
   private TiRegion region;
   private TikvBlockingStub blockingStub;
   private TikvStub asyncStub;
@@ -279,6 +281,9 @@ public class RegionStoreClient extends AbstractGRPCClient<TikvBlockingStub, Tikv
       TiRegion region, Store store, TiSession session) {
     RegionStoreClient client;
     String addressStr = store.getAddress();
+    if (logger.isDebugEnabled()) {
+      logger.debug(String.format("Create region store client on address %s", addressStr));
+    }
     ManagedChannel channel = session.getChannel(addressStr);
 
     TikvBlockingStub blockingStub = TikvGrpc.newBlockingStub(channel);

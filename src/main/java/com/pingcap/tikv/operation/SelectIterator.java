@@ -22,6 +22,7 @@ import com.pingcap.tidb.tipb.SelectRequest;
 import com.pingcap.tidb.tipb.SelectResponse;
 import com.pingcap.tikv.TiSession;
 import com.pingcap.tikv.codec.CodecDataInput;
+import com.pingcap.tikv.exception.GrpcRegionStaleException;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
 import com.pingcap.tikv.kvproto.Metapb.Store;
@@ -32,16 +33,18 @@ import com.pingcap.tikv.row.Row;
 import com.pingcap.tikv.row.RowReader;
 import com.pingcap.tikv.row.RowReaderFactory;
 import com.pingcap.tikv.types.DataType;
+import com.pingcap.tikv.util.RangeSplitter;
 import com.pingcap.tikv.util.RangeSplitter.RegionTask;
-
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.function.Function;
+import org.apache.log4j.Logger;
 
 public abstract class SelectIterator<T, RawT> implements Iterator<T> {
-
+  private static final Logger logger = Logger.getLogger(SelectIterator.class);
   protected final TiSession session;
   protected final List<RegionTask> regionTasks;
 
@@ -59,7 +62,7 @@ public abstract class SelectIterator<T, RawT> implements Iterator<T> {
     return new SelectIterator<Row, ByteString>(req.buildScan(false),
                                                regionTasks,
                                                session,
-                                               SchemaInfer.create(null),
+                                               SchemaInfer.create(req),
                                                (chunks) -> ChunkIterator.getRawBytesChunkIterator(chunks)) {
       @Override
       public Row next() {
@@ -80,7 +83,7 @@ public abstract class SelectIterator<T, RawT> implements Iterator<T> {
     return new SelectIterator<Long, Long>(req.buildScan(true),
                                           regionTasks,
                                           session,
-                                          SchemaInfer.create(null),
+                                          SchemaInfer.create(req),
                                           (chunks) -> ChunkIterator.getHandleChunkIterator(chunks)) {
       @Override
       public Long next() {
@@ -128,13 +131,34 @@ public abstract class SelectIterator<T, RawT> implements Iterator<T> {
 
     RegionStoreClient client;
     client = RegionStoreClient.create(region, store, session);
-    SelectResponse resp = client.coprocess(request, ranges);
-    // if resp is null, then indicates eof.
-    if (resp == null) {
-      eof = true;
-      return null;
+    try {
+      if (logger.isDebugEnabled()) {
+        logger.debug(String.format("RegionTask [%s]", regionTask));
+      }
+      SelectResponse resp = client.coprocess(request, ranges);
+      // if resp is null, then indicates eof.
+      if (resp == null) {
+        eof = true;
+        return null;
+      }
+      return resp.getChunksList();
+    } catch (GrpcRegionStaleException e) {
+      List<Chunk> resultChunk = new ArrayList<>();
+      List<RegionTask> splitTasks = RangeSplitter.newSplitter(session.getRegionManager()).splitRangeByRegion(ranges);
+      for(RegionTask t : splitTasks) {
+        if (logger.isDebugEnabled()) {
+          logger.debug(
+              String.format("createClientAndSendReq split for stale region, old region[%s] - new region[%s]",
+              regionTask.getRegion(),
+              t.getRegion()));
+        }
+        List<Chunk> resFromCurTask = createClientAndSendReq(t);
+        if(resFromCurTask != null) {
+          resultChunk.addAll(resFromCurTask);
+        }
+      }
+      return resultChunk;
     }
-    return resp.getChunksList();
   }
 
   private boolean readNextRegion() {
