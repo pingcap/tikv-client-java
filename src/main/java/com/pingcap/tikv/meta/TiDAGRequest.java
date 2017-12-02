@@ -234,7 +234,7 @@ public class TiDAGRequest implements Serializable {
       executorBuilder.clear();
     }
 
-    if (0 != getLimit()) {
+    if (getLimit() != 0) {
       Limit.Builder limitBuilder = Limit.newBuilder();
       limitBuilder.setLimit(getLimit());
       executorBuilder.setTp(ExecType.TypeLimit);
@@ -600,8 +600,12 @@ public class TiDAGRequest implements Serializable {
       sb.append(", Order By: ");
       sb.append(Joiner.on(", ").skipNulls().join(getOrderByItems()));
     }
-    return sb.toString();
 
+    if (getLimit() != 0) {
+      sb.append(", Limit: ");
+      sb.append("[").append(limit).append("]");
+    }
+    return sb.toString();
   }
 
 }
