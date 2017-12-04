@@ -213,6 +213,7 @@ public class TiDAGRequest implements Serializable {
               Selection.newBuilder().addConditions(whereExpr.toProto())
           )
       );
+      executorBuilder.clear();
     }
 
     if (!getGroupByItems().isEmpty() || !getAggregates().isEmpty()) {
