@@ -29,18 +29,24 @@ import java.time.ZonedDateTime;
 import java.util.Date;
 
 public class TimestampType extends DataType {
-  static ZoneId defaultZone = ZoneId.of("UTC");
-  static String exceptionOutput = "Invalid Flag type for TimestampType: ";
+  ZoneId defaultZone;
+  private static final String exceptionOutput = "Invalid Flag type for TimestampType: ";
   static TimestampType of(int tp) {
     return new TimestampType(tp);
   }
 
+  void initTimezone() {
+    defaultZone = ZoneId.of("UTC");
+  }
+
   TimestampType(int tp) {
     super(tp);
+    initTimezone();
   }
 
   TimestampType(TiColumnInfo.InternalTypeHolder holder) {
     super(holder);
+    initTimezone();
   }
 
   @Override
