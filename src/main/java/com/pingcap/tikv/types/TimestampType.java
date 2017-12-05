@@ -53,7 +53,7 @@ public class TimestampType extends DataType {
       }
       return Timestamp.from(ZonedDateTime.of(localDateTime, defaultZone).toInstant());
     } else if (flag == UINT_FLAG) {
-      // read packedInt
+      // read UInt
       LocalDateTime localDateTime = fromPackedLong(IntegerType.readULong(cdi));
       if (localDateTime == null) {
         return null;
