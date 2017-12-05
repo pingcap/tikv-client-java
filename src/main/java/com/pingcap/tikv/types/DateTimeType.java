@@ -17,15 +17,9 @@
 
 package com.pingcap.tikv.types;
 
-import com.pingcap.tikv.codec.CodecDataInput;
-import com.pingcap.tikv.codec.CodecDataOutput;
-import com.pingcap.tikv.codec.InvalidCodecFormatException;
 import com.pingcap.tikv.meta.TiColumnInfo;
 
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 
 public class DateTimeType extends TimestampType {
   static {
