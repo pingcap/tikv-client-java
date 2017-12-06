@@ -26,8 +26,9 @@ import com.pingcap.tikv.region.RegionManager;
 import com.pingcap.tikv.region.TiRegion;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
-import java.util.function.Function;
 import org.apache.log4j.Logger;
+
+import java.util.function.Function;
 
 public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
   private static final Logger logger = Logger.getLogger(KVErrorHandler.class);
@@ -75,6 +76,7 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
 
         regionManager.invalidateRegion(ctxRegion.getId());
         regionManager.invalidateStore(ctxRegion.getLeader().getStoreId());
+        regionManager.incrementCacheAccumulator(ctxRegion.getId(), ctxRegion.getLeader().getStoreId());
         recv.onStoreNotMatch();
         throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
       } else if (error.hasStaleEpoch()) {
@@ -98,6 +100,7 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
         // for other errors, we only drop cache here and throw a retryable exception.
         regionManager.invalidateRegion(ctxRegion.getId());
         regionManager.invalidateStore(ctxRegion.getLeader().getStoreId());
+        regionManager.incrementCacheAccumulator(ctxRegion.getId(), ctxRegion.getLeader().getStoreId());
         throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
       }
     }

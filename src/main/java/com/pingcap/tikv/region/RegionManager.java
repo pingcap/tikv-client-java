@@ -18,13 +18,12 @@
 package com.pingcap.tikv.region;
 
 
-import static com.pingcap.tikv.codec.KeyUtils.formatBytes;
-import static com.pingcap.tikv.util.KeyRangeUtils.makeRange;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.ReadOnlyPDClient;
 import com.pingcap.tikv.TiSession;
+import com.pingcap.tikv.event.CacheInvalidateEvent;
 import com.pingcap.tikv.exception.GrpcException;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.kvproto.Metapb.Peer;
@@ -32,27 +31,35 @@ import com.pingcap.tikv.kvproto.Metapb.Store;
 import com.pingcap.tikv.kvproto.Metapb.StoreState;
 import com.pingcap.tikv.util.Comparables;
 import com.pingcap.tikv.util.Pair;
+import org.apache.log4j.Logger;
+
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.log4j.Logger;
+import java.util.Random;
+import java.util.function.Function;
+
+import static com.pingcap.tikv.codec.KeyUtils.formatBytes;
+import static com.pingcap.tikv.util.KeyRangeUtils.makeRange;
 
 
 public class RegionManager {
   private static final Logger logger = Logger.getLogger(RegionManager.class);
   private RegionCache cache;
   private final ReadOnlyPDClient pdClient;
+  private final Function<CacheInvalidateEvent, Void> accFunc;
 
   // To avoid double retrieval, we used the async version of grpc
   // When rpc not returned, instead of call again, it wait for previous one done
   public RegionManager(ReadOnlyPDClient pdClient) {
     this.cache = new RegionCache(pdClient);
     this.pdClient = pdClient;
+    this.accFunc = pdClient != null ? pdClient.getSession().getAccumulatorFunction() : null;
   }
 
   public static class RegionCache {
-    private final Map<Long, TiRegion>             regionCache;
-    private final Map<Long, Store>                storeCache;
-    private final RangeMap<Comparable, Long>      keyToRegionIdCache;
+    private final Map<Long, TiRegion> regionCache;
+    private final Map<Long, Store> storeCache;
+    private final RangeMap<Comparable, Long> keyToRegionIdCache;
     private final ReadOnlyPDClient pdClient;
 
     public RegionCache(ReadOnlyPDClient pdClient) {
@@ -129,7 +136,7 @@ public class RegionManager {
 
     public synchronized void invalidateAllRegionForStore(long storeId) {
       for (TiRegion r : regionCache.values()) {
-        if(r.getLeader().getStoreId() == storeId) {
+        if (r.getLeader().getStoreId() == storeId) {
           if (logger.isDebugEnabled()) {
             logger.debug(String.format("invalidateAllRegionForStore Region[%s]", r));
           }
@@ -216,12 +223,40 @@ public class RegionManager {
 
   /**
    * Clears all cache when a TiKV server does not respond
+   *
    * @param regionId region's id
-   * @param storeId TiKV store's id
+   * @param storeId  TiKV store's id
    */
   public void onRequestFail(long regionId, long storeId) {
     cache.invalidateRegion(regionId);
     cache.invalidateAllRegionForStore(storeId);
+    incrementCacheAccumulator(regionId, storeId);
+  }
+
+  /**
+   * Used for notifying Spark driver to invalidate cache from Spark workers.
+   */
+  public void incrementCacheAccumulator(long regionId, long storeId) {
+    if (accFunc != null) {
+      accFunc.apply(new CacheInvalidateEvent(regionId, storeId, true, true));
+    }
+  }
+
+  public void incrementRegionAccumulator(long regionId) {
+    if (accFunc != null) {
+      accFunc.apply(new CacheInvalidateEvent(regionId, 0, true, false));
+    }
+  }
+
+  public void incrementStoreAccumulator(long storeId) {
+    if (accFunc != null) {
+      accFunc.apply(new CacheInvalidateEvent(0, storeId, false, true));
+    }
+  }
+
+  public void iAmTest() {
+    Random random = new Random();
+    accFunc.apply(new CacheInvalidateEvent(random.nextInt(), random.nextInt(), false, false));
   }
 
   public void invalidateStore(long storeId) {

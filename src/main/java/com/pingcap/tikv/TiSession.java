@@ -18,6 +18,7 @@ package com.pingcap.tikv;
 import com.google.common.net.HostAndPort;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.pingcap.tikv.catalog.Catalog;
+import com.pingcap.tikv.event.CacheInvalidateEvent;
 import com.pingcap.tikv.meta.TiTimestamp;
 import com.pingcap.tikv.region.RegionManager;
 import io.grpc.ManagedChannel;
@@ -28,20 +29,24 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 
 public class TiSession implements AutoCloseable {
   private static final Map<String, ManagedChannel> connPool = new HashMap<>();
   private final TiConfiguration conf;
+  private final Function<CacheInvalidateEvent, Void> accumulatorFunction;
   // below object creation is either heavy or making connection (pd), pending for lazy loading
   private volatile RegionManager regionManager;
+//  private volatile AccumulatorManager accumulatorManager;
   private volatile PDClient client;
   private volatile Catalog catalog;
   private volatile ExecutorService indexScanThreadPool;
   private volatile ExecutorService tableScanThreadPool;
 
-  public TiSession(TiConfiguration conf) {
+  public TiSession(TiConfiguration conf, Function<CacheInvalidateEvent, Void> accumulatorFunction) {
     this.conf = conf;
+    this.accumulatorFunction = accumulatorFunction;
   }
 
   public TiConfiguration getConf() {
@@ -154,7 +159,15 @@ public class TiSession implements AutoCloseable {
   }
 
   public static TiSession create(TiConfiguration conf) {
-    return new TiSession(conf);
+    return new TiSession(conf, null);
+  }
+
+  public static TiSession create(TiConfiguration conf, Function<CacheInvalidateEvent, Void> accumulatorFunction) {
+    return new TiSession(conf, accumulatorFunction);
+  }
+
+  public Function<CacheInvalidateEvent, Void> getAccumulatorFunction() {
+    return accumulatorFunction;
   }
 
   @Override

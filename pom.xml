@@ -23,9 +23,24 @@
         <jackson.version>2.6.6</jackson.version>
         <trove4j.version>3.0.1</trove4j.version>
         <proto.folder>${basedir}/proto</proto.folder>
+        <spark.version>2.1.1</spark.version>
+        <scala.binary.version>2.11</scala.binary.version>
+        <scala.version>2.11</scala.version>
     </properties>
 
     <dependencies>
+        <!--<dependency>-->
+            <!--<groupId>org.apache.spark</groupId>-->
+            <!--<artifactId>spark-core_${scala.version}</artifactId>-->
+            <!--<version>${spark.version}</version>-->
+            <!--<scope>provided</scope>-->
+            <!--<exclusions>-->
+                <!--<exclusion>-->
+                    <!--<groupId>io.netty</groupId>-->
+                    <!--<artifactId>netty-all</artifactId>-->
+                <!--</exclusion>-->
+            <!--</exclusions>-->
+        <!--</dependency>-->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
