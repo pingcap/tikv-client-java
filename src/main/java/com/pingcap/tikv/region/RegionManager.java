@@ -229,27 +229,36 @@ public class RegionManager {
   public void onRequestFail(long regionId, long storeId) {
     cache.invalidateRegion(regionId);
     cache.invalidateAllRegionForStore(storeId);
-    incrementCacheAccumulator(regionId, storeId);
+    incrementCacheAccumulator(regionId, storeId, CacheInvalidateEvent.CacheType.REGION_STORE);
   }
 
   /**
    * Used for notifying Spark driver to invalidate cache from Spark workers.
    */
-  public void incrementCacheAccumulator(long regionId, long storeId) {
+  public void incrementCacheAccumulator(long regionId, long storeId, CacheInvalidateEvent.CacheType type) {
     if (accFunc != null) {
-      accFunc.apply(new CacheInvalidateEvent(regionId, storeId, true, true));
+      accFunc.apply(new CacheInvalidateEvent(
+          regionId, storeId,
+          true, true,
+          type));
     }
   }
 
   public void incrementRegionAccumulator(long regionId) {
     if (accFunc != null) {
-      accFunc.apply(new CacheInvalidateEvent(regionId, 0, true, false));
+      accFunc.apply(new CacheInvalidateEvent(
+          regionId, 0,
+          true, false,
+          CacheInvalidateEvent.CacheType.REGION_STORE));
     }
   }
 
   public void incrementStoreAccumulator(long storeId) {
     if (accFunc != null) {
-      accFunc.apply(new CacheInvalidateEvent(0, storeId, false, true));
+      accFunc.apply(new CacheInvalidateEvent(
+          0, storeId,
+          false, true,
+          CacheInvalidateEvent.CacheType.REGION_STORE));
     }
   }
 

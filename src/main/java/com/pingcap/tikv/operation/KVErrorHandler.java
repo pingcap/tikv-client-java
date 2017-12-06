@@ -19,6 +19,7 @@ package com.pingcap.tikv.operation;
 
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.codec.KeyUtils;
+import com.pingcap.tikv.event.CacheInvalidateEvent;
 import com.pingcap.tikv.exception.GrpcRegionStaleException;
 import com.pingcap.tikv.kvproto.Errorpb;
 import com.pingcap.tikv.region.RegionErrorReceiver;
@@ -65,7 +66,11 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
             ctxRegion.getLeader().getStoreId()));
         long newStoreId = error.getNotLeader().getLeader().getStoreId();
         regionManager.updateLeader(ctxRegion.getId(), newStoreId);
-
+        regionManager.incrementCacheAccumulator(
+            ctxRegion.getId(),
+            newStoreId,
+            CacheInvalidateEvent.CacheType.LEADER
+        );
         recv.onNotLeader(this.regionManager.getRegionById(ctxRegion.getId()),
                          this.regionManager.getStoreById(newStoreId));
         throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
@@ -76,7 +81,11 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
 
         regionManager.invalidateRegion(ctxRegion.getId());
         regionManager.invalidateStore(ctxRegion.getLeader().getStoreId());
-        regionManager.incrementCacheAccumulator(ctxRegion.getId(), ctxRegion.getLeader().getStoreId());
+        regionManager.incrementCacheAccumulator(
+            ctxRegion.getId(),
+            ctxRegion.getLeader().getStoreId(),
+            CacheInvalidateEvent.CacheType.REGION_STORE
+        );
         recv.onStoreNotMatch();
         throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
       } else if (error.hasStaleEpoch()) {
@@ -100,7 +109,11 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
         // for other errors, we only drop cache here and throw a retryable exception.
         regionManager.invalidateRegion(ctxRegion.getId());
         regionManager.invalidateStore(ctxRegion.getLeader().getStoreId());
-        regionManager.incrementCacheAccumulator(ctxRegion.getId(), ctxRegion.getLeader().getStoreId());
+        regionManager.incrementCacheAccumulator(
+            ctxRegion.getId(),
+            ctxRegion.getLeader().getStoreId(),
+            CacheInvalidateEvent.CacheType.REGION_STORE
+        );
         throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
       }
     }

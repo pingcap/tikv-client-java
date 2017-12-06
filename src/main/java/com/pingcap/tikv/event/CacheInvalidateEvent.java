@@ -16,14 +16,23 @@
 package com.pingcap.tikv.event;
 
 public class CacheInvalidateEvent {
+  public enum CacheType {
+    REGION_STORE,
+    LEADER
+  }
+
   private long regionId;
   private long storeId;
   private boolean invalidateRegion;
   private boolean invalidateStore;
+  private CacheType cacheType;
 
-  public CacheInvalidateEvent(long regionId, long storeId, boolean updateRegion, boolean updateStore) {
+  public CacheInvalidateEvent(long regionId, long storeId,
+                              boolean updateRegion, boolean updateStore,
+                              CacheType type) {
     this.regionId = regionId;
     this.storeId = storeId;
+    this.cacheType = type;
     if (updateRegion) {
       invalidateRegion();
     }
@@ -75,5 +84,9 @@ public class CacheInvalidateEvent {
 
   public boolean shouldUpdateStore() {
     return invalidateStore;
+  }
+
+  public CacheType getCacheType() {
+    return cacheType;
   }
 }
