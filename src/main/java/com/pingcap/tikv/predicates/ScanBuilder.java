@@ -15,9 +15,6 @@
 
 package com.pingcap.tikv.predicates;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.Objects.requireNonNull;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.BoundType;
 import com.google.common.collect.ImmutableList;
@@ -37,10 +34,14 @@ import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.predicates.RangeBuilder.IndexRange;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.IntegerType;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
 
 // TODO: Rethink value binding part since we abstract away datum of TiDB
 public class ScanBuilder {
@@ -80,9 +81,25 @@ public class ScanBuilder {
 
   // Build scan plan picking access path with lowest cost by estimation
   public ScanPlan buildScan(List<TiExpr> conditions, TiTableInfo table) {
-    TiIndexInfo pkIndex = TiIndexInfo.generateFakePrimaryKeyIndex(table);
-    ScanPlan minPlan = buildScan(conditions, pkIndex, table);
+    ScanPlan minPlan = buildTableScan(conditions, table);
     double minCost = minPlan.getCost();
+    ScanPlan indexPlan = buildIndexScan(conditions, table);
+    if (indexPlan == null || minCost < indexPlan.getCost()) {
+      return minPlan;
+    } else {
+      return indexPlan;
+    }
+  }
+
+  public ScanPlan buildTableScan(List<TiExpr> conditions, TiTableInfo table) {
+    TiIndexInfo pkIndex = TiIndexInfo.generateFakePrimaryKeyIndex(table);
+    ScanPlan plan = buildScan(conditions, pkIndex, table);
+    return plan;
+  }
+
+  public ScanPlan buildIndexScan(List<TiExpr> conditions, TiTableInfo table) {
+    double minCost = Double.MAX_VALUE;
+    ScanPlan minPlan = null;
     for (TiIndexInfo index : table.getIndices()) {
       ScanPlan plan = buildScan(conditions, index, table);
       if (plan.getCost() < minCost) {
@@ -91,12 +108,6 @@ public class ScanBuilder {
       }
     }
     return minPlan;
-  }
-
-  public ScanPlan buildTableScan(List<TiExpr> conditions, TiTableInfo table) {
-    TiIndexInfo pkIndex = TiIndexInfo.generateFakePrimaryKeyIndex(table);
-    ScanPlan plan = buildScan(conditions, pkIndex, table);
-    return plan;
   }
 
   public ScanPlan buildScan(List<TiExpr> conditions, TiIndexInfo index, TiTableInfo table) {
