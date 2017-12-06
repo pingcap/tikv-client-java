@@ -15,7 +15,9 @@
 
 package com.pingcap.tikv.event;
 
-public class CacheInvalidateEvent {
+import java.io.Serializable;
+
+public class CacheInvalidateEvent implements Serializable {
   public enum CacheType {
     REGION_STORE,
     LEADER
