@@ -29,13 +29,13 @@ import java.time.ZonedDateTime;
 import java.util.Date;
 
 public class TimestampType extends DataType {
-  private static final ZoneId utcTimezone = ZoneId.of("UTC");
+  private static final ZoneId UTC_TIMEZONE = ZoneId.of("UTC");
   static TimestampType of(int tp) {
     return new TimestampType(tp);
   }
 
-  ZoneId getDefaultTimezone() {
-    return utcTimezone;
+  protected ZoneId getDefaultTimezone() {
+    return UTC_TIMEZONE;
   }
 
   private String getClassName() {
