@@ -29,7 +29,7 @@ import java.time.ZonedDateTime;
 import java.util.Date;
 
 public class TimestampType extends DataType {
-  private static ZoneId utcTimezone = ZoneId.of("UTC");
+  private static final ZoneId utcTimezone = ZoneId.of("UTC");
   static TimestampType of(int tp) {
     return new TimestampType(tp);
   }
@@ -38,7 +38,7 @@ public class TimestampType extends DataType {
     return utcTimezone;
   }
 
-  String getClassName() {
+  private String getClassName() {
     return getClass().getSimpleName();
   }
 

@@ -22,7 +22,7 @@ import com.pingcap.tikv.meta.TiColumnInfo;
 import java.time.ZoneId;
 
 public class DateTimeType extends TimestampType {
-  private static ZoneId defaultZone = ZoneId.systemDefault();
+  private static final ZoneId defaultZone = ZoneId.systemDefault();
   static DateTimeType of(int tp) {
     return new DateTimeType(tp);
   }
