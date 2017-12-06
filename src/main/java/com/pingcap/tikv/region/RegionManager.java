@@ -57,9 +57,9 @@ public class RegionManager {
   }
 
   public static class RegionCache {
-    private final Map<Long, TiRegion> regionCache;
-    private final Map<Long, Store> storeCache;
-    private final RangeMap<Comparable, Long> keyToRegionIdCache;
+    private final Map<Long, TiRegion>             regionCache;
+    private final Map<Long, Store>                storeCache;
+    private final RangeMap<Comparable, Long>      keyToRegionIdCache;
     private final ReadOnlyPDClient pdClient;
 
     public RegionCache(ReadOnlyPDClient pdClient) {
@@ -136,7 +136,7 @@ public class RegionManager {
 
     public synchronized void invalidateAllRegionForStore(long storeId) {
       for (TiRegion r : regionCache.values()) {
-        if (r.getLeader().getStoreId() == storeId) {
+        if(r.getLeader().getStoreId() == storeId) {
           if (logger.isDebugEnabled()) {
             logger.debug(String.format("invalidateAllRegionForStore Region[%s]", r));
           }

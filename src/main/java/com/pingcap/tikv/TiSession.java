@@ -38,7 +38,6 @@ public class TiSession implements AutoCloseable {
   private final Function<CacheInvalidateEvent, Void> accumulatorFunction;
   // below object creation is either heavy or making connection (pd), pending for lazy loading
   private volatile RegionManager regionManager;
-//  private volatile AccumulatorManager accumulatorManager;
   private volatile PDClient client;
   private volatile Catalog catalog;
   private volatile ExecutorService indexScanThreadPool;

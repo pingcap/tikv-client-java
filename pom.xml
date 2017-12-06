@@ -23,9 +23,6 @@
         <jackson.version>2.6.6</jackson.version>
         <trove4j.version>3.0.1</trove4j.version>
         <proto.folder>${basedir}/proto</proto.folder>
-        <spark.version>2.1.1</spark.version>
-        <scala.binary.version>2.11</scala.binary.version>
-        <scala.version>2.11</scala.version>
     </properties>
 
     <dependencies>
