@@ -22,13 +22,14 @@ import com.pingcap.tikv.meta.TiColumnInfo;
 import java.time.ZoneId;
 
 public class DateTimeType extends TimestampType {
+  private static ZoneId defaultZone = ZoneId.systemDefault();
   static DateTimeType of(int tp) {
     return new DateTimeType(tp);
   }
 
   @Override
-  void initTimezone() {
-    defaultZone = ZoneId.systemDefault();
+  ZoneId getDefaultTimezone() {
+    return defaultZone;
   }
 
   private DateTimeType(int tp) {

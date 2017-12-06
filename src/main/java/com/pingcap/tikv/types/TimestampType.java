@@ -29,24 +29,25 @@ import java.time.ZonedDateTime;
 import java.util.Date;
 
 public class TimestampType extends DataType {
-  ZoneId defaultZone;
-  private static final String exceptionOutput = "Invalid Flag type for TimestampType: ";
+  private static ZoneId utcTimezone = ZoneId.of("UTC");
   static TimestampType of(int tp) {
     return new TimestampType(tp);
   }
 
-  void initTimezone() {
-    defaultZone = ZoneId.of("UTC");
+  ZoneId getDefaultTimezone() {
+    return utcTimezone;
+  }
+
+  String getClassName() {
+    return getClass().getSimpleName();
   }
 
   TimestampType(int tp) {
     super(tp);
-    initTimezone();
   }
 
   TimestampType(TiColumnInfo.InternalTypeHolder holder) {
     super(holder);
-    initTimezone();
   }
 
   @Override
@@ -57,16 +58,16 @@ public class TimestampType extends DataType {
       if (localDateTime == null) {
         return null;
       }
-      return Timestamp.from(ZonedDateTime.of(localDateTime, defaultZone).toInstant());
+      return Timestamp.from(ZonedDateTime.of(localDateTime, getDefaultTimezone()).toInstant());
     } else if (flag == UINT_FLAG) {
       // read UInt
       LocalDateTime localDateTime = fromPackedLong(IntegerType.readULong(cdi));
       if (localDateTime == null) {
         return null;
       }
-      return Timestamp.from(ZonedDateTime.of(localDateTime, defaultZone).toInstant());
+      return Timestamp.from(ZonedDateTime.of(localDateTime, getDefaultTimezone()).toInstant());
     } else {
-      throw new InvalidCodecFormatException(exceptionOutput + flag);
+      throw new InvalidCodecFormatException("Invalid Flag type for " + getClassName() + ": " + flag);
     }
   }
 
