@@ -35,7 +35,6 @@ import org.apache.log4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.function.Function;
 
 import static com.pingcap.tikv.codec.KeyUtils.formatBytes;
@@ -252,11 +251,6 @@ public class RegionManager {
     if (accFunc != null) {
       accFunc.apply(new CacheInvalidateEvent(0, storeId, false, true));
     }
-  }
-
-  public void iAmTest() {
-    Random random = new Random();
-    accFunc.apply(new CacheInvalidateEvent(random.nextInt(), random.nextInt(), false, false));
   }
 
   public void invalidateStore(long storeId) {
