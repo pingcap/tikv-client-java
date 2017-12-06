@@ -59,7 +59,8 @@ public class CacheInvalidateEvent implements Serializable {
     } else if (obj instanceof CacheInvalidateEvent) {
       CacheInvalidateEvent event = (CacheInvalidateEvent) obj;
       return event.getRegionId() == getRegionId() &&
-          event.getStoreId() == getStoreId();
+          event.getStoreId() == getStoreId() &&
+          event.getCacheType() == getCacheType();
     }
     return false;
   }
@@ -69,6 +70,7 @@ public class CacheInvalidateEvent implements Serializable {
     int result = 1106;
     result += result * 31 + getStoreId();
     result += result * 31 + getRegionId();
+    result += result * 31 + getCacheType().name().hashCode();
     return result;
   }
 
