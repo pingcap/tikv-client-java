@@ -27,13 +27,15 @@ import org.junit.Test;
 public class TiExprTest {
   @Test
   public void isSupportedExprTest() {
-    ExpressionBlacklist blackList = new ExpressionBlacklist("And, Not, , Test");
+    ExpressionBlacklist blackList = new ExpressionBlacklist("And, , Test");
     Or or = new Or(TiConstant.create(1), TiConstant.create(1));
     And and = new And(TiConstant.create(1), or);
     Not not = new Not(or);
+    Not notFail = new Not(and);
 
     assertTrue(or.isSupportedExpr(blackList));
     assertFalse(and.isSupportedExpr(blackList));
-    assertFalse(not.isSupportedExpr(blackList));
+    assertTrue(not.isSupportedExpr(blackList));
+    assertFalse(notFail.isSupportedExpr(blackList));
   }
 }
