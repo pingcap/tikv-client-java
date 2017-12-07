@@ -23,7 +23,6 @@ import com.google.common.collect.TreeRangeMap;
 import com.google.protobuf.ByteString;
 import com.pingcap.tikv.ReadOnlyPDClient;
 import com.pingcap.tikv.TiSession;
-import com.pingcap.tikv.event.CacheInvalidateEvent;
 import com.pingcap.tikv.exception.GrpcException;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.kvproto.Metapb.Peer;
@@ -35,7 +34,6 @@ import org.apache.log4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 import static com.pingcap.tikv.codec.KeyUtils.formatBytes;
 import static com.pingcap.tikv.util.KeyRangeUtils.makeRange;
@@ -45,14 +43,12 @@ public class RegionManager {
   private static final Logger logger = Logger.getLogger(RegionManager.class);
   private RegionCache cache;
   private final ReadOnlyPDClient pdClient;
-  private final Function<CacheInvalidateEvent, Void> accFunc;
 
   // To avoid double retrieval, we used the async version of grpc
   // When rpc not returned, instead of call again, it wait for previous one done
   public RegionManager(ReadOnlyPDClient pdClient) {
     this.cache = new RegionCache(pdClient);
     this.pdClient = pdClient;
-    this.accFunc = pdClient != null ? pdClient.getSession().getAccumulatorFunction() : null;
   }
 
   public static class RegionCache {
@@ -222,44 +218,12 @@ public class RegionManager {
 
   /**
    * Clears all cache when a TiKV server does not respond
-   *
    * @param regionId region's id
-   * @param storeId  TiKV store's id
+   * @param storeId TiKV store's id
    */
   public void onRequestFail(long regionId, long storeId) {
     cache.invalidateRegion(regionId);
     cache.invalidateAllRegionForStore(storeId);
-    incrementCacheAccumulator(regionId, storeId, CacheInvalidateEvent.CacheType.REGION_STORE);
-  }
-
-  /**
-   * Used for notifying Spark driver to invalidate cache from Spark workers.
-   */
-  public void incrementCacheAccumulator(long regionId, long storeId, CacheInvalidateEvent.CacheType type) {
-    if (accFunc != null) {
-      accFunc.apply(new CacheInvalidateEvent(
-          regionId, storeId,
-          true, true,
-          type));
-    }
-  }
-
-  public void incrementRegionAccumulator(long regionId) {
-    if (accFunc != null) {
-      accFunc.apply(new CacheInvalidateEvent(
-          regionId, 0,
-          true, false,
-          CacheInvalidateEvent.CacheType.REGION_STORE));
-    }
-  }
-
-  public void incrementStoreAccumulator(long storeId) {
-    if (accFunc != null) {
-      accFunc.apply(new CacheInvalidateEvent(
-          0, storeId,
-          false, true,
-          CacheInvalidateEvent.CacheType.REGION_STORE));
-    }
   }
 
   public void invalidateStore(long storeId) {

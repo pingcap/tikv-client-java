@@ -34,6 +34,7 @@ import java.util.function.Function;
 public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
   private static final Logger logger = Logger.getLogger(KVErrorHandler.class);
   private Function<RespT, Errorpb.Error> getRegionError;
+  private Function<CacheInvalidateEvent, Void> cacheInvalidateCallBack;
   private RegionManager regionManager;
   private RegionErrorReceiver recv;
   private TiRegion ctxRegion;
@@ -47,6 +48,9 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
     this.recv = recv;
     this.regionManager = regionManager;
     this.getRegionError = getRegionError;
+    this.cacheInvalidateCallBack =
+        regionManager != null && regionManager.getSession() != null ?
+        regionManager.getSession().getCacheInvalidateCallback() : null;
   }
 
   public void handle(RespT resp) {
@@ -66,7 +70,7 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
             ctxRegion.getLeader().getStoreId()));
         long newStoreId = error.getNotLeader().getLeader().getStoreId();
         regionManager.updateLeader(ctxRegion.getId(), newStoreId);
-        regionManager.incrementCacheAccumulator(
+        notifyCacheInvalidation(
             ctxRegion.getId(),
             newStoreId,
             CacheInvalidateEvent.CacheType.LEADER
@@ -81,7 +85,7 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
 
         regionManager.invalidateRegion(ctxRegion.getId());
         regionManager.invalidateStore(ctxRegion.getLeader().getStoreId());
-        regionManager.incrementCacheAccumulator(
+        notifyCacheInvalidation(
             ctxRegion.getId(),
             ctxRegion.getLeader().getStoreId(),
             CacheInvalidateEvent.CacheType.REGION_STORE
@@ -109,13 +113,27 @@ public class KVErrorHandler<RespT> implements ErrorHandler<RespT> {
         // for other errors, we only drop cache here and throw a retryable exception.
         regionManager.invalidateRegion(ctxRegion.getId());
         regionManager.invalidateStore(ctxRegion.getLeader().getStoreId());
-        regionManager.incrementCacheAccumulator(
+        notifyCacheInvalidation(
             ctxRegion.getId(),
             ctxRegion.getLeader().getStoreId(),
             CacheInvalidateEvent.CacheType.REGION_STORE
         );
         throw new StatusRuntimeException(Status.fromCode(Status.Code.UNAVAILABLE).withDescription(error.toString()));
       }
+    }
+  }
+
+  /**
+   * Used for notifying Spark driver to invalidate cache from Spark workers.
+   */
+  private void notifyCacheInvalidation(long regionId, long storeId, CacheInvalidateEvent.CacheType type) {
+    if (cacheInvalidateCallBack != null) {
+      cacheInvalidateCallBack.apply(new CacheInvalidateEvent(
+          regionId, storeId,
+          true, true,
+          type));
+    } else {
+      logger.error("Failed to send notification back to driver since CacheInvalidateCallBack is null in executor node.");
     }
   }
 }

@@ -35,7 +35,7 @@ import java.util.function.Function;
 public class TiSession implements AutoCloseable {
   private static final Map<String, ManagedChannel> connPool = new HashMap<>();
   private final TiConfiguration conf;
-  private final Function<CacheInvalidateEvent, Void> accumulatorFunction;
+  private Function<CacheInvalidateEvent, Void> cacheInvalidateCallback;
   // below object creation is either heavy or making connection (pd), pending for lazy loading
   private volatile RegionManager regionManager;
   private volatile PDClient client;
@@ -43,9 +43,8 @@ public class TiSession implements AutoCloseable {
   private volatile ExecutorService indexScanThreadPool;
   private volatile ExecutorService tableScanThreadPool;
 
-  public TiSession(TiConfiguration conf, Function<CacheInvalidateEvent, Void> accumulatorFunction) {
+  public TiSession(TiConfiguration conf) {
     this.conf = conf;
-    this.accumulatorFunction = accumulatorFunction;
   }
 
   public TiConfiguration getConf() {
@@ -158,15 +157,19 @@ public class TiSession implements AutoCloseable {
   }
 
   public static TiSession create(TiConfiguration conf) {
-    return new TiSession(conf, null);
+    return new TiSession(conf);
   }
 
-  public static TiSession create(TiConfiguration conf, Function<CacheInvalidateEvent, Void> accumulatorFunction) {
-    return new TiSession(conf, accumulatorFunction);
+  public Function<CacheInvalidateEvent, Void> getCacheInvalidateCallback() {
+    return cacheInvalidateCallback;
   }
 
-  public Function<CacheInvalidateEvent, Void> getAccumulatorFunction() {
-    return accumulatorFunction;
+  /**
+   * This is used for setting call back function to invalidate cache information
+   * @param callBackFunc callback function
+   */
+  public void injectCallBackFunc(Function<CacheInvalidateEvent, Void> callBackFunc) {
+    this.cacheInvalidateCallback = callBackFunc;
   }
 
   @Override
