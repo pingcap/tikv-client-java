@@ -91,6 +91,16 @@ public abstract class TiFunctionExpression implements TiExpr {
   }
 
   @Override
+  public boolean isSupportedExpr(ExpressionBlacklist blackList) {
+    for (TiExpr arg : args) {
+      if (!arg.isSupportedExpr(blackList)) {
+        return false;
+      }
+    }
+    return TiExpr.super.isSupportedExpr(blackList);
+  }
+
+  @Override
   public int hashCode() {
     int hash = 31 * getClass().hashCode();
     for (TiExpr arg : args) {
