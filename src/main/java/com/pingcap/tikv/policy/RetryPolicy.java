@@ -72,16 +72,14 @@ public abstract class RetryPolicy<RespT> {
 
   public RespT callWithRetry(Callable<RespT> proc, String methodName) {
     for(;true;) {
-      RespT result = null;
       try {
-        result = proc.call();
-        return result;
-      } catch (Exception e) {
-          handleFailure(e, methodName, backOff.nextBackOffMillis());
-      } finally {
+        RespT result = proc.call();
         if (handler != null) {
           handler.handle(result);
         }
+        return result;
+      } catch (Exception e) {
+          handleFailure(e, methodName, backOff.nextBackOffMillis());
       }
     }
   }
