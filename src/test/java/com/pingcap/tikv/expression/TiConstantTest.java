@@ -17,8 +17,6 @@
 
 package com.pingcap.tikv.expression;
 
-import static org.junit.Assert.assertEquals;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pingcap.tidb.tipb.Expr;
 import com.pingcap.tikv.codec.CodecDataInput;
@@ -27,6 +25,10 @@ import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.meta.TiTableInfoTest;
 import com.pingcap.tikv.types.RealType;
 import org.junit.Test;
+
+import java.util.Calendar;
+
+import static org.junit.Assert.assertEquals;
 
 public class TiConstantTest {
   @Test
@@ -38,5 +40,16 @@ public class TiConstantTest {
     assertEquals(2, ge.getChildrenCount());
     double expected = RealType.readDouble(new CodecDataInput(ge.getChildren(1).getVal()));
     assertEquals(1.12, expected, 0.00001);
+  }
+
+  @Test
+  public void testEncodeSQLDate() {
+    Calendar calendar = Calendar.getInstance();
+    calendar.set(1998, Calendar.OCTOBER, 2);
+
+    TiConstant sqlDate = TiConstant.create(new java.sql.Date(calendar.getTime().getTime()));
+
+    assertEquals("tp: MysqlTime\nval: \"\\031_\\304\\000\\000\\000\\000\\000\"\n",
+        sqlDate.toProto().toString());
   }
 }

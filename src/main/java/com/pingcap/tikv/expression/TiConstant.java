@@ -23,9 +23,12 @@ import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.types.*;
 
 import java.math.BigDecimal;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Objects;
 
 import static com.pingcap.tikv.types.Types.*;
+import static java.util.Calendar.*;
 
 // TODO: This might need a refactor to accept an DataType?
 public class TiConstant implements TiExpr {
@@ -78,6 +81,17 @@ public class TiConstant implements TiExpr {
     } else if (value instanceof BigDecimal) {
       builder.setTp(ExprType.MysqlDecimal);
       DecimalType.writeDecimal(cdo, (BigDecimal) value);
+    } else if (value instanceof java.sql.Date) {
+      builder.setTp(ExprType.MysqlTime);
+      Calendar calendar = Calendar.getInstance();
+      calendar.setTime((Date) value);
+      IntegerType.writeULong(cdo,
+          TimestampType.toPackedLong(
+              calendar.get(YEAR),
+              calendar.get(MONTH),
+              calendar.get(DAY_OF_MONTH),
+              0, 0, 0, 0
+          ));
     } else {
       throw new TiExpressionException("Constant type not supported.");
     }
