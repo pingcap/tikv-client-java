@@ -23,6 +23,7 @@ import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.types.*;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Objects;
@@ -91,7 +92,12 @@ public class TiConstant implements TiExpr {
               calendar.get(MONTH),
               calendar.get(DAY_OF_MONTH),
               0, 0, 0, 0
+              // java.sql.Date does not provide these precision conceptually, need to set them 0
           ));
+    } else if (value instanceof Timestamp) {
+      builder.setTp(ExprType.MysqlTime);
+      Timestamp ts = (Timestamp) value;
+      IntegerType.writeULong(cdo, TimestampType.toPackedLong(ts.toLocalDateTime()));
     } else {
       throw new TiExpressionException("Constant type not supported.");
     }

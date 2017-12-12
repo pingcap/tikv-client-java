@@ -26,6 +26,7 @@ import com.pingcap.tikv.meta.TiTableInfoTest;
 import com.pingcap.tikv.types.RealType;
 import org.junit.Test;
 
+import java.sql.Timestamp;
 import java.util.Calendar;
 
 import static org.junit.Assert.assertEquals;
@@ -51,5 +52,11 @@ public class TiConstantTest {
 
     assertEquals("tp: MysqlTime\nval: \"\\031_\\304\\000\\000\\000\\000\\000\"\n",
         sqlDate.toProto().toString());
+  }
+
+  @Test
+  public void testEncodeTimestamp() {
+    TiConstant tsDate = TiConstant.create(new Timestamp(904741201002L));
+    System.out.println(tsDate.toProto().toString());
   }
 }
