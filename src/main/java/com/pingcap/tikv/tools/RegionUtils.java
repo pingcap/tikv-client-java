@@ -44,7 +44,7 @@ public class RegionUtils {
         .splitRangeByRegion(scanPlan.getKeyRanges());
     HashMap<String, Integer> regionMap = new HashMap<>();
     for (RegionTask task : tasks) {
-      regionMap.merge(task.getHost(), 1, Integer::sum);
+      regionMap.merge(task.getHost() + "_" + task.getStore().getId(), 1, Integer::sum);
     }
     return regionMap;
   }
