@@ -25,8 +25,10 @@ import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.meta.TiColumnInfo;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.sql.Date;
+import java.time.format.DateTimeFormatter;
 
 public class DateType extends DataType {
   static DateType of(int tp) {
@@ -67,6 +69,13 @@ public class DateType extends DataType {
     }
     long val = toPackedLong(in);
     codecObject.encodeNotNull(cdo, encodeType, val);
+  }
+
+  @Override
+  public Object getOriginDefaultValueNonNull(String value) {
+    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    LocalDate localDate = LocalDate.parse(value, dateTimeFormatter);
+    return new Date(localDate.getYear(), localDate.getMonthValue(), localDate.getDayOfMonth());
   }
 
   DateType(TiColumnInfo.InternalTypeHolder holder) {

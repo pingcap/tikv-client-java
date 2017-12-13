@@ -65,6 +65,11 @@ public class RealType extends DataType {
     IntegerType.writeULong(cdo, encodeDoubleToCmpLong(val));
   }
 
+  @Override
+  public Object getOriginDefaultValueNonNull(String value) {
+    return Float.parseFloat(value);
+  }
+
   /**
    * Decode as float
    *

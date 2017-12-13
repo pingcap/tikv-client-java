@@ -69,6 +69,11 @@ public class DecimalType extends DataType {
     writeDouble(cdo, val);
   }
 
+  @Override
+  public Object getOriginDefaultValueNonNull(String value) {
+    return Double.parseDouble(value);
+  }
+
   /**
    * read a decimal value from CodecDataInput
    *

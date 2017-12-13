@@ -23,9 +23,14 @@ import com.pingcap.tikv.codec.InvalidCodecFormatException;
 import com.pingcap.tikv.meta.TiColumnInfo;
 
 import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 public class TimestampType extends DataType {
@@ -72,7 +77,15 @@ public class TimestampType extends DataType {
       throw new UnsupportedOperationException("Can not cast Object to LocalDateTime ");
     }
     long val = toPackedLong(localDateTime);
-    IntegerType.writeULongFull(cdo, val, true);
+    IntegerType.writeULongFull(cdo, val, false);
+  }
+
+  @Override
+  public Object getOriginDefaultValueNonNull(String value) {
+    // yyyy-mm-dd hh:mm:ss
+    // TODO: need decode time with time zone info.
+    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    return LocalDateTime.parse(value, dateTimeFormatter);
   }
 
   /**

@@ -74,6 +74,11 @@ public class BytesType extends DataType {
     }
   }
 
+  @Override
+  public Object getOriginDefaultValueNonNull(String value) {
+    return value;
+  }
+
   private static final int GRP_SIZE = 8;
   private static final byte[] PADS = new byte[GRP_SIZE];
   private static final int MARKER = 0xFF;

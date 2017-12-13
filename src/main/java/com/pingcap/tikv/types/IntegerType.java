@@ -90,6 +90,11 @@ public class IntegerType extends DataType {
     }
   }
 
+  @Override
+  public Object getOriginDefaultValueNonNull(String value) {
+    return Integer.parseInt(value);
+  }
+
   protected IntegerType(TiColumnInfo.InternalTypeHolder holder) {
     super(holder);
   }
