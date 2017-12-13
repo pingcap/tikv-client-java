@@ -103,7 +103,7 @@ public class Snapshot {
    * scan
    *
    * @param dagRequest SelectRequest for coprocessor
-   * @param task RegionTask of the coprocessor request to send
+   * @param task       RegionTask of the coprocessor request to send
    * @return Row iterator to iterate over resulting rows
    */
   public Iterator<Row> tableRead(TiDAGRequest dagRequest, List<RegionTask> task) {
@@ -119,6 +119,21 @@ public class Snapshot {
           task,
           session);
     }
+  }
+
+  /**
+   * Read index handle from DAG request.
+   *
+   * @param dagRequest
+   * @param tasks
+   * @return
+   */
+  public Iterator<Long> handleRead(TiDAGRequest dagRequest, List<RegionTask> tasks) {
+    return getHandleIterator(
+        dagRequest,
+        tasks,
+        session
+    );
   }
 
   public Iterator<KvPair> scan(ByteString startKey) {
