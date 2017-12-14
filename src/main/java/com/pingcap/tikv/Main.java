@@ -34,6 +34,8 @@ public class Main {
     ScanBuilder.ScanPlan scanPlan = scanBuilder.buildScan(new ArrayList<>(), table);
     selectRequest.addRequiredColumn(TiColumnRef.create("c1", table))
         .addRequiredColumn(TiColumnRef.create("c2", table))
+        .addRequiredColumn(TiColumnRef.create("s1", table))
+        .addRequiredColumn(TiColumnRef.create("f1", table))
         .setStartTs(snapshot.getVersion())
         .addRanges(scanPlan.getKeyRanges())
         .setTableInfo(table);
