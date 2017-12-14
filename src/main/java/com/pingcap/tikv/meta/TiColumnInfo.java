@@ -75,7 +75,7 @@ public class TiColumnInfo implements Serializable {
     this.schemaState = SchemaState.StatePublic;
     this.comment = "";
     this.isPrimaryKey = isPrimaryKey;
-    this.originDefultValue = "";
+    this.originDefultValue = "1";
     this.defaultValue = "";
   }
 
