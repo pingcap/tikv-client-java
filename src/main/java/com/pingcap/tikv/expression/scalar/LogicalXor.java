@@ -18,12 +18,12 @@ package com.pingcap.tikv.expression.scalar;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.pingcap.tidb.tipb.ExprType;
-import com.pingcap.tikv.expression.TiBinaryFunctionExpression;
+import com.pingcap.tidb.tipb.ScalarFuncSig;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.IntegerType;
 
-public class LogicalXor extends TiBinaryFunctionExpression {
+public class LogicalXor extends TiScalarFunction {
   public LogicalXor(TiExpr lhs, TiExpr rhs) {
     super(lhs, rhs);
   }
@@ -31,11 +31,6 @@ public class LogicalXor extends TiBinaryFunctionExpression {
   @Override
   protected ExprType getExprType() {
     return ExprType.Xor;
-  }
-
-  @Override
-  public String getName() {
-    return "LogicalXor";
   }
 
   @Override
@@ -50,5 +45,10 @@ public class LogicalXor extends TiBinaryFunctionExpression {
     // Validate 2 arguments are strings
     checkArgument(this.args.get(0).getType() instanceof IntegerType);
     checkArgument(this.args.get(1).getType() instanceof IntegerType);
+  }
+
+  @Override
+  ScalarFuncSig getSignature() {
+    return ScalarFuncSig.LogicalXor;
   }
 }

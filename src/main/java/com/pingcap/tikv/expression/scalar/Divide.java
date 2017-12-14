@@ -16,11 +16,9 @@
 package com.pingcap.tikv.expression.scalar;
 
 import com.pingcap.tidb.tipb.ExprType;
-import com.pingcap.tikv.expression.TiBinaryFunctionExpression;
 import com.pingcap.tikv.expression.TiExpr;
-import com.pingcap.tikv.types.DataType;
 
-public class Divide extends TiBinaryFunctionExpression {
+public class Divide extends TiScalarFunction {
   public Divide(TiExpr lhs, TiExpr rhs) {
     super(lhs, rhs);
   }
@@ -28,15 +26,5 @@ public class Divide extends TiBinaryFunctionExpression {
   @Override
   protected ExprType getExprType() {
     return ExprType.Div;
-  }
-
-  @Override
-  public String getName() {
-    return "Divide";
-  }
-
-  @Override
-  public DataType getType() {
-    throw new UnsupportedOperationException();
   }
 }

@@ -16,12 +16,11 @@
 package com.pingcap.tikv.expression.scalar;
 
 import com.pingcap.tidb.tipb.ExprType;
-import com.pingcap.tikv.expression.TiBinaryFunctionExpression;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.IntegerType;
 
-public class NotEqual extends TiBinaryFunctionExpression {
+public class NotEqual extends TiScalarFunction {
   public NotEqual(TiExpr lhs, TiExpr rhs) {
     super(lhs, rhs);
   }
@@ -29,11 +28,6 @@ public class NotEqual extends TiBinaryFunctionExpression {
   @Override
   protected ExprType getExprType() {
     return ExprType.NE;
-  }
-
-  @Override
-  public String getName() {
-    return "<>";
   }
 
   @Override

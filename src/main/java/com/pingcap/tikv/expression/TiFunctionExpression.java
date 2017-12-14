@@ -25,6 +25,7 @@ import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.meta.TiTableInfo;
 import java.util.List;
 
+
 public abstract class TiFunctionExpression implements TiExpr {
 
   protected final List<TiExpr> args;
@@ -62,7 +63,9 @@ public abstract class TiFunctionExpression implements TiExpr {
     return builder.build();
   }
 
-  public abstract String getName();
+  public String getName() {
+    return getClass().getSimpleName();
+  }
 
   protected void validateArguments(TiExpr... args) throws RuntimeException {
     requireNonNull(args, "Expressions cannot be null");
@@ -85,6 +88,16 @@ public abstract class TiFunctionExpression implements TiExpr {
       return true;
     }
     return false;
+  }
+
+  @Override
+  public boolean isSupportedExpr(ExpressionBlacklist blackList) {
+    for (TiExpr arg : args) {
+      if (!arg.isSupportedExpr(blackList)) {
+        return false;
+      }
+    }
+    return TiExpr.super.isSupportedExpr(blackList);
   }
 
   @Override

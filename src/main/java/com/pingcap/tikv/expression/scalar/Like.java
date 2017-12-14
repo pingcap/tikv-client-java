@@ -18,13 +18,13 @@ package com.pingcap.tikv.expression.scalar;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.pingcap.tidb.tipb.ExprType;
-import com.pingcap.tikv.expression.TiBinaryFunctionExpression;
+import com.pingcap.tidb.tipb.ScalarFuncSig;
 import com.pingcap.tikv.expression.TiExpr;
 import com.pingcap.tikv.types.BytesType;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.IntegerType;
 
-public class Like extends TiBinaryFunctionExpression {
+public class Like extends TiScalarFunction {
   public Like(TiExpr lhs, TiExpr rhs) {
     super(lhs, rhs);
   }
@@ -32,11 +32,6 @@ public class Like extends TiBinaryFunctionExpression {
   @Override
   protected ExprType getExprType() {
     return ExprType.Like;
-  }
-
-  @Override
-  public String getName() {
-    return "LIKE";
   }
 
   @Override
@@ -51,5 +46,10 @@ public class Like extends TiBinaryFunctionExpression {
     // Validate 2 arguments are strings
     checkArgument(this.args.get(0).getType() instanceof BytesType);
     checkArgument(this.args.get(1).getType() instanceof BytesType);
+  }
+
+  @Override
+  ScalarFuncSig getSignature() {
+    return ScalarFuncSig.LikeSig;
   }
 }

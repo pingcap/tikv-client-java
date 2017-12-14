@@ -17,10 +17,9 @@ package com.pingcap.tikv.expression.scalar;
 
 import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.expression.TiExpr;
-import com.pingcap.tikv.expression.TiFunctionExpression;
 import com.pingcap.tikv.types.DataType;
 
-public class Coalesce extends TiFunctionExpression {
+public class Coalesce extends TiScalarFunction {
   public Coalesce(TiExpr... args) {
     super(args);
   }
@@ -31,12 +30,8 @@ public class Coalesce extends TiFunctionExpression {
   }
 
   @Override
-  public String getName() {
-    return "Coalesce";
+  protected void validateArguments(TiExpr... args) throws RuntimeException {
   }
-
-  @Override
-  protected void validateArguments(TiExpr... args) throws RuntimeException {}
 
   @Override
   public DataType getType() {

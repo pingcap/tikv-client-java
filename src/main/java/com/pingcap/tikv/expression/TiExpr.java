@@ -23,7 +23,10 @@ import java.io.Serializable;
 public interface TiExpr extends Serializable {
   Expr toProto();
 
-  default boolean isSupportedExpr() {
+  default boolean isSupportedExpr(ExpressionBlacklist blackList) {
+    if (blackList != null && blackList.isUnsupportedPushdownExpr(getClass())) {
+      return false;
+    }
     try {
       Expr expr = toProto();
       return expr != null;

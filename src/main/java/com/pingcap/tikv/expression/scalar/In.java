@@ -20,11 +20,10 @@ import static java.util.Objects.requireNonNull;
 
 import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.expression.TiExpr;
-import com.pingcap.tikv.expression.TiFunctionExpression;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.types.IntegerType;
 
-public class In extends TiFunctionExpression {
+public class In extends TiScalarFunction {
   public In(TiExpr... args) {
     super(args);
   }
@@ -32,11 +31,6 @@ public class In extends TiFunctionExpression {
   @Override
   protected ExprType getExprType() {
     return ExprType.In;
-  }
-
-  @Override
-  public String getName() {
-    return "IN";
   }
 
   @Override

@@ -15,16 +15,19 @@
 
 package com.pingcap.tikv.expression;
 
-import static com.pingcap.tikv.types.Types.*;
-
 import com.pingcap.tidb.tipb.Expr;
 import com.pingcap.tidb.tipb.ExprType;
 import com.pingcap.tikv.codec.CodecDataOutput;
+import com.pingcap.tikv.exception.TiExpressionException;
 import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.types.*;
+
 import java.math.BigDecimal;
 import java.util.Objects;
 
+import static com.pingcap.tikv.types.Types.*;
+// Refactor needed.
+// Refer to https://github.com/pingcap/tipb/blob/master/go-tipb/expression.pb.go
 // TODO: This might need a refactor to accept an DataType?
 public class TiConstant implements TiExpr {
   private Object value;
@@ -95,7 +98,7 @@ public class TiConstant implements TiExpr {
     } else if (value instanceof Float) {
       return DataTypeFactory.of(TYPE_FLOAT);
     } else if (value instanceof Double) {
-      return DataTypeFactory.of(TYPE_NEW_DECIMAL);
+      return DataTypeFactory.of(TYPE_DOUBLE);
     } else {
       throw new TiExpressionException("Constant type not supported.");
     }
