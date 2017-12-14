@@ -90,6 +90,11 @@ public class IntegerType extends DataType {
     }
   }
 
+  /**
+   * get origin default value
+   * @param value a int value represents in string
+   * @return a int object
+   */
   @Override
   public Object getOriginDefaultValueNonNull(String value) {
     return Integer.parseInt(value);

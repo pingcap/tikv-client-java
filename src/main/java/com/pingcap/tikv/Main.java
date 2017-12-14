@@ -27,13 +27,13 @@ public class Main {
     TiSession session = TiSession.create(conf);
     Catalog cat = session.getCatalog();
     TiDBInfo db = cat.getDatabase("test");
-    TiTableInfo table = cat.getTable(db, "t2");
+    TiTableInfo table = cat.getTable(db, "t1");
     Snapshot snapshot = session.createSnapshot();
     TiSelectRequest selectRequest = new TiSelectRequest();
     ScanBuilder scanBuilder = new ScanBuilder();
     ScanBuilder.ScanPlan scanPlan = scanBuilder.buildScan(new ArrayList<>(), table);
     selectRequest.addRequiredColumn(TiColumnRef.create("c1", table))
-        .addRequiredColumn(TiColumnRef.create("ts", table))
+        .addRequiredColumn(TiColumnRef.create("c2", table))
         .setStartTs(snapshot.getVersion())
         .addRanges(scanPlan.getKeyRanges())
         .setTableInfo(table);

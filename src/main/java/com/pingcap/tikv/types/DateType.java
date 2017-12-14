@@ -71,6 +71,11 @@ public class DateType extends DataType {
     codecObject.encodeNotNull(cdo, encodeType, val);
   }
 
+  /**
+   * get origin default value in string
+   * @param value a date represents in string in "yyyy-MM-dd" format
+   * @return a {@link Date} Object
+   */
   @Override
   public Object getOriginDefaultValueNonNull(String value) {
     DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");

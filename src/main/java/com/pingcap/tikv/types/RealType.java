@@ -65,6 +65,11 @@ public class RealType extends DataType {
     IntegerType.writeULong(cdo, encodeDoubleToCmpLong(val));
   }
 
+  /**
+   * get origin default value
+   * @param value a float value represents in string
+   * @return a {@link Float} Object
+   */
   @Override
   public Object getOriginDefaultValueNonNull(String value) {
     return Float.parseFloat(value);
