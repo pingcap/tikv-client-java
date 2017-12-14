@@ -38,7 +38,7 @@ public class TiColumnInfo implements Serializable {
   private final String comment;
   private final boolean isPrimaryKey;
   private final String defaultValue;
-  private final String originDefultValue;
+  private final String originDefaultValue;
 
   @VisibleForTesting
   private static final int PK_MASK = 0x2;
@@ -60,7 +60,7 @@ public class TiColumnInfo implements Serializable {
     this.schemaState = SchemaState.fromValue(schemaState);
     this.comment = comment;
     this.defaultValue = defaultValue;
-    this.originDefultValue = originalDefaultValue;
+    this.originDefaultValue = originalDefaultValue;
     // I don't think pk flag should be set on type
     // Refactor against original tidb code
     this.isPrimaryKey = (type.getFlag() & PK_MASK) > 0;
@@ -75,7 +75,7 @@ public class TiColumnInfo implements Serializable {
     this.schemaState = SchemaState.StatePublic;
     this.comment = "";
     this.isPrimaryKey = isPrimaryKey;
-    this.originDefultValue = "1";
+    this.originDefaultValue = "1";
     this.defaultValue = "";
   }
 
@@ -115,9 +115,9 @@ public class TiColumnInfo implements Serializable {
     return defaultValue;
   }
 
-  public ByteString getOriginDefultValue() {
+  public ByteString getOriginDefaultValue() {
     CodecDataOutput cdo = new CodecDataOutput();
-    type.encode(cdo, EncodeType.VALUE, type.getOriginDefaultValue(originDefultValue));
+    type.encode(cdo, EncodeType.VALUE, type.getOriginDefaultValue(originDefaultValue));
     return cdo.toByteString();
   }
 
@@ -225,7 +225,7 @@ public class TiColumnInfo implements Serializable {
         .setColumnLen((int) type.getLength())
         .setDecimal(type.getDecimal())
         .setFlag(type.getFlag())
-        .setDefaultVal(getOriginDefultValue())
+        .setDefaultVal(getOriginDefaultValue())
         .setPkHandle(table.isPkHandle() && isPrimaryKey())
         .addAllElems(type.getElems());
   }
