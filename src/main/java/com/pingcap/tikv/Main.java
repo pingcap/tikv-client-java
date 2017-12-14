@@ -5,6 +5,8 @@ import com.google.common.collect.ImmutableList;
 import com.pingcap.tikv.catalog.Catalog;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.aggregate.Count;
+import com.pingcap.tikv.meta.TiDAGRequest;
+import com.pingcap.tikv.meta.TiDAGRequest.PushDownType;
 import com.pingcap.tikv.meta.TiDBInfo;
 import com.pingcap.tikv.meta.TiSelectRequest;
 import com.pingcap.tikv.meta.TiTableInfo;
@@ -29,7 +31,7 @@ public class Main {
     TiDBInfo db = cat.getDatabase("test");
     TiTableInfo table = cat.getTable(db, "t1");
     Snapshot snapshot = session.createSnapshot();
-    TiSelectRequest selectRequest = new TiSelectRequest();
+    TiDAGRequest selectRequest = new TiDAGRequest(PushDownType.NORMAL);
     ScanBuilder scanBuilder = new ScanBuilder();
     ScanBuilder.ScanPlan scanPlan = scanBuilder.buildScan(new ArrayList<>(), table);
     selectRequest.addRequiredColumn(TiColumnRef.create("c1", table))
