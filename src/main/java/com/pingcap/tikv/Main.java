@@ -52,30 +52,4 @@ public class Main {
     }
     session.close();
   }
-
-  private static void tableScan(Catalog cat, TiSession session, String dbName, String tableName) throws Exception {
-    TiDBInfo db = cat.getDatabase(dbName);
-    TiTableInfo table = cat.getTable(db, tableName);
-    Snapshot snapshot = session.createSnapshot();
-
-    logger.info(String.format("Table Scan Start: db[%s] table[%s]", dbName, tableName));
-
-    ScanBuilder scanBuilder = new ScanBuilder();
-    ScanBuilder.ScanPlan scanPlan = scanBuilder.buildTableScan(ImmutableList.of(), table);
-
-    TiSelectRequest selReq = new TiSelectRequest();
-    TiColumnRef firstColumn = TiColumnRef.create(table.getColumns().get(0).getName(), table);
-    selReq.setTableInfo(table)
-          .addAggregate(new Count(firstColumn))
-          .addRequiredColumn(firstColumn)
-          .setStartTs(snapshot.getVersion());
-
-    List<RegionTask> regionTasks = RangeSplitter
-        .newSplitter(session.getRegionManager())
-        .splitRangeByRegion(scanPlan.getKeyRanges());
-    for (RegionTask task : regionTasks) {
-      Iterator<Row> it = snapshot.tableRead(selReq, ImmutableList.of(task));
-      Row row = it.next();
-    }
-  }
 }
