@@ -39,11 +39,11 @@ public class TiConfiguration implements Serializable {
   private static final Class<? extends BackOff> DEF_BACKOFF_CLASS = ExponentialBackOff.class;
   private static final int DEF_MAX_FRAME_SIZE = 268435456 * 2; // 256 * 2 MB
   private static final int DEF_INDEX_SCAN_BATCH_SIZE = 2000000;
-  private static final int DEF_INDEX_SCAN_REGION_MINI_BATCH_SIZE = 500;
   private static final int DEF_INDEX_SCAN_CONCURRENCY = 5;
   private static final int DEF_TABLE_SCAN_CONCURRENCY = 512;
   private static final CommandPri DEF_COMMAND_PRIORITY = CommandPri.Low;
   private static final IsolationLevel DEF_ISOLATION_LEVEL = IsolationLevel.RC;
+  private static final int REGION_INDEX_SCAN_DOWNGRADE_THRESHOLD = 100000;
 
   private int retryTimes = DEF_RETRY_TIMES;
   private int timeout = DEF_TIMEOUT;
@@ -56,11 +56,11 @@ public class TiConfiguration implements Serializable {
   private Class<? extends BackOff> backOffClass = DEF_BACKOFF_CLASS;
   private List<HostAndPort> pdAddrs = new ArrayList<>();
   private int indexScanBatchSize = DEF_INDEX_SCAN_BATCH_SIZE;
-  private int indexScanRegionBatch = DEF_INDEX_SCAN_REGION_MINI_BATCH_SIZE;
   private int indexScanConcurrency = DEF_INDEX_SCAN_CONCURRENCY;
   private int tableScanConcurrency = DEF_TABLE_SCAN_CONCURRENCY;
   private CommandPri commandPriority = DEF_COMMAND_PRIORITY;
   private IsolationLevel isolationLevel = DEF_ISOLATION_LEVEL;
+  private int regionIndexScanDowngradeThreshold = REGION_INDEX_SCAN_DOWNGRADE_THRESHOLD;
 
   public static TiConfiguration createDefault(String pdAddrsStr) {
     Objects.requireNonNull(pdAddrsStr, "pdAddrsStr is null");
@@ -214,11 +214,11 @@ public class TiConfiguration implements Serializable {
     this.isolationLevel = isolationLevel;
   }
 
-  public int getIndexScanRegionBatch() {
-    return indexScanRegionBatch;
+  public int getRegionIndexScanDowngradeThreshold() {
+    return regionIndexScanDowngradeThreshold;
   }
 
-  public void setIndexScanRegionBatch(int indexScanRegionBatch) {
-    this.indexScanRegionBatch = indexScanRegionBatch;
+  public void setRegionIndexScanDowngradeThreshold(int regionIndexScanDowngradeThreshold) {
+    this.regionIndexScanDowngradeThreshold = regionIndexScanDowngradeThreshold;
   }
 }
