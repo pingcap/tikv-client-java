@@ -39,6 +39,7 @@ public class TiConfiguration implements Serializable {
   private static final Class<? extends BackOff> DEF_BACKOFF_CLASS = ExponentialBackOff.class;
   private static final int DEF_MAX_FRAME_SIZE = 268435456 * 2; // 256 * 2 MB
   private static final int DEF_INDEX_SCAN_BATCH_SIZE = 2000000;
+  private static final int DEF_INDEX_SCAN_REGION_MINI_BATCH_SIZE = 500;
   private static final int DEF_INDEX_SCAN_CONCURRENCY = 5;
   private static final int DEF_TABLE_SCAN_CONCURRENCY = 512;
   private static final CommandPri DEF_COMMAND_PRIORITY = CommandPri.Low;
@@ -55,6 +56,7 @@ public class TiConfiguration implements Serializable {
   private Class<? extends BackOff> backOffClass = DEF_BACKOFF_CLASS;
   private List<HostAndPort> pdAddrs = new ArrayList<>();
   private int indexScanBatchSize = DEF_INDEX_SCAN_BATCH_SIZE;
+  private int indexScanRegionBatch = DEF_INDEX_SCAN_REGION_MINI_BATCH_SIZE;
   private int indexScanConcurrency = DEF_INDEX_SCAN_CONCURRENCY;
   private int tableScanConcurrency = DEF_TABLE_SCAN_CONCURRENCY;
   private CommandPri commandPriority = DEF_COMMAND_PRIORITY;
@@ -210,5 +212,13 @@ public class TiConfiguration implements Serializable {
 
   public void setIsolationLevel(IsolationLevel isolationLevel) {
     this.isolationLevel = isolationLevel;
+  }
+
+  public int getIndexScanRegionBatch() {
+    return indexScanRegionBatch;
+  }
+
+  public void setIndexScanRegionBatch(int indexScanRegionBatch) {
+    this.indexScanRegionBatch = indexScanRegionBatch;
   }
 }
