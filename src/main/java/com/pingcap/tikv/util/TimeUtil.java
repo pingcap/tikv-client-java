@@ -141,7 +141,7 @@ public class TimeUtil {
    * @return days passed
    */
   private static long calcDays(int y) {
-    return 365 * y + (y / 4 - y / 400 + y / 100);
+    return 365 * y + (y / 4 + y / 400 - y / 100);
   }
 
   /**
