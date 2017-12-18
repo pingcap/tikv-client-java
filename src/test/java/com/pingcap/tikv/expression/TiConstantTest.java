@@ -28,6 +28,7 @@ import org.junit.Test;
 
 import java.sql.Timestamp;
 import java.util.Calendar;
+import java.util.TimeZone;
 
 import static org.junit.Assert.assertEquals;
 
@@ -46,7 +47,8 @@ public class TiConstantTest {
   @Test
   public void testEncodeSQLDate() {
     Calendar calendar = Calendar.getInstance();
-    calendar.set(1998, Calendar.OCTOBER, 2);
+    calendar.setTimeZone(TimeZone.getTimeZone("UTC"));
+    calendar.set(1998, Calendar.SEPTEMBER, 2);
 
     TiConstant sqlDate = TiConstant.create(new java.sql.Date(calendar.getTime().getTime()));
 
@@ -57,6 +59,7 @@ public class TiConstantTest {
   @Test
   public void testEncodeTimestamp() {
     TiConstant tsDate = TiConstant.create(new Timestamp(904741201002L));
-    System.out.println(tsDate.toProto().toString());
+    assertEquals("tp: MysqlTime\nval: \"\\031_\\305P\\001\\000\\a\\320\"\n",
+        tsDate.toProto().toString());
   }
 }

@@ -21,15 +21,14 @@ import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.exception.TiExpressionException;
 import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.types.*;
+import com.pingcap.tikv.util.TimeUtil;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Objects;
 
 import static com.pingcap.tikv.types.Types.*;
-import static java.util.Calendar.*;
 
 // Refactor needed.
 // Refer to https://github.com/pingcap/tipb/blob/master/go-tipb/expression.pb.go
@@ -86,13 +85,13 @@ public class TiConstant implements TiExpr {
       DecimalType.writeDecimal(cdo, (BigDecimal) value);
     } else if (value instanceof java.sql.Date) {
       builder.setTp(ExprType.MysqlTime);
-      Calendar calendar = Calendar.getInstance();
-      calendar.setTime((Date) value);
+      Date date = (Date) value;
+      TimeUtil.Date val = TimeUtil.convertToDate(date.getTime());
       IntegerType.writeULong(cdo,
           TimestampType.toPackedLong(
-              calendar.get(YEAR),
-              calendar.get(MONTH),
-              calendar.get(DAY_OF_MONTH),
+              val.getYear(),
+              val.getMonth(),
+              val.getDay(),
               0, 0, 0, 0
               // java.sql.Date does not provide these precision conceptually, need to set them 0
           ));
