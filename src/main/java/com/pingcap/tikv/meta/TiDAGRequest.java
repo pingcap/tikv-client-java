@@ -9,7 +9,7 @@ import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.expression.TiByItem;
 import com.pingcap.tikv.expression.TiColumnRef;
 import com.pingcap.tikv.expression.TiExpr;
-import com.pingcap.tikv.expression.scalar.TiScalarFunction;
+import com.pingcap.tikv.expression.TiFunctionExpression;
 import com.pingcap.tikv.kvproto.Coprocessor;
 import com.pingcap.tikv.types.DataType;
 import com.pingcap.tikv.util.KeyRangeUtils;
@@ -274,8 +274,8 @@ public class TiDAGRequest implements Serializable {
   }
 
   private void setColumnOffsets(TiExpr expr) {
-    if (expr instanceof TiScalarFunction) {
-      ((TiScalarFunction) expr).getArgs().forEach(
+    if (expr instanceof TiFunctionExpression) {
+      ((TiFunctionExpression) expr).getArgs().forEach(
           this::setColumnOffsets
       );
     } else if (expr instanceof TiColumnRef) {
