@@ -36,13 +36,13 @@ public class RegionUtils {
     requireNonNull(databaseName, "databaseName is null");
     requireNonNull(tableName, "tableName is null");
     TiTableInfo table = session.getCatalog().getTable(databaseName, tableName);
-    requireNonNull(table, String.format("Table not find %s.%s", databaseName, tableName));
+    requireNonNull(table, String.format("Table not found %s.%s", databaseName, tableName));
     ScanBuilder builder = new ScanBuilder();
     ScanPlan scanPlan = builder.buildScan(ImmutableList.of(), table);
     List<RegionTask> tasks = RangeSplitter
         .newSplitter(session.getRegionManager())
         .splitRangeByRegion(scanPlan.getKeyRanges());
-    HashMap<String, Integer> regionMap = new HashMap<>();
+    Map<String, Integer> regionMap = new HashMap<>();
     for (RegionTask task : tasks) {
       regionMap.merge(task.getHost() + "_" + task.getStore().getId(), 1, Integer::sum);
     }
