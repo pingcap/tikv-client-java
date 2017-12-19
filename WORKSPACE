@@ -9,6 +9,11 @@ maven_jar(
 )
 
 maven_jar(
+    name = "joda_time",
+    artifact = "joda-time:joda-time:2.9.9"
+)
+
+maven_jar(
     name = "com_fasterxml_jackson_core_jackson_core",
     artifact = "com.fasterxml.jackson.core:jackson-core:2.6.6",
 )
