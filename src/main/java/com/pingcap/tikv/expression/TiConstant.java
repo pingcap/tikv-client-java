@@ -21,7 +21,7 @@ import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.exception.TiExpressionException;
 import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.types.*;
-import com.pingcap.tikv.util.TimeUtil;
+import org.joda.time.LocalDate;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -86,12 +86,12 @@ public class TiConstant implements TiExpr {
     } else if (value instanceof java.sql.Date) {
       builder.setTp(ExprType.MysqlTime);
       Date date = (Date) value;
-      TimeUtil.Date val = TimeUtil.convertToDate(date.getTime());
+      LocalDate jodaDate = new LocalDate(date.getTime());
       IntegerType.writeULong(cdo,
           TimestampType.toPackedLong(
-              val.getYear(),
-              val.getMonth(),
-              val.getDay(),
+              jodaDate.getYear(),
+              jodaDate.getMonthOfYear(),
+              jodaDate.getDayOfMonth(),
               0, 0, 0, 0
               // java.sql.Date does not provide these precision conceptually, need to set them 0
           ));
