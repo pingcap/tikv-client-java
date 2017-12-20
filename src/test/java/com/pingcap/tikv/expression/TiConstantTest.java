@@ -26,6 +26,9 @@ import com.pingcap.tikv.meta.TiTableInfoTest;
 import com.pingcap.tikv.types.RealType;
 import org.junit.Test;
 
+import java.sql.Date;
+import java.sql.Timestamp;
+
 import static org.junit.Assert.assertEquals;
 
 public class TiConstantTest {
@@ -40,22 +43,19 @@ public class TiConstantTest {
     assertEquals(1.12, expected, 0.00001);
   }
 
-//  @Test
-//  public void testEncodeSQLDate() {
-//    Calendar calendar = Calendar.getInstance();
-//    calendar.setTimeZone(TimeZone.getTimeZone("UTC"));
-//    calendar.set(1998, Calendar.SEPTEMBER, 2);
-//
-//    TiConstant sqlDate = TiConstant.create(new java.sql.Date(calendar.getTime().getTime()));
-//
-//    assertEquals("tp: MysqlTime\nval: \"\\031_\\304\\000\\000\\000\\000\\000\"\n",
-//        sqlDate.toProto().toString());
-//  }
+  @Test
+  public void testEncodeSQLDate() {
+    Date date = new Date(946656000000L);
+    System.out.println(date);
+    TiConstant sqlDate = TiConstant.create(date);
+    assertEquals("tp: MysqlTime\nval: \"\\031dB\\000\\000\\000\\000\\000\"\n",
+        sqlDate.toProto().toString());
+  }
 
-//  @Test
-//  public void testEncodeTimestamp() {
-//    TiConstant tsDate = TiConstant.create(new Timestamp(904741201002L));
-//    assertEquals("tp: MysqlTime\nval: \"\\031_\\305P\\001\\000\\a\\320\"\n",
-//        tsDate.toProto().toString());
-//  }
+  @Test
+  public void testEncodeTimestamp() {
+    TiConstant tsDate = TiConstant.create(new Timestamp(904741201002L));
+    assertEquals("tp: MysqlTime\nval: \"\\031_\\305P\\001\\000\\a\\320\"\n",
+        tsDate.toProto().toString());
+  }
 }

@@ -24,8 +24,8 @@ import com.pingcap.tikv.types.*;
 import org.joda.time.LocalDate;
 
 import java.math.BigDecimal;
+import java.sql.Date;
 import java.sql.Timestamp;
-import java.util.Date;
 import java.util.Objects;
 
 import static com.pingcap.tikv.types.Types.*;
@@ -44,7 +44,7 @@ public class TiConstant implements TiExpr {
     this.value = value;
   }
 
-  public boolean isIntegerType() {
+  protected boolean isIntegerType() {
     return value instanceof Long
         || value instanceof Integer
         || value instanceof Short
@@ -83,22 +83,12 @@ public class TiConstant implements TiExpr {
     } else if (value instanceof BigDecimal) {
       builder.setTp(ExprType.MysqlDecimal);
       DecimalType.writeDecimal(cdo, (BigDecimal) value);
-    } else if (value instanceof java.sql.Date) {
+    } else if (value instanceof Date) {
       builder.setTp(ExprType.MysqlTime);
-      Date date = (Date) value;
-      LocalDate jodaDate = new LocalDate(date.getTime());
-      IntegerType.writeULong(cdo,
-          TimestampType.toPackedLong(
-              jodaDate.getYear(),
-              jodaDate.getMonthOfYear(),
-              jodaDate.getDayOfMonth(),
-              0, 0, 0, 0
-              // java.sql.Date does not provide these precision conceptually, need to set them 0
-          ));
+      IntegerType.writeULong(cdo, calcTimestampFromDate(((Date) value)));
     } else if (value instanceof Timestamp) {
       builder.setTp(ExprType.MysqlTime);
-      Timestamp ts = (Timestamp) value;
-      IntegerType.writeULong(cdo, TimestampType.toPackedLong(ts.toLocalDateTime()));
+      IntegerType.writeULong(cdo, TimestampType.toPackedLong(((Timestamp) value).toLocalDateTime()));
     } else {
       throw new TiExpressionException("Constant type not supported.");
     }
@@ -122,6 +112,17 @@ public class TiConstant implements TiExpr {
     } else {
       throw new TiExpressionException("Constant type not supported.");
     }
+  }
+
+  private static long calcTimestampFromDate(Date date) {
+    LocalDate jodaDate = new LocalDate(date.getTime());
+    return TimestampType.toPackedLong(
+        jodaDate.getYear(),
+        jodaDate.getMonthOfYear(),
+        jodaDate.getDayOfMonth(),
+        0, 0, 0, 0
+        // java.sql.Date does not provide these precision conceptually, need to set them 0
+    );
   }
 
   @Override
