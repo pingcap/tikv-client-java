@@ -43,7 +43,7 @@ public class TiConfiguration implements Serializable {
   private static final int DEF_TABLE_SCAN_CONCURRENCY = 512;
   private static final CommandPri DEF_COMMAND_PRIORITY = CommandPri.Low;
   private static final IsolationLevel DEF_ISOLATION_LEVEL = IsolationLevel.RC;
-  private static final int REGION_INDEX_SCAN_DOWNGRADE_THRESHOLD = 100000;
+  private static final long REGION_INDEX_SCAN_DOWNGRADE_THRESHOLD = 100000;
 
   private int retryTimes = DEF_RETRY_TIMES;
   private int timeout = DEF_TIMEOUT;
@@ -60,7 +60,7 @@ public class TiConfiguration implements Serializable {
   private int tableScanConcurrency = DEF_TABLE_SCAN_CONCURRENCY;
   private CommandPri commandPriority = DEF_COMMAND_PRIORITY;
   private IsolationLevel isolationLevel = DEF_ISOLATION_LEVEL;
-  private int regionIndexScanDowngradeThreshold = REGION_INDEX_SCAN_DOWNGRADE_THRESHOLD;
+  private long regionIndexScanDowngradeThreshold = REGION_INDEX_SCAN_DOWNGRADE_THRESHOLD;
 
   public static TiConfiguration createDefault(String pdAddrsStr) {
     Objects.requireNonNull(pdAddrsStr, "pdAddrsStr is null");
@@ -214,11 +214,11 @@ public class TiConfiguration implements Serializable {
     this.isolationLevel = isolationLevel;
   }
 
-  public int getRegionIndexScanDowngradeThreshold() {
+  public long getRegionIndexScanDowngradeThreshold() {
     return regionIndexScanDowngradeThreshold;
   }
 
-  public void setRegionIndexScanDowngradeThreshold(int regionIndexScanDowngradeThreshold) {
+  public void setRegionIndexScanDowngradeThreshold(long regionIndexScanDowngradeThreshold) {
     this.regionIndexScanDowngradeThreshold = regionIndexScanDowngradeThreshold;
   }
 }
