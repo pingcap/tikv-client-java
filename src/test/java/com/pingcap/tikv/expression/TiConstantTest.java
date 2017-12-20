@@ -24,6 +24,7 @@ import com.pingcap.tikv.expression.scalar.GreaterThan;
 import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.meta.TiTableInfoTest;
 import com.pingcap.tikv.types.RealType;
+import org.joda.time.LocalDateTime;
 import org.junit.Test;
 
 import java.sql.Date;
@@ -45,17 +46,17 @@ public class TiConstantTest {
 
   @Test
   public void testEncodeSQLDate() {
-    Date date = new Date(946656000000L);
-    System.out.println(date);
+    LocalDateTime localDateTime = new LocalDateTime(1998, 9, 2, 0, 0);
+    Date date = new Date(localDateTime.toDate().getTime());
     TiConstant sqlDate = TiConstant.create(date);
-    assertEquals("tp: MysqlTime\nval: \"\\031dB\\000\\000\\000\\000\\000\"\n",
+    assertEquals("tp: MysqlTime\nval: \"\\031_\\304\\000\\000\\000\\000\\000\"\n",
         sqlDate.toProto().toString());
   }
 
   @Test
   public void testEncodeTimestamp() {
-    TiConstant tsDate = TiConstant.create(new Timestamp(904741201002L));
-    assertEquals("tp: MysqlTime\nval: \"\\031_\\305P\\001\\000\\a\\320\"\n",
+    TiConstant tsDate = TiConstant.create(new Timestamp(1998, 9, 2, 19, 0, 0, 0));
+    assertEquals("tp: MysqlTime\nval: \"1\\177\\0050\\000\\000\\000\\000\"\n",
         tsDate.toProto().toString());
   }
 }
