@@ -21,6 +21,7 @@ import com.pingcap.tikv.codec.CodecDataOutput;
 import com.pingcap.tikv.exception.TiExpressionException;
 import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.types.*;
+import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
 
 import java.io.Serializable;
@@ -143,7 +144,7 @@ public class TiConstant implements TiExpr {
   }
 
   private static long calcTimestampFromTime(Long time) {
-    LocalDate jodaDate = new LocalDate(time);
+    LocalDate jodaDate = new LocalDate(time, DateTimeZone.UTC);
     return TimestampType.toPackedLong(
         jodaDate.getYear(),
         jodaDate.getMonthOfYear(),
