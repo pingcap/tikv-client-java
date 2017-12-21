@@ -35,6 +35,11 @@ public class TiDAGRequest implements Serializable {
     this.pushDownType = pushDownType;
   }
 
+  public TiDAGRequest(PushDownType pushDownType, int timeZoneOffset) {
+    this(pushDownType);
+    this.timeZoneOffset = timeZoneOffset;
+  }
+
   public enum TruncateMode {
     IgnoreTruncation(0x1),
     TruncationAsWarning(0x2);
