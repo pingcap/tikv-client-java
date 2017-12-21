@@ -24,12 +24,11 @@ import com.pingcap.tikv.expression.scalar.GreaterThan;
 import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.meta.TiTableInfoTest;
 import com.pingcap.tikv.types.RealType;
-import org.joda.time.LocalDateTime;
 import org.junit.Test;
 
-import java.sql.Date;
 import java.sql.Timestamp;
 
+import static com.pingcap.tikv.expression.TiConstant.DateWrapper;
 import static org.junit.Assert.assertEquals;
 
 public class TiConstantTest {
@@ -46,11 +45,27 @@ public class TiConstantTest {
 
   @Test
   public void testEncodeSQLDate() {
-    LocalDateTime localDateTime = new LocalDateTime(1998, 9, 2, 0, 0);
-    Date date = new Date(localDateTime.toDate().getTime());
-    TiConstant sqlDate = TiConstant.create(date);
-    assertEquals("tp: MysqlTime\nval: \"\\031_\\304\\000\\000\\000\\000\\000\"\n",
-        sqlDate.toProto().toString());
+    DateWrapper[] wrappers = new DateWrapper[] {
+        new DateWrapper(904694400000L),
+        new DateWrapper(946684800000L),
+        new DateWrapper(1077984000000L),
+        new DateWrapper(-1019721600000L),
+        new DateWrapper(1488326400000L),
+    };
+
+    String[] answers = new String[] {
+        "tp: MysqlTime\nval: \"\\031_\\304\\000\\000\\000\\000\\000\"\n",
+        "tp: MysqlTime\nval: \"\\031dB\\000\\000\\000\\000\\000\"\n",
+        "tp: MysqlTime\nval: \"\\031q\\272\\000\\000\\000\\000\\000\"\n",
+        "tp: MysqlTime\nval: \"\\030\\231\\222\\000\\000\\000\\000\\000\"\n",
+        "tp: MysqlTime\nval: \"\\031\\234\\002\\000\\000\\000\\000\\000\"\n",
+    };
+    assertEquals(answers.length, wrappers.length);
+
+    for (int i = 0; i < wrappers.length; i++) {
+      TiConstant sqlDate = TiConstant.create(wrappers[i]);
+      assertEquals(answers[i], sqlDate.toProto().toString());
+    }
   }
 
   @Test

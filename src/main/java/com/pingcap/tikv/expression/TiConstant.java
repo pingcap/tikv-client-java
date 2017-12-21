@@ -23,8 +23,8 @@ import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.types.*;
 import org.joda.time.LocalDate;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
-import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.Objects;
 
@@ -34,6 +34,34 @@ import static com.pingcap.tikv.types.Types.*;
 // Refer to https://github.com/pingcap/tipb/blob/master/go-tipb/expression.pb.go
 // TODO: This might need a refactor to accept an DataType?
 public class TiConstant implements TiExpr {
+  public static class DateWrapper implements Serializable {
+    private Long value;
+
+    public DateWrapper(Long value) {
+      this.value = value;
+    }
+
+    @Override
+    public String toString() {
+      return value == null ? "" : value.toString();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (obj == this) {
+        return true;
+      } else if (obj instanceof DateWrapper) {
+        return ((DateWrapper) obj).value.equals(value);
+      }
+      return false;
+    }
+
+    @Override
+    public int hashCode() {
+      return (int) (7 * (31 * value));
+    }
+  }
+
   private Object value;
 
   public static TiConstant create(Object value) {
@@ -83,9 +111,9 @@ public class TiConstant implements TiExpr {
     } else if (value instanceof BigDecimal) {
       builder.setTp(ExprType.MysqlDecimal);
       DecimalType.writeDecimal(cdo, (BigDecimal) value);
-    } else if (value instanceof Date) {
+    } else if (value instanceof DateWrapper) {
       builder.setTp(ExprType.MysqlTime);
-      IntegerType.writeULong(cdo, calcTimestampFromDate(((Date) value)));
+      IntegerType.writeULong(cdo, calcTimestampFromTime(((DateWrapper) value).value));
     } else if (value instanceof Timestamp) {
       builder.setTp(ExprType.MysqlTime);
       IntegerType.writeULong(cdo, TimestampType.toPackedLong(((Timestamp) value).toLocalDateTime()));
@@ -114,8 +142,8 @@ public class TiConstant implements TiExpr {
     }
   }
 
-  private static long calcTimestampFromDate(Date date) {
-    LocalDate jodaDate = new LocalDate(date.getTime());
+  private static long calcTimestampFromTime(Long time) {
+    LocalDate jodaDate = new LocalDate(time);
     return TimestampType.toPackedLong(
         jodaDate.getYear(),
         jodaDate.getMonthOfYear(),
