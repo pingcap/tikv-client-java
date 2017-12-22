@@ -39,6 +39,7 @@ public class TiConfiguration implements Serializable {
   private static final Class<? extends BackOff> DEF_BACKOFF_CLASS = ExponentialBackOff.class;
   private static final int DEF_MAX_FRAME_SIZE = 268435456 * 2; // 256 * 2 MB
   private static final int DEF_INDEX_SCAN_BATCH_SIZE = 2000000;
+  private static final int MAX_REQUEST_KEY_RANGE_SIZE = 200000;
   private static final int DEF_INDEX_SCAN_CONCURRENCY = 5;
   private static final int DEF_TABLE_SCAN_CONCURRENCY = 512;
   private static final CommandPri DEF_COMMAND_PRIORITY = CommandPri.Low;
@@ -61,6 +62,7 @@ public class TiConfiguration implements Serializable {
   private CommandPri commandPriority = DEF_COMMAND_PRIORITY;
   private IsolationLevel isolationLevel = DEF_ISOLATION_LEVEL;
   private long regionIndexScanDowngradeThreshold = REGION_INDEX_SCAN_DOWNGRADE_THRESHOLD;
+  private int maxRequestKeyRangeSize = MAX_REQUEST_KEY_RANGE_SIZE;
 
   public static TiConfiguration createDefault(String pdAddrsStr) {
     Objects.requireNonNull(pdAddrsStr, "pdAddrsStr is null");
@@ -220,5 +222,16 @@ public class TiConfiguration implements Serializable {
 
   public void setRegionIndexScanDowngradeThreshold(long regionIndexScanDowngradeThreshold) {
     this.regionIndexScanDowngradeThreshold = regionIndexScanDowngradeThreshold;
+  }
+
+  public int getMaxRequestKeyRangeSize() {
+    return maxRequestKeyRangeSize;
+  }
+
+  public void setMaxRequestKeyRangeSize(int maxRequestKeyRangeSize) {
+    if (maxRequestKeyRangeSize <= 0) {
+      throw new IllegalArgumentException("Key range size cannot be less than 1");
+    }
+    this.maxRequestKeyRangeSize = maxRequestKeyRangeSize;
   }
 }
