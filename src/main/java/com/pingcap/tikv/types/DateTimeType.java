@@ -40,4 +40,5 @@ public class DateTimeType extends TimestampType {
     super(holder);
   }
 
+  public String simpleTypeName() { return "datetime"; }
 }

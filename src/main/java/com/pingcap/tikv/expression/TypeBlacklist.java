@@ -23,7 +23,7 @@ public class TypeBlacklist extends Blacklist {
     super(typesString);
   }
 
-  public boolean isUnsupportedType(Class<?> cls) {
-    return isUnsupported(cls);
+  public boolean isUnsupportedType(String typeName) {
+    return isUnsupported(typeName);
   }
 }

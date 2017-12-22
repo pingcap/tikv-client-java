@@ -37,8 +37,11 @@ public class Blacklist {
     }
   }
 
+  boolean isUnsupported(String name) {
+    return unsupported.contains(name);
+  }
+
   boolean isUnsupported(Class<?> cls) {
-    String simpleClassName = requireNonNull(cls).getSimpleName();
-    return unsupported.contains(simpleClassName);
+    return isUnsupported(requireNonNull(cls).getSimpleName());
   }
 }
