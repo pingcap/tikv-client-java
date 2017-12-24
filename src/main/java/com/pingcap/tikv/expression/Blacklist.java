@@ -19,6 +19,7 @@ package com.pingcap.tikv.expression;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
@@ -43,5 +44,10 @@ public class Blacklist {
 
   boolean isUnsupported(Class<?> cls) {
     return isUnsupported(requireNonNull(cls).getSimpleName());
+  }
+
+  @Override
+  public String toString() {
+    return unsupported.stream().collect(Collectors.joining(","));
   }
 }

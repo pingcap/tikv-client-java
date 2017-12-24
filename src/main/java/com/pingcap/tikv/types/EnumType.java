@@ -17,6 +17,8 @@
 
 package com.pingcap.tikv.types;
 
+import com.pingcap.tikv.codec.CodecDataInput;
+import com.pingcap.tikv.codec.UnsupportedTypeException;
 import com.pingcap.tikv.meta.TiColumnInfo;
 
 public class EnumType extends BytesType {
@@ -33,4 +35,10 @@ public class EnumType extends BytesType {
   }
 
   public String simpleTypeName() { return "enum"; }
+
+  // Enum is not supported yet
+  @Override
+  public Object decodeNotNull(int flag, CodecDataInput cdi) {
+    throw new UnsupportedTypeException("Enum type is not supported yet");
+  }
 }
