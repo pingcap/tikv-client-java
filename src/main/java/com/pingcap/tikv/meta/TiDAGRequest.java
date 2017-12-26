@@ -499,21 +499,6 @@ public class TiDAGRequest implements Serializable {
     return this;
   }
 
-  /**
-   * set key range of downgrade table scan
-   *
-   * @param ranges key range of scan
-   */
-  public TiDAGRequest addDowngradeRanges(List<Coprocessor.KeyRange> ranges) {
-    downGradeRanges.addAll(requireNonNull(ranges, "DownGradeRanges is null"));
-    return this;
-  }
-
-  public void resetRanges(List<Coprocessor.KeyRange> ranges) {
-    keyRanges.clear();
-    keyRanges.addAll(ranges);
-  }
-
   public void resetFilters(List<TiExpr> filters) {
     filter.clear();
     filter.addAll(filters);
@@ -521,10 +506,6 @@ public class TiDAGRequest implements Serializable {
 
   public List<Coprocessor.KeyRange> getRanges() {
     return keyRanges;
-  }
-
-  public List<Coprocessor.KeyRange> getDownGradeRanges() {
-    return downGradeRanges;
   }
 
   public TiDAGRequest addFilter(TiExpr filter) {
@@ -658,19 +639,6 @@ public class TiDAGRequest implements Serializable {
       sb.append("[").append(limit).append("]");
     }
 
-    if (!getDownGradeRanges().isEmpty()) {
-      sb.append(", Downgrade ranges: ");
-      List<String> rangeStrings = getDownGradeRanges()
-          .stream()
-          .map(KeyRangeUtils::toString)
-          .collect(Collectors.toList());
-      sb.append(Joiner.on(", ").skipNulls().join(rangeStrings));
-    }
-
-    if (!getDowngradeFilters().isEmpty()) {
-      sb.append(", Downgrade filters: ");
-      sb.append(Joiner.on(", ").skipNulls().join(getDowngradeFilters()));
-    }
     return sb.toString();
   }
 
