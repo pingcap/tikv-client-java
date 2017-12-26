@@ -16,6 +16,7 @@
 package com.pingcap.tikv.predicates;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.pingcap.tikv.util.KeyRangeUtils.makeCoprocRange;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -23,12 +24,12 @@ import com.google.common.collect.BoundType;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Range;
-import com.google.protobuf.ByteString;
-import com.pingcap.tikv.codec.CodecDataOutput;
-import com.pingcap.tikv.codec.KeyUtils;
-import com.pingcap.tikv.codec.TableCodec;
 import com.pingcap.tikv.exception.TiClientInternalException;
 import com.pingcap.tikv.expression.TiExpr;
+import com.pingcap.tikv.key.IndexKey;
+import com.pingcap.tikv.key.Key;
+import com.pingcap.tikv.key.RowKey;
+import com.pingcap.tikv.key.TypedKey;
 import com.pingcap.tikv.kvproto.Coprocessor.KeyRange;
 import com.pingcap.tikv.meta.TiColumnInfo;
 import com.pingcap.tikv.meta.TiIndexColumn;
@@ -36,7 +37,6 @@ import com.pingcap.tikv.meta.TiIndexInfo;
 import com.pingcap.tikv.meta.TiTableInfo;
 import com.pingcap.tikv.predicates.RangeBuilder.IndexRange;
 import com.pingcap.tikv.types.DataType;
-import com.pingcap.tikv.types.IntegerType;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -113,7 +113,7 @@ public class ScanBuilder {
 
     RangeBuilder builder = new RangeBuilder();
     List<IndexRange> irs =
-        builder.exprsToIndexRanges(
+        builder.expressionToIndexRanges(
             result.accessPoints, result.accessPointsTypes,
             result.accessConditions, result.rangeType);
 
@@ -128,74 +128,56 @@ public class ScanBuilder {
   }
 
   private List<KeyRange> buildTableScanKeyRange(TiTableInfo table, List<IndexRange> indexRanges) {
-    requireNonNull(table, "Table cannot be null to encoding keyRange");
-    requireNonNull(indexRanges, "indexRanges cannot be null to encoding keyRange");
+    requireNonNull(table, "Table is null");
+    requireNonNull(indexRanges, "indexRanges is null");
 
     List<KeyRange> ranges = new ArrayList<>(indexRanges.size());
     for (IndexRange ir : indexRanges) {
-      ByteString startKey;
-      ByteString endKey;
-      if (ir.hasAccessPoints()) {
-        checkArgument(
-            !ir.hasRange(), "Table scan must have one and only one access condition / point");
+      Key startKey;
+      Key endKey;
+      if (ir.hasAccessKeys()) {
+        checkArgument(!ir.hasRange(), "Table scan must have one and only one access condition / point");
 
-        Object v = ir.getAccessPoints().get(0);
-        checkArgument(v instanceof Long, "Table scan key range must be long value");
-        DataType type = ir.getTypes().get(0);
-        checkArgument(type instanceof IntegerType, "Table scan key range must be long value");
-        startKey = TableCodec.encodeRowKeyWithHandle(table.getId(), (long) v);
-        endKey = ByteString.copyFrom(KeyUtils.prefixNext(startKey.toByteArray()));
+        Key key = ir.getAccessKey();
+        checkArgument(key instanceof TypedKey, "Table scan key range must be typed key");
+        TypedKey typedKey = (TypedKey)key;
+        startKey = RowKey.toRowKey(table.getId(), typedKey);
+        endKey = startKey.next();
       } else if (ir.hasRange()) {
-        checkArgument(
-            !ir.hasAccessPoints(),
-            "Table scan must have one and only one access condition / point");
-        Range r = ir.getRange();
-        DataType type = ir.getRangeType();
-        checkArgument(type instanceof IntegerType, "Table scan key range must be long value");
+        checkArgument(!ir.hasAccessKeys(), "Table scan must have one and only one access condition / point");
+        Range<TypedKey> r = ir.getRange();
 
         if (!r.hasLowerBound()) {
           // -INF
-          // TODO: Domain and encoding should be further encapsulated
-          startKey = TableCodec.encodeRowKeyWithHandle(table.getId(), Long.MIN_VALUE);
+          startKey = RowKey.createMin(table.getId());
         } else {
           // Comparision with null should be filtered since it yields unknown always
-          Object lb = r.lowerEndpoint();
-          checkArgument(lb instanceof Long, "Table scan key range must be long value");
-          long lVal = (long) lb;
+          startKey = RowKey.toRowKey(table.getId(), r.lowerEndpoint());
           if (r.lowerBoundType().equals(BoundType.OPEN)) {
-            // TODO: Need push back?
-            if (lVal != Long.MAX_VALUE) {
-              lVal++;
-            }
+            startKey = startKey.next();
           }
-          startKey = TableCodec.encodeRowKeyWithHandle(table.getId(), lVal);
         }
 
         if (!r.hasUpperBound()) {
           // INF
-          endKey = TableCodec.encodeRowKeyWithHandle(table.getId(), Long.MAX_VALUE);
+          endKey = RowKey.createMax(table.getId());
         } else {
-          Object ub = r.upperEndpoint();
-          checkArgument(ub instanceof Long, "Table scan key range must be long value");
-          long lVal = (long) ub;
+          endKey = RowKey.toRowKey(table.getId(), r.upperEndpoint());
           if (r.upperBoundType().equals(BoundType.CLOSED)) {
-            if (lVal != Long.MAX_VALUE) {
-              lVal++;
-            }
+            endKey = endKey.next();
           }
-          endKey = TableCodec.encodeRowKeyWithHandle(table.getId(), lVal);
         }
       } else {
         throw new TiClientInternalException("Empty access conditions");
       }
 
-      ranges.add(KeyRange.newBuilder().setStart(startKey).setEnd(endKey).build());
+      ranges.add(makeCoprocRange(startKey.toByteString(), endKey.toByteString()));
     }
 
     if (ranges.isEmpty()) {
-      ByteString startKey = TableCodec.encodeRowKeyWithHandle(table.getId(), Long.MIN_VALUE);
-      ByteString endKey = TableCodec.encodeRowKeyWithHandle(table.getId(), Long.MAX_VALUE);
-      ranges.add(KeyRange.newBuilder().setStart(startKey).setEnd(endKey).build());
+      Key startKey = RowKey.createMin(table.getId());
+      Key endKey = RowKey.createMax(table.getId());
+      ranges.add(makeCoprocRange(startKey.toByteString(), endKey.toByteString()));
     }
 
     return ranges;
@@ -210,94 +192,52 @@ public class ScanBuilder {
     List<KeyRange> ranges = new ArrayList<>(indexRanges.size());
 
     for (IndexRange ir : indexRanges) {
-      CodecDataOutput cdo = new CodecDataOutput();
-      List<Object> values = ir.getAccessPoints();
-      List<DataType> types = ir.getTypes();
-      for (int i = 0; i < values.size(); i++) {
-        Object v = values.get(i);
-        DataType t = types.get(i);
-        t.encode(cdo, DataType.EncodeType.KEY, v);
-      }
+      Key pointKey = ir.getAccessKey();
 
-      byte[] pointsData = cdo.toBytes();
+      Range<TypedKey> r = ir.getRange();
+      Key lPointKey;
+      Key uPointKey;
 
-      cdo.reset();
-      Range r = ir.getRange();
-      byte[] lPointKey;
-      byte[] uPointKey;
-
-      byte[] lKey;
-      byte[] uKey;
+      Key lKey;
+      Key uKey;
       if (r == null) {
-        lPointKey = pointsData;
-        uPointKey = KeyUtils.prefixNext(lPointKey.clone());
+        lPointKey = pointKey;
+        uPointKey = pointKey.next();
 
-        lKey = new byte[0];
-        uKey = new byte[0];
+        lKey = Key.NULL;
+        uKey = Key.NULL;
       } else {
-        lPointKey = pointsData;
-        uPointKey = pointsData;
+        lPointKey = pointKey;
+        uPointKey = pointKey;
 
-        DataType type = ir.getRangeType();
         if (!r.hasLowerBound()) {
           // -INF
-          type.encodeMinValue(cdo);
-          lKey = cdo.toBytes();
+          lKey = Key.MIN;
         } else {
-          Object lb = r.lowerEndpoint();
-          type.encode(cdo, DataType.EncodeType.KEY, lb);
-          lKey = cdo.toBytes();
+          lKey = r.lowerEndpoint();
           if (r.lowerBoundType().equals(BoundType.OPEN)) {
-            lKey = KeyUtils.prefixNext(lKey);
+            lKey = lKey.next();
           }
         }
 
-        cdo.reset();
         if (!r.hasUpperBound()) {
           // INF
-          type.encodeMaxValue(cdo);
-          uKey = cdo.toBytes();
+          uKey = Key.MAX;
         } else {
-          Object ub = r.upperEndpoint();
-          type.encode(cdo, DataType.EncodeType.KEY, ub);
-          uKey = cdo.toBytes();
+          uKey = r.upperEndpoint();
           if (r.upperBoundType().equals(BoundType.CLOSED)) {
-            uKey = KeyUtils.prefixNext(uKey);
+            uKey = uKey.next();
           }
         }
-
-        cdo.reset();
       }
-      TableCodec.writeIndexSeekKey(cdo, table.getId(), index.getId(), lPointKey, lKey);
+      IndexKey lbsKey = IndexKey.toIndexKey(table.getId(), index.getId(), lPointKey, lKey);
+      IndexKey ubsKey = IndexKey.toIndexKey(table.getId(), index.getId(), uPointKey, uKey);
 
-      ByteString lbsKey = ByteString.copyFrom(cdo.toBytes());
-
-      cdo.reset();
-      TableCodec.writeIndexSeekKey(cdo, table.getId(), index.getId(), uPointKey, uKey);
-      ByteString ubsKey = ByteString.copyFrom(cdo.toBytes());
-
-      ranges.add(KeyRange.newBuilder().setStart(lbsKey).setEnd(ubsKey).build());
+      ranges.add(makeCoprocRange(lbsKey.toByteString(), ubsKey.toByteString()));
     }
 
     if (ranges.isEmpty()) {
-      CodecDataOutput cdo = new CodecDataOutput();
-      DataType.encodeIndexMinValue(cdo);
-      byte[] bytesMin = cdo.toBytes();
-      cdo.reset();
-
-      DataType.encodeIndexMaxValue(cdo);
-      byte[] bytesMax = cdo.toBytes();
-      cdo.reset();
-
-      TableCodec.writeIndexSeekKey(cdo, table.getId(), index.getId(), bytesMin);
-      ByteString rangeMin = cdo.toByteString();
-
-      cdo.reset();
-
-      TableCodec.writeIndexSeekKey(cdo, table.getId(), index.getId(), bytesMax);
-      ByteString rangeMax = cdo.toByteString();
-
-      ranges.add(KeyRange.newBuilder().setStart(rangeMin).setEnd(rangeMax).build());
+      ranges.add(makeCoprocRange(Key.MIN.toByteString(), Key.MAX.toByteString()));
     }
     return ranges;
   }
@@ -357,13 +297,15 @@ public class ScanBuilder {
         // index, it likely yields nothing. Maybe a check needed
         // to simplify it to a false condition
         TiIndexColumn col = index.getIndexColumns().get(i);
-        IndexMatcher matcher = new IndexMatcher(col, true);
+        IndexMatcher eqMatcher = IndexMatcher.equalOnlyMatcher(col);
         boolean found = false;
         // For first prefix index encountered, it equals to a range
         // and we cannot push equal conditions further
         for (TiExpr cond : conditions) {
-          if (visited.contains(cond)) continue;
-          if (matcher.match(cond)) {
+          if (visited.contains(cond)) {
+            continue;
+          }
+          if (eqMatcher.match(cond)) {
             accessPoints.add(cond);
             TiColumnInfo tiColumnInfo = table.getColumns().get(col.getOffset());
             accessPointTypes.add(tiColumnInfo.getType());
@@ -379,9 +321,11 @@ public class ScanBuilder {
         if (!found) {
           // For first "broken index chain piece"
           // search for a matching range condition
-          matcher = new IndexMatcher(col, false);
+          IndexMatcher matcher = IndexMatcher.matcher(col);
           for (TiExpr cond : conditions) {
-            if (visited.contains(cond)) continue;
+            if (visited.contains(cond)) {
+              continue;
+            }
             if (matcher.match(cond)) {
               accessConditions.add(cond);
               TiColumnInfo tiColumnInfo = table.getColumns().get(col.getOffset());
