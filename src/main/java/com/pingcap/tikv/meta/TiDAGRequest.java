@@ -186,7 +186,6 @@ public class TiDAGRequest implements Serializable {
     DAGRequest.Builder dagRequestBuilder = DAGRequest.newBuilder();
     Executor.Builder executorBuilder = Executor.newBuilder();
     TableScan.Builder tblScanBuilder = TableScan.newBuilder();
-
     // Step1. Add columns to first executor
     getFields().forEach(tiColumnInfo ->
         tblScanBuilder.addColumns(
