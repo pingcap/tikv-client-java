@@ -129,7 +129,7 @@ public class Snapshot {
    * @param tasks      RegionTask of the coprocessor request to send
    * @return Row iterator to iterate over resulting rows
    */
-  public Iterator<Long> handleRead(TiDAGRequest dagRequest, List<RegionTask> tasks) {
+  public Iterator<Long> indexHandleRead(TiDAGRequest dagRequest, List<RegionTask> tasks) {
     return getHandleIterator(
         dagRequest,
         tasks,
